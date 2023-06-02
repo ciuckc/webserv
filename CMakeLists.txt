@@ -10,4 +10,4 @@ add_executable(webserv
         srcs/server/Route.h
         srcs/server/VServer.h
         srcs/Server.h
-        srcs/main.cc)
+        srcs/main.cc srcs/http/Header.cc srcs/http/Request.h srcs/http/Request.cc)
