@@ -1,7 +1,9 @@
 #pragma once
 #include <stdint.h>
+
 #include <string>
 #include <vector>
+
 #include "Route.h"
 
 // one of the server { } blocks in the config file

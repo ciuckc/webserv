@@ -1,6 +1,7 @@
 #pragma once
 #include <ostream>
 #include <string>
+
 #include "Headers.h"
 
 class Response {
@@ -11,7 +12,7 @@ class Response {
 
   Headers headers_;
 
-  char *body_;
+  char* body_;
   size_t body_size_;
 
  public:
@@ -20,9 +21,9 @@ class Response {
   Response(const Response& other);
   Response& operator=(const Response& rhs);
 
-  void addHeader(const std::string &key, const std::string &val);
+  void addHeader(const std::string& key, const std::string& val);
 
-  void write(std::ostream &out) const;
+  void write(std::ostream& out) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Response& res);

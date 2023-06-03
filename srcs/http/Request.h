@@ -1,10 +1,10 @@
 #pragma once
 #include <istream>
 #include <string>
+
 #include "Headers.h"
 
 class Request {
-
  public:
   enum Method {
     INVALID = 0,
@@ -19,7 +19,7 @@ class Request {
 
   Headers headers_;
 
-  char *body_;
+  char* body_;
   size_t body_size_;
 
   void parseStatus(std::istream& in);
@@ -32,7 +32,7 @@ class Request {
 
   void parse(std::istream& in);
 
-  void write(std::ostream &out) const;
+  void write(std::ostream& out) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Request& req);
