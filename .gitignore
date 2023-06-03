@@ -35,7 +35,9 @@ webserv
 
 # Cmake build dir
 cmake-build*/
-build/
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
 
 # Clangd index cache dir
 .cache/

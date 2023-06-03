@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include "config/Config.h"
+#include "Config.h"
 #include "Server.h"
-#include "http/Request.h"
+#include "Request.h"
 
 #define DEFAULT_CONFIG_FILE "./webserv.conf"
 
