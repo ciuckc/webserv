@@ -36,3 +36,6 @@
 
 # Cmake build dir
 cmake-build*/
+
+# Clangd index cache dir
+.cache/
