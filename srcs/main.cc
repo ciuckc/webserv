@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "config/Config.h"
 #include "Server.h"
 #include "http/Request.h"
