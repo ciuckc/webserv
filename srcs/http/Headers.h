@@ -29,10 +29,10 @@ class Headers {
   citerator cbegin() const;
   citerator cend() const;
 
-  iterator find(const std::string &key);
-  iterator find_or_create(const std::string &key);
+  iterator find(const std::string& key);
+  iterator find_or_create(const std::string& key);
 
   void parse(std::istream& in);
 };
 
-std::ostream &operator<<(std::ostream &out, const Headers& headers);
+std::ostream& operator<<(std::ostream& out, const Headers& headers);

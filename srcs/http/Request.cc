@@ -1,25 +1,20 @@
-#include <cstdlib>
-#include <cstring>
 #include "Request.h"
 
+#include <cstdlib>
+#include <cstring>
+
 Request::Request()
-    : method_(),
-      uri_(),
-      ver_(),
-      headers_(),
-      body_(),
-      body_size_() {}
+    : method_(), uri_(), ver_(), headers_(), body_(), body_size_() {}
 
 Request::~Request() {
   delete[] body_;
 }
 
-Request::Request(const Request& other)
-    : body_() {
+Request::Request(const Request& other) : body_() {
   *this = other;
 }
 
-Request& Request::operator=(const Request &rhs) {
+Request& Request::operator=(const Request& rhs) {
   if (this == &rhs)
     return *this;
   method_ = rhs.method_;
@@ -43,12 +38,11 @@ void Request::parse(std::istream& in) {
 
   {
     Headers::iterator cl_idx = headers_.find("content-length");
-    if (cl_idx != headers_.end())
-    {
-      char *end;
+    if (cl_idx != headers_.end()) {
+      char* end;
       body_size_ = std::strtol(cl_idx->values_.front().c_str(), &end, 10);
       if (*end != '\0')
-        throw std::exception(); // invalid content-length?
+        throw std::exception();  // invalid content-length?
     }
   }
 
@@ -56,7 +50,7 @@ void Request::parse(std::istream& in) {
     delete[] body_;
     body_ = new char[body_size_];
     if (!in.get(body_, static_cast<std::streamsize>(body_size_ + 1)))
-      throw std::exception(); // todo: another error
+      throw std::exception();  // todo: another error
   }
 }
 
@@ -69,13 +63,13 @@ static Request::Method parseMethod(std::string method_str) {
   if (method_str == "POST")
     return Request::POST;
 
-  throw std::exception(); // Right? can't do much with wrong method
+  throw std::exception();  // Right? can't do much with wrong method
 }
 
-void Request::parseStatus(std::istream &in) {
+void Request::parseStatus(std::istream& in) {
   std::string line;
   if (!std::getline(in, line))
-    throw std::exception(); // todo
+    throw std::exception();  // todo
 
   size_t start = 0;
   size_t end = line.find(' ');
@@ -97,11 +91,7 @@ void Request::parseStatus(std::istream &in) {
 }
 
 void Request::write(std::ostream& out) const {
-  const char *methods[3] = {
-      "UNKNOWN",
-      "GET",
-      "POST"
-  };
+  const char* methods[3] = {"UNKNOWN", "GET", "POST"};
 
   out << methods[method_] << ' ' << uri_ << ' ' << ver_ << "\r\n";
   out << headers_;
