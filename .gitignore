@@ -27,15 +27,18 @@
 *.lib
 
 # Executables
-*.exe
 *.out
-*.app
+webserv
 
 # Jetbrains IDE files
 .idea
 
 # Cmake build dir
 cmake-build*/
+build/
 
 # Clangd index cache dir
 .cache/
+
+# Compile commands
+compile_commands.json
