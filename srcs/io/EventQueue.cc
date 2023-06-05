@@ -33,7 +33,7 @@ static EventQueue::event create_event(int fd, void* context, bool listen_sock) {
 #else
   EventQueue::event ev;
   EV_SET(&ev, fd,
-         listen_sock ? EVFILT_READ : EVFILT_READ | EVFILT_WRITE,
+         listen_sock ? EVFILT_READ : EVFILT_WRITE,
          EV_ADD, 0, NULL, context);
   // the first NULL here should be an int pointer, for listen sockets it will contain the backlog
   // and for read/write sockets it will contain the amount of bytes we can read/write
@@ -76,12 +76,14 @@ EventQueue::event& EventQueue::getNext() {
         throw IOException("epoll", errno);
       }
     }
-    while ((event_count_ = epoll_wait(queue_fd_, events_, MAX_EVENTS, -1)) <= 0); // todo: error handling
+    event_count_ = epoll_wait(queue_fd_, events_, MAX_EVENTS, -1);
 #else
     event_count_ = kevent(queue_fd_, changelist_.data(), changelist_.size(), events_, MAX_EVENTS, NULL);
-    if (event_count_ == -1)
-      throw IOException("kevent", errno);
 #endif
+    if (event_count_ == -1)
+      throw IOException("EventQueue", errno);
+    // if (event_count_ == 0)
+    //   timeout();
     changelist_.clear();
   }
   return events_[event_index_++];
