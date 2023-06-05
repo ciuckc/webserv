@@ -1,21 +1,18 @@
 #include "Socket.h"
 #include "IOException.h"
-#include <cstring>
+#include <fcntl.h>
 #include <cerrno>
-#include <csignal>
 #include <iostream>
+#include <unistd.h>
 
 const protoent* Socket::tcp = getprotobyname("tcp");
 
 Socket::Socket() {
-  int flags = SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK;
-  fd_ = socket(AF_INET, flags, tcp->p_proto);
-  if (fd_ == -1) {
-    std::string str = "Opening socket failed: ";
-    str += std::strerror(errno);
-    str += '\n';
-    throw IOException(str);
-  }
+  fd_ = socket(AF_INET, SOCK_STREAM, tcp->p_proto);
+  if (fd_ == -1)
+    throw IOException("Opening socket failed", errno);
+  if (fcntl(fd_, F_SETFL, O_NONBLOCK) == -1)
+    throw IOException("Failed to set fd to NONBLOCK", errno);
 }
 
 Socket::~Socket() {
@@ -52,33 +49,24 @@ void Socket::bind(const char* host, const char* port) const {
   }
 
   freeaddrinfo(bind_info);
-  if (!bound) {
-    std::string str = "Failed to bind to host: ";
-    str += std::strerror(errno);
-    str += '\n';
-    throw IOException(str);
-  }
+  if (!bound)
+    throw IOException("Failed to bind to host", errno);
 }
 
 void Socket::listen(int backlog) const {
-  if (::listen(fd_, backlog)) {
-    std::string str = "Failed to set socket to listen: ";
-    str += std::strerror(errno);
-    str += '\n';
-    throw IOException(str);
-  }
+  if (::listen(fd_, backlog))
+    throw IOException("Failed to set socket to listen", errno);
 }
 
 int Socket::accept() const {
   sockaddr_in addr = {};
   socklen_t len = sizeof(sockaddr_in);
   int fd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
-  if (fd < 0) {
-    std::string str = "Failed to accept request: ";
-    str += std::strerror(errno);
-    str += '\n';
-    throw IOException(str);
-  }
+  if (fd < 0)
+    throw IOException("Failed to accept request", errno);
+  if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+    throw IOException("Failed to set fd to NONBLOCK", errno);
+
   char* ip_pointer = reinterpret_cast<char*>(&addr.sin_addr.s_addr);
   std::cout << "Accept";
   for (int i = 0; i < 4; i++)

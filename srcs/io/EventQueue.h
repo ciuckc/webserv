@@ -1,5 +1,11 @@
 #pragma once
+#ifdef __linux__
 #include <sys/epoll.h>
+#else
+#include <sys/event.h>
+#endif
+#include <vector>
+
 #define MAX_EVENTS 32
 
 class EventQueue {
@@ -7,13 +13,13 @@ class EventQueue {
   EventQueue(const EventQueue& other); // = delete;
   EventQueue& operator=(const EventQueue& rhs); // = delete;
 
-  int epoll_fd_;
-
-  epoll_event events_[MAX_EVENTS];
-  int event_count_;
-  int event_index_;
-
  public:
+#ifdef __linux__
+  typedef struct epoll_event event
+#else
+  typedef struct kevent event;
+#endif
+
   struct Data {
     int fd; // dst/src
     //todo: insert handler type
@@ -23,10 +29,19 @@ class EventQueue {
   EventQueue();
   ~EventQueue();
 
-  void add(int fd, void* context, uint32_t flags);
+  void add(int fd, void* context, bool listen_sock);
   void mod(int fd, void* context, uint32_t flags);
   void del(int fd);
 
   void doPoll();
-  epoll_event& getNext();
+  event& getNext();
+
+ private:
+  int queue_fd_;
+
+  event events_[MAX_EVENTS];
+  int event_count_;
+  int event_index_;
+
+  std::vector<event> changelist_;
 };

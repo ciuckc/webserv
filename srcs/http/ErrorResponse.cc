@@ -13,7 +13,7 @@ ErrorResponse::ErrorResponse(int error) throw() {
   // todo: lazy initialize body when possible (while writing to socket)
 
   std::string reason = http::getStatus(error);
-  size_t len = errpage_template.length() + (reason.length() * 2) + 3;
+  size_t len = errpage_template.length() + (reason.length() * 2) + 3 - 6;
 
   char* body = new char[len + 1];
   std::snprintf(body, len + 1, errpage_template.c_str(),
