@@ -20,7 +20,7 @@ int main() {
   Socket socket;
   socket.bind(NULL, "6969");
   socket.listen(64);
-  queue.add(socket.get_fd(), &socket, true);
+  queue.add(socket.get_fd(), &socket, IN);
   while (true) {
     EventQueue::event event = queue.getNext();
     EventQueue::Data& data = *(reinterpret_cast<EventQueue::Data*>(event.udata));

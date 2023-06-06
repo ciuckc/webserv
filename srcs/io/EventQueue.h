@@ -15,8 +15,12 @@ class EventQueue {
 
  public:
 #ifdef __linux__
-  typedef struct epoll_event event
+#define IN EPOLLIN
+#define OUT EPOLLOUT
+  typedef struct epoll_event event;
 #else
+#define IN EVFILT_READ
+#define OUT EVFILT_WRITE
   typedef struct kevent event;
 #endif
 
@@ -29,11 +33,10 @@ class EventQueue {
   EventQueue();
   ~EventQueue();
 
-  void add(int fd, void* context, bool listen_sock);
-  void mod(int fd, void* context, uint32_t flags);
-  void del(int fd);
+  void add(int fd, void* context, uint32_t direction);
+  void mod(int fd, void* context, uint32_t direction);
+  void del(event ev);
 
-  void doPoll();
   event& getNext();
 
  private:
@@ -44,4 +47,7 @@ class EventQueue {
   int event_index_;
 
   std::vector<event> changelist_;
+
+  static int getFileDes(const event& ev);
+  static Data* getUserData(const event& ev);
 };

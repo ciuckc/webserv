@@ -34,9 +34,14 @@ add_executable(webserv
         srcs/http/Request.cc
         srcs/http/Headers.h
         srcs/http/Headers.cc
+        srcs/http/ErrorResponse.h
+        srcs/http/ErrorResponse.cc
         srcs/io/Socket.h
         srcs/io/Socket.cc
-        srcs/io/IOException.h)
+        srcs/io/EventQueue.h
+        srcs/io/EventQueue.cc
+        srcs/io/IOException.h
+        srcs/io/IOTask.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
         ${CMAKE_SOURCE_DIR})
