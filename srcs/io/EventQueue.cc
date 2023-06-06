@@ -106,6 +106,14 @@ EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #endif
 }
 
+bool EventQueue::isError(const EventQueue::event& ev) {
+#ifdef __linux__
+  return false;
+#else
+  return ev.flags == EV_ERROR;
+#endif
+}
+
 void EventQueue::Data::operator()() {
   (void)handler;
   // handler.doIO();
