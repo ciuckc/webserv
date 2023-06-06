@@ -6,12 +6,10 @@
 
 class Response {
  private:
-  std::string ver_;
-  std::string code_;
-  std::string reason_;
-
+  std::string message_;
   Headers headers_;
 
+  // todo: some kinda fstream that's triggered by event?
   char* body_;
   size_t body_size_;
 
@@ -21,7 +19,10 @@ class Response {
   Response(const Response& other);
   Response& operator=(const Response& rhs);
 
+  void setMessage(int status);
+  const std::string& getMessage() const;
   void addHeader(const std::string& key, const std::string& val);
+  void setBody(char* body, size_t body_size);
 
   void write(std::ostream& out) const;
 };

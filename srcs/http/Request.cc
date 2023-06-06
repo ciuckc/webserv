@@ -3,8 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 
-Request::Request()
-    : method_(), uri_(), ver_(), headers_(), body_(), body_size_() {}
+Request::Request() : method_(), body_(), body_size_() {}
 
 Request::~Request() {
   delete[] body_;
