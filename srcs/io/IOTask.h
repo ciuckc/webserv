@@ -1,5 +1,3 @@
 #pragma once
 
-class IOTask {
-
-};
+class IOTask {};

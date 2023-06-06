@@ -1,5 +1,6 @@
 #pragma once
 #include <exception>
+
 #include "Response.h"
 
 class ErrorResponse : public Response, public std::exception {
@@ -14,4 +15,3 @@ class ErrorResponse : public Response, public std::exception {
 
   const char* what() const throw();
 };
-
