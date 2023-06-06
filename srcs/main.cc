@@ -1,6 +1,6 @@
 #include <netdb.h>
-#include <unistd.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <fstream>
 #include <iostream>
@@ -8,8 +8,8 @@
 
 #include "Server.h"
 #include "config/Config.h"
-#include "http/Request.h"
 #include "http/ErrorResponse.h"
+#include "http/Request.h"
 #include "io/EventQueue.h"
 #include "io/Socket.h"
 
