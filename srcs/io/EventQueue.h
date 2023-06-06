@@ -10,8 +10,8 @@
 
 class EventQueue {
  private:
-  EventQueue(const EventQueue& other); // = delete;
-  EventQueue& operator=(const EventQueue& rhs); // = delete;
+  EventQueue(const EventQueue& other);           // = delete;
+  EventQueue& operator=(const EventQueue& rhs);  // = delete;
 
  public:
 #ifdef __linux__
@@ -25,9 +25,9 @@ class EventQueue {
 #endif
 
   struct Data {
-    int fd; // dst/src
-    //todo: insert handler type
-    void* context; // state
+    int fd;  // dst/src
+    // todo: insert handler type
+    void* context;  // state
   };
 
   EventQueue();
