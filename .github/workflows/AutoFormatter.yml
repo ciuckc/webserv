@@ -25,7 +25,7 @@ jobs:
 
     - name: Format code
       run: |
-        find . -regex '.*\.\(cpp\|hpp\|h\|cc\|cxx\)' -exec clang-format -style="{ BasedOnStyle: Google, PointerAlignment: Left, ColumnLimit: 110}" -i {} \;
+        find . -regex '.*\.\(cpp\|hpp\|h\|cc\|cxx\|c\)' -exec clang-format -style="{ BasedOnStyle: Google, PointerAlignment: Left, ColumnLimit: 110}" -i {} \;
 
     - name: Commit changes
       uses: stefanzweifel/git-auto-commit-action@v4
