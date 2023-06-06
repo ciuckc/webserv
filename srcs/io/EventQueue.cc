@@ -39,7 +39,7 @@ static EventQueue::event create_event(int fd, void* context, uint32_t direction)
 void EventQueue::add(int fd, void* context, uint32_t direction) {
   Data* data = new Data();
   data->fd = fd;
-  data->context = context;
+  data->handler = context;
 
   event ev = create_event(fd, data, direction);
   changelist_.push_back(ev);
@@ -95,4 +95,9 @@ EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #else
   return reinterpret_cast<Data*>(ev.udata);
 #endif
+}
+
+void EventQueue::Data::operator()() {
+  (void)handler;
+  // handler.doIO();
 }

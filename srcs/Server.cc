@@ -11,6 +11,7 @@ Server::~Server() {}
 void Server::loop() {
   while (true) {
     EventQueue::event event = evqueue_.getNext();
-    EventQueue::Data& data = EventQueue::
+    EventQueue::Data& data = *EventQueue::getUserData(event);
+    data();
   }
 }

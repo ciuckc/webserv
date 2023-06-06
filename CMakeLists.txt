@@ -27,6 +27,7 @@ include_directories(srcs)
 add_executable(webserv
         srcs/main.cc
         srcs/Server.h
+        srcs/Server.cc
         srcs/config/Config.h
         srcs/server/Route.h
         srcs/server/VServer.h
