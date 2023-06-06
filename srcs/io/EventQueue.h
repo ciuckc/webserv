@@ -26,8 +26,13 @@ class EventQueue {
 
   struct Data {
     int fd; // dst/src
-    //todo: insert handler type
-    void* context; // state
+    void* handler; //todo: replace this with a handler reference. Maybe the
+                   // IOTask type would be nice for this? We do still need this
+                   // struct though as the task will change for the fd, so if
+                   // we dynamically allocate the handler we will have to track
+                   // more memory
+
+    void operator()();
   };
 
   EventQueue();
@@ -39,6 +44,9 @@ class EventQueue {
 
   event& getNext();
 
+  static int getFileDes(const event& ev);
+  static Data* getUserData(const event& ev);
+
  private:
   int queue_fd_;
 
@@ -47,7 +55,4 @@ class EventQueue {
   int event_index_;
 
   std::vector<event> changelist_;
-
-  static int getFileDes(const event& ev);
-  static Data* getUserData(const event& ev);
 };
