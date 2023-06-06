@@ -1,4 +1,5 @@
 #include "Server.h"
+#include "io/IOException.h"
 
 Server::Server() {
   listen_socket_.bind(NULL, "6969");
@@ -11,6 +12,9 @@ Server::~Server() {}
 void Server::loop() {
   while (true) {
     EventQueue::event event = evqueue_.getNext();
+    if (EventQueue::isError(event))
+      throw IOException("Error returned: ", static_cast<int>(event.data));
+
     EventQueue::Data& data = *EventQueue::getUserData(event);
     data();
   }
