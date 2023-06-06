@@ -10,8 +10,8 @@
 class VServer {
  private:
   // listening on:
-  uint32_t addr_;
-  uint16_t port_;
+  // uint32_t addr_;
+  // uint16_t port_;
   // hostname:
   std::string server_name_;
   // locations:

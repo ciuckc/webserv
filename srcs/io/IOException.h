@@ -21,5 +21,5 @@ class IOException : public std::exception {
   ~IOException() throw() {};
   IOException(const IOException& other) throw(): msg_(other.msg_) {}
 
-  const char* what() throw() { return msg_.c_str(); }
+  const char* what() const throw() { return msg_.c_str(); }
 };

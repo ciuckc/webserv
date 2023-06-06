@@ -32,6 +32,8 @@ add_executable(webserv
         srcs/server/VServer.h
         srcs/http/Request.h
         srcs/http/Request.cc
+        srcs/http/Response.h
+        srcs/http/Response.cc
         srcs/http/Headers.h
         srcs/http/Headers.cc
         srcs/http/ErrorResponse.h
