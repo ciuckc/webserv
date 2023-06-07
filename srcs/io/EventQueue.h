@@ -4,8 +4,8 @@
 #else
 #include <sys/event.h>
 #endif
-#include <vector>
 #include <map>
+#include <vector>
 
 #define MAX_EVENTS 32
 
@@ -26,12 +26,12 @@ class EventQueue {
 #endif
 
   struct Data {
-    int fd;  // dst/src
-    void* handler; //todo: replace this with a handler reference. Maybe the
-                   // IOTask type would be nice for this? We do still need this
-                   // struct though as the task will change for the fd, so if
-                   // we dynamically allocate the handler we will have to track
-                   // more memory
+    int fd;         // dst/src
+    void* handler;  // todo: replace this with a handler reference. Maybe the
+                    //  IOTask type would be nice for this? We do still need this
+                    //  struct though as the task will change for the fd, so if
+                    //  we dynamically allocate the handler we will have to track
+                    //  more memory
 
     void operator()();
   };

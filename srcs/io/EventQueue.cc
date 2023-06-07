@@ -1,7 +1,10 @@
-#include <unistd.h>
-#include <exception>
-#include <cerrno>
 #include "EventQueue.h"
+
+#include <unistd.h>
+
+#include <cerrno>
+#include <exception>
+
 #include "IOException.h"
 
 static int create_queue() {
@@ -61,11 +64,8 @@ static void update_events(int queue, std::vector<EventQueue::event>& changes) {
     int fd = EventQueue::getFileDes(*i);
     EventQueue::event* ptr = i.operator->();
 
-    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) != -1)
-      continue;
-    if (errno != EEXIST ||
-        epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1)
-      throw IOException("epoll", errno);
+    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) != -1) continue;
+    if (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1) throw IOException("epoll", errno);
   }
 }
 #endif
@@ -87,9 +87,7 @@ EventQueue::Data& EventQueue::getNext() {
   return *getUserData(events_[event_index_++]);
 }
 
-int EventQueue::getFileDes(const EventQueue::event& ev) {
-  return getUserData(ev)->fd;
-}
+int EventQueue::getFileDes(const EventQueue::event& ev) { return getUserData(ev)->fd; }
 
 EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #ifdef __linux__

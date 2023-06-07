@@ -1,9 +1,12 @@
-#include <iostream>
-#include <unistd.h>
-#include <sstream>
 #include "Server.h"
-#include "io/IOException.h"
+
+#include <unistd.h>
+
+#include <iostream>
+#include <sstream>
+
 #include "http/ErrorResponse.h"
+#include "io/IOException.h"
 
 Server::Server() {
   listen_socket_.bind(NULL, "6969");
@@ -36,11 +39,10 @@ static void do_read(EventQueue& queue, int fd) {
     std::cout.write(buf, 4096);
     amt = 4096;
   }
-  queue.mod(fd, (void*) send_error, OUT);
+  queue.mod(fd, (void*)send_error, OUT);
 }
 
 void Server::loop() {
-
   while (true) {
     EventQueue::Data& data = evqueue_.getNext();
     if (data.fd == listen_socket_.get_fd()) {

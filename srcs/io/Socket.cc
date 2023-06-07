@@ -1,15 +1,14 @@
 #include "Socket.h"
 
 #include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <iostream>
-#include <netinet/in.h>
-#include <netdb.h>
 
 #include "IOException.h"
-
 
 Socket::Socket() {
   fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
