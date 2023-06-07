@@ -5,6 +5,8 @@
 
 #include <cerrno>
 #include <iostream>
+#include <netinet/in.h>
+#include <netdb.h>
 
 #include "IOException.h"
 
