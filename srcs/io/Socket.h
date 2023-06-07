@@ -1,13 +1,10 @@
 #pragma once
-#include <netdb.h>
 #include <sys/socket.h>
 
 #include <string>
 
 class Socket {
  private:
-  static const protoent* tcp;
-
   Socket(const Socket& other);           // = delete
   Socket& operator=(const Socket& rhs);  // = delete
 
