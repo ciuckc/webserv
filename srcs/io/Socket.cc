@@ -8,10 +8,9 @@
 
 #include "IOException.h"
 
-const protoent* Socket::tcp = getprotobyname("tcp");
 
 Socket::Socket() {
-  fd_ = socket(AF_INET, SOCK_STREAM, tcp->p_proto);
+  fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (fd_ == -1) throw IOException("Opening socket failed", errno);
   if (fcntl(fd_, F_SETFL, O_NONBLOCK) == -1) throw IOException("Failed to set fd to NONBLOCK", errno);
 }
@@ -27,7 +26,7 @@ void Socket::bind(const char* host, const char* port) const {
     addrinfo hints = {};
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = tcp->p_proto;
+    hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
     int status = getaddrinfo(host, port, &hints, &bind_info);
