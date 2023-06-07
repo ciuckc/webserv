@@ -1,10 +1,7 @@
-#include "EventQueue.h"
-
 #include <unistd.h>
-
-#include <cerrno>
 #include <exception>
-
+#include <cerrno>
+#include "EventQueue.h"
 #include "IOException.h"
 
 static int create_queue() {
@@ -49,26 +46,35 @@ void EventQueue::mod(int fd, void* context, uint32_t direction) { add(fd, contex
 
 void EventQueue::del(event event) {
 #ifdef __linux__
-  epoll_ctl(queue_fd_, EPOLL_CTL_DEL, fd, NULL);
+  epoll_ctl(queue_fd_, EPOLL_CTL_DEL, getFileDes(event), &event);
 #else
   event.flags = EV_DELETE;
   changelist_.push_back(event);
 #endif
 }
 
-EventQueue::event& EventQueue::getNext() {
-  if (event_index_ >= event_count_) {
+#ifdef __linux__
+static void update_events(int queue, std::vector<EventQueue::event>& changes) {
+  typedef std::vector<EventQueue::event>::iterator iter;
+
+  for (iter i = changes.begin(); i < changes.end(); ++i) {
+    int fd = EventQueue::getFileDes(*i);
+    EventQueue::event* ptr = i.operator->();
+
+    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) != -1)
+      continue;
+    if (errno != EEXIST ||
+        epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1)
+      throw IOException("epoll", errno);
+  }
+}
+#endif
+
+EventQueue::Data& EventQueue::getNext() {
+  while (event_index_ >= event_count_) {
     event_index_ = 0;
 #ifdef __linux__
-    for (std::vector<event>::iterator it = changelist_.begin(); it < changelist_.end(); it++) {
-      int fd = getFileDes(*it);
-      event* ptr = it.operator->();
-
-      if (epoll_ctl(queue_fd_, EPOLL_CTL_ADD, fd, ptr) != -1) continue;
-      // epoll does not modify existing entries
-      if (errno != EEXIST || epoll_ctl(queue_fd_, EPOLL_CTL_MOD, fd, ptr) == -1)
-        throw IOException("epoll", errno);
-    }
+    update_events(queue_fd_, changelist_);
     event_count_ = epoll_wait(queue_fd_, events_, MAX_EVENTS, -1);
 #else
     event_count_ = kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, NULL);
@@ -78,15 +84,11 @@ EventQueue::event& EventQueue::getNext() {
     //   timeout();
     changelist_.clear();
   }
-  return events_[event_index_++];
+  return *getUserData(events_[event_index_++]);
 }
 
 int EventQueue::getFileDes(const EventQueue::event& ev) {
-#ifdef __linux__
   return getUserData(ev)->fd;
-#else
-  return static_cast<int>(ev.ident);
-#endif
 }
 
 EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
@@ -99,7 +101,7 @@ EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 
 bool EventQueue::isError(const EventQueue::event& ev) {
 #ifdef __linux__
-  return false;
+  return (ev.events & EPOLLERR) != 0;
 #else
   return ev.flags == EV_ERROR;
 #endif

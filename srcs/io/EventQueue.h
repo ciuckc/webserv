@@ -5,6 +5,7 @@
 #include <sys/event.h>
 #endif
 #include <vector>
+#include <map>
 
 #define MAX_EVENTS 32
 
@@ -42,7 +43,7 @@ class EventQueue {
   void mod(int fd, void* context, uint32_t direction);
   void del(event ev);
 
-  event& getNext();
+  Data& getNext();
 
   static int getFileDes(const event& ev);
   static Data* getUserData(const event& ev);
@@ -55,5 +56,6 @@ class EventQueue {
   int event_count_;
   int event_index_;
 
+  std::map<int, Data> event_args_;
   std::vector<event> changelist_;
 };
