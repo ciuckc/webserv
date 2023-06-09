@@ -31,8 +31,8 @@ class Request {
   Request& operator=(const Request& rhs);
 
   void parse(std::istream& in);
-
   void write(std::ostream& out) const;
+  Method GetMethod() const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Request& req);

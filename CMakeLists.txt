@@ -39,6 +39,8 @@ add_executable(webserv
         srcs/http/Headers.cc
         srcs/http/ErrorResponse.h
         srcs/http/ErrorResponse.cc
+		srcs/http/RequestHandler.cc
+		srcs/http/RequestHandler.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
         srcs/io/EventQueue.h

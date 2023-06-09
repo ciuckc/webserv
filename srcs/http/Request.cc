@@ -98,6 +98,10 @@ void Request::write(std::ostream& out) const {
     out.write(body_, static_cast<std::streamsize>(body_size_));
 }
 
+Request::Method Request::GetMethod() const {
+  return (this->method_);
+}
+
 std::ostream& operator<<(std::ostream& out, const Request& req) {
   req.write(out);
   return out;
