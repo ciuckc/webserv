@@ -14,6 +14,5 @@ class ConfigParse {
  private:
   ConfigParse(const ConfigParse&);            // = delete
   ConfigParse operator=(const ConfigParse&);  // = delete
-
-  std::ifstream config_file_name_;
+  std::ifstream config_file_;
 };
