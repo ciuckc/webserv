@@ -33,6 +33,7 @@ class Request {
   void parse(std::istream& in);
   void write(std::ostream& out) const;
   Method GetMethod() const;
+  const std::string& GetUri() const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Request& req);

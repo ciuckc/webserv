@@ -102,6 +102,10 @@ Request::Method Request::GetMethod() const {
   return (this->method_);
 }
 
+const std::string& GetUri() const {
+  return (this->uri_);
+}
+
 std::ostream& operator<<(std::ostream& out, const Request& req) {
   req.write(out);
   return out;
