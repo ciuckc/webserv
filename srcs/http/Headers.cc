@@ -81,16 +81,8 @@ void Headers::parse(std::istream& in) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Headers& headers) {
-  typedef std::vector<std::string>::const_iterator val_iter;
-
   for (Headers::citerator i = headers.cbegin(); i < headers.cend(); ++i) {
-    out << i->key_ << ':';
-
-    for (val_iter j = i->values_.begin(); j < i->values_.end(); ++j) {
-      out << ' ' << *j;
-      if (j != i->values_.end() - 1) out << ',';
-    }
-    out << "\r\n";
+    out << i->operator std::string();
   }
   out << "\r\n";
   return out;
