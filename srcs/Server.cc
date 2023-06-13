@@ -1,9 +1,10 @@
+#include "Server.h"
+
 #include <unistd.h>
 
 #include <iostream>
 #include <sstream>
 
-#include "Server.h"
 #include "http/ErrorResponse.h"
 #include "io/IOException.h"
 
@@ -47,7 +48,6 @@ static void do_read(EventQueue& queue, EventQueue::Data& data) {
 }
 
 void Server::loop() {
-
   while (true) {
     EventQueue::Data& data = evqueue_.getNext();
     if (data.socket.get_fd() == listen_socket_.get_fd()) {

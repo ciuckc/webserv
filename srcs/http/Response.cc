@@ -41,13 +41,13 @@ void Response::setBody(char *body, size_t body_size) {
   body_size_ = body_size;
 }
 
-void Response::write(std::ostream& out) const {
+void Response::write(std::ostream &out) const {
   out << message_;
   out << headers_;
   if (body_) out.write(body_, body_size_);
 }
 
-void Response::write(Socket& socket) const {
+void Response::write(Socket &socket) const {
   size_t offs = 0;
   socket.write(message_);
   socket.write(headers_.cbegin(), headers_.cend(), offs);
