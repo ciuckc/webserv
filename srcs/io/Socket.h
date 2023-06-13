@@ -1,8 +1,16 @@
 #pragma once
-#include <sys/socket.h>
+
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/tcp.h>
 
 #include <string>
+
+#ifdef __linux__
+#define CORK_OPT TCP_CORK
+#else
+#define CORK_OPT TCP_NOPUSH
+#endif
 
 class Socket {
  private:
@@ -10,7 +18,6 @@ class Socket {
   Socket& operator=(const Socket& rhs);  // = delete
 
   int fd_;
-
  public:
   Socket();
   ~Socket();

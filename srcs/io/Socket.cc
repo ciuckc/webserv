@@ -16,11 +16,9 @@ Socket::Socket() {
   if (fd_ == -1) throw IOException("Opening socket failed", errno);
   if (fcntl(fd_, F_SETFL, O_NONBLOCK) == -1) throw IOException("Failed to set fd to NONBLOCK", errno);
 
-#ifdef __linux__
   // Wait until uncorked to send partial packets, require flush!
   int cork = true;
-  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-#endif
+  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
 }
 
 Socket::~Socket() { close(fd_); }
@@ -80,12 +78,10 @@ int Socket::accept() const {
 int Socket::get_fd() const { return fd_; }
 
 void Socket::flush() {
-#ifdef __linux__
   int cork = false;
-  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
   cork = !cork;
-  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-#endif
+  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
 }
 
 ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const { return ::write(fd_, buf + offs, len); }
