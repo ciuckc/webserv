@@ -1,9 +1,10 @@
 #include <exception>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <unistd.h>
 #include "RequestHandler.h"
-#include "CasesGET.h"
+#include "Cases.h"
 
 RequestHandler::RequestHandler() {}
 
@@ -64,11 +65,12 @@ void  RequestHandler::DoGET_()
   // accepted method for route
 
   CasesGET cases;
-  for (int i = 0; i < cases.size(); i++)
+  for (size_t i = 0; i < cases.size(); i++)
   {
-    if (cases[i].test(this->request_))
+    std::cout << i << std::endl;
+    if (cases[i]->test(this->request_))
     {
-      cases[i].act(this->request_);
+      cases[i]->act(this->request_);
       break;
     }
   }

@@ -1,0 +1,1 @@
+g++ -std=c++11 test_get.cc ../srcs/http/*.cc -o unit_test -L`brew --prefix criterion`/lib -lcriterion

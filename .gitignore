@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# my vim is broken
+*.swp
+
 # Compiled Object files
 *.slo
 *.lo

@@ -102,7 +102,8 @@ Request::Method Request::GetMethod() const {
   return (this->method_);
 }
 
-const std::string& GetUri() const {
+const std::string& Request::GetPath() {
+  // strip params and such
   return (this->uri_);
 }
 

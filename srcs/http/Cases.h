@@ -7,27 +7,27 @@
 namespace get {
   class CaseRedirect : public ACase {
      bool test(Request& req) const;
-     void act(Request& req) const;
+     Response act(Request& req) const;
   };
   class CaseNoFile : public ACase {
      bool test(Request& req) const;
-     void act(Request& req) const;
+     Response act(Request& req) const;
   };
   class CaseCGI : public ACase {
      bool test(Request& req) const;
-     void act(Request& req) const;
+     Response act(Request& req) const;
   };
   class CaseFile : public ACase {
      bool test(Request& req) const;
-     void act(Request& req) const;
+     Response act(Request& req) const;
   };
   class CaseDir : public ACase {
      bool test(Request& req) const;
-     void act(Request& req) const;
+     Response act(Request& req) const;
   };
   class CaseFail : public ACase {
      bool test(Request& req) const;
-     void act(Request& req) const;
+     Response act(Request& req) const;
   };
 };
 

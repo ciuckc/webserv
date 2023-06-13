@@ -1,0 +1,84 @@
+In file included from test_get.cc:1:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/criterion.h:31:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/types.h:31:
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/alloc.h:118:31: warning: variadic templates are a C++11 extension [-Wc++11-extensions]
+template <typename T, typename... Params>
+                              ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/alloc.h:284:40: warning: rvalue references are a C++11 extension [-Wc++11-extensions]
+    inline void construct(pointer p, T &&t) { new (p) T(std::move(t)); }
+                                       ^
+In file included from test_get.cc:1:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/criterion.h:32:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/assert.h:1681:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/assert.h:47:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/../options.h:32:
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:160:26: warning: 'override' keyword is a C++11 extension [-Wc++11-extensions]
+      virtual int sync() override
+                         ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:179:17: error: no matching constructor for initialization of 'criterion::logging::stream'
+  static stream info { CR_LOG_INFO };
+                ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:172:7: note: candidate constructor not viable: requires single argument 'severity__', but no arguments were provided
+      stream(enum criterion_severity severity__)
+      ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:170:9: note: candidate constructor (the implicit copy constructor) not viable: requires 1 argument, but 0 were provided
+  class stream : public std::ostream {
+        ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:179:21: error: expected ';' after top level declarator
+  static stream info { CR_LOG_INFO };
+                    ^
+                    ;
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:180:17: error: no matching constructor for initialization of 'criterion::logging::stream'
+  static stream warn { CR_LOG_WARNING };
+                ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:172:7: note: candidate constructor not viable: requires single argument 'severity__', but no arguments were provided
+      stream(enum criterion_severity severity__)
+      ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:170:9: note: candidate constructor (the implicit copy constructor) not viable: requires 1 argument, but 0 were provided
+  class stream : public std::ostream {
+        ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:180:21: error: expected ';' after top level declarator
+  static stream warn { CR_LOG_WARNING };
+                    ^
+                    ;
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:181:17: error: no matching constructor for initialization of 'criterion::logging::stream'
+  static stream error { CR_LOG_ERROR };
+                ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:172:7: note: candidate constructor not viable: requires single argument 'severity__', but no arguments were provided
+      stream(enum criterion_severity severity__)
+      ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:170:9: note: candidate constructor (the implicit copy constructor) not viable: requires 1 argument, but 0 were provided
+  class stream : public std::ostream {
+        ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/logging.h:181:22: error: expected ';' after top level declarator
+  static stream error { CR_LOG_ERROR };
+                     ^
+                     ;
+In file included from test_get.cc:1:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/criterion.h:32:
+In file included from /Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/assert.h:1681:
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/assert.h:54:5: error: unknown type name 'constexpr'
+    constexpr criterion_assert_args(const char *msg) : msg(msg), sentinel_(0) {}
+    ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/assert.h:54:15: error: constructor cannot have a return type
+    constexpr criterion_assert_args(const char *msg) : msg(msg), sentinel_(0) {}
+              ^~~~~~~~~~~~~~~~~~~~~
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/assert.h:55:5: error: unknown type name 'constexpr'
+    constexpr criterion_assert_args(const char *msg, int sentinel_) : msg(msg), sentinel_(sentinel_) {}
+    ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/assert.h:55:15: error: constructor cannot have a return type
+    constexpr criterion_assert_args(const char *msg, int sentinel_) : msg(msg), sentinel_(sentinel_) {}
+              ^~~~~~~~~~~~~~~~~~~~~
+test_get.cc:3:1: error: expected expression
+Test(RequestHandler, get_root) {
+^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/test.h:199:37: note: expanded from macro 'Test'
+#define Test(...)         CR_EXPAND(CR_TEST_BASE(__VA_ARGS__, .sentinel_ = 0))
+                                    ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/test.h:160:23: note: expanded from macro 'CR_TEST_BASE'
+            CR_EXPAND(CRITERION_MAKE_STRUCT(criterion_test_extra_data,       \
+                      ^
+/Users/mbatstra/.brew/Cellar/criterion/2.4.1_1/include/criterion/internal/designated-initializer-compat.h:117:5: note: expanded from macro 'CRITERION_MAKE_STRUCT'
+    []() -> Type {                                      \
+    ^
+3 warnings and 11 errors generated.
