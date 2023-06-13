@@ -18,7 +18,12 @@ EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
   if (queue_fd_ == -1) throw IOException("Failed to create system event queue", errno);
 }
 
-EventQueue::~EventQueue() { close(queue_fd_); }
+EventQueue::~EventQueue() {
+  close(queue_fd_);
+  for (std::map<int, Data*>::iterator it = event_args_.begin(); it != event_args_.end(); ++it) {
+    delete it->second;
+  }
+}
 
 static EventQueue::event create_event(int fd, void* context, uint32_t direction) {
 #ifdef __linux__
@@ -34,8 +39,9 @@ static EventQueue::event create_event(int fd, void* context, uint32_t direction)
 }
 
 void EventQueue::add(int fd, void* context, uint32_t direction) {
-  Data* data = new Data();
-  data->fd = fd;
+  Data*& data = event_args_[fd];
+  if (data == NULL)
+    data = new Data(fd);
   data->handler = context;
 
   event ev = create_event(fd, data, direction);
@@ -45,8 +51,13 @@ void EventQueue::add(int fd, void* context, uint32_t direction) {
 void EventQueue::mod(int fd, void* context, uint32_t direction) { add(fd, context, direction); }
 
 void EventQueue::del(event event) {
+  std::map<int, Data*>::iterator it = event_args_.find(getFileDes(event));
+  if (it == event_args_.end())
+    return;
+  delete it->second;
+
 #ifdef __linux__
-  epoll_ctl(queue_fd_, EPOLL_CTL_DEL, getFileDes(event), &event);
+  epoll_ctl(queue_fd_, EPOLL_CTL_DEL, it->first, &event);
 #else
   event.flags = EV_DELETE;
   changelist_.push_back(event);
@@ -87,7 +98,7 @@ EventQueue::Data& EventQueue::getNext() {
   return *getUserData(events_[event_index_++]);
 }
 
-int EventQueue::getFileDes(const EventQueue::event& ev) { return getUserData(ev)->fd; }
+int EventQueue::getFileDes(const EventQueue::event& ev) { return getUserData(ev)->socket.get_fd(); }
 
 EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #ifdef __linux__
@@ -104,6 +115,10 @@ bool EventQueue::isError(const EventQueue::event& ev) {
   return ev.flags == EV_ERROR;
 #endif
 }
+
+EventQueue::Data::Data(int fd) : socket(fd), handler() {}
+
+EventQueue::Data::~Data() {}
 
 void EventQueue::Data::operator()() {
   (void)handler;

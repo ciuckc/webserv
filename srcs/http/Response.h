@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Headers.h"
+#include "io/Socket.h"
 
 class Response {
  private:
@@ -25,6 +26,7 @@ class Response {
   void setBody(char* body, size_t body_size);
 
   void write(std::ostream& out) const;
+  void write(Socket& socket) const;
 };
 
 std::ostream& operator<<(std::ostream& out, const Response& res);

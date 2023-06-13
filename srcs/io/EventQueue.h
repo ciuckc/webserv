@@ -6,6 +6,7 @@
 #endif
 #include <map>
 #include <vector>
+#include "Socket.h"
 
 #define MAX_EVENTS 32
 
@@ -26,14 +27,17 @@ class EventQueue {
 #endif
 
   struct Data {
-    int fd;         // dst/src
+    explicit Data(int fd);
+    ~Data();
+
+    void operator()();
+
+    Socket socket;  // dst/src
     void* handler;  // todo: replace this with a handler reference. Maybe the
                     //  IOTask type would be nice for this? We do still need this
                     //  struct though as the task will change for the fd, so if
                     //  we dynamically allocate the handler we will have to track
                     //  more memory
-
-    void operator()();
   };
 
   EventQueue();
@@ -56,6 +60,6 @@ class EventQueue {
   int event_count_;
   int event_index_;
 
-  std::map<int, Data> event_args_;
+  std::map<int, Data*> event_args_;
   std::vector<event> changelist_;
 };
