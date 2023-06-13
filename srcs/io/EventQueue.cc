@@ -23,7 +23,7 @@ EventQueue::~EventQueue() { close(queue_fd_); }
 static EventQueue::event create_event(int fd, void* context, uint32_t direction) {
 #ifdef __linux__
   (void)fd;
-  return (epoll_event){direction, context};
+  return (epoll_event){direction, {context}};
 #else
   EventQueue::event ev;
   EV_SET(&ev, fd, direction, EV_ADD, 0, NULL, context);
@@ -87,9 +87,7 @@ EventQueue::Data& EventQueue::getNext() {
   return *getUserData(events_[event_index_++]);
 }
 
-int EventQueue::getFileDes(const EventQueue::event& ev) {
-  return getUserData(ev)->fd;
-}
+int EventQueue::getFileDes(const EventQueue::event& ev) { return getUserData(ev)->fd; }
 
 EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #ifdef __linux__

@@ -1,5 +1,6 @@
 #pragma once
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include <string>
 
@@ -20,4 +21,9 @@ class Socket {
   int accept() const;
 
   int get_fd() const;
+
+  void flush();
+  ssize_t write(char* buf, ssize_t len, size_t offs = 0) const;
+  ssize_t write(const std::string& str, size_t offs = 0) const;
+  template <class Iter> Iter& write(Iter& begin, Iter& end, size_t &str_off);
 };
