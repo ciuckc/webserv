@@ -1,7 +1,10 @@
-#include <unistd.h>
-#include <exception>
-#include <cerrno>
 #include "EventQueue.h"
+
+#include <unistd.h>
+
+#include <cerrno>
+#include <exception>
+
 #include "IOException.h"
 
 static int create_queue() {
@@ -40,8 +43,7 @@ static EventQueue::event create_event(int fd, void* context, uint32_t direction)
 
 void EventQueue::add(int fd, void* context, uint32_t direction) {
   Data*& data = event_args_[fd];
-  if (data == NULL)
-    data = new Data(fd);
+  if (data == NULL) data = new Data(fd);
   data->handler = context;
 
   event ev = create_event(fd, data, direction);
@@ -52,8 +54,7 @@ void EventQueue::mod(int fd, void* context, uint32_t direction) { add(fd, contex
 
 void EventQueue::del(event event) {
   std::map<int, Data*>::iterator it = event_args_.find(getFileDes(event));
-  if (it == event_args_.end())
-    return;
+  if (it == event_args_.end()) return;
   delete it->second;
 
 #ifdef __linux__
@@ -72,11 +73,8 @@ static void update_events(int queue, std::vector<EventQueue::event>& changes) {
     int fd = EventQueue::getFileDes(*i);
     EventQueue::event* ptr = i.operator->();
 
-    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) != -1)
-      continue;
-    if (errno != EEXIST ||
-        epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1)
-      throw IOException("epoll", errno);
+    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) != -1) continue;
+    if (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1) throw IOException("epoll", errno);
   }
 }
 #endif

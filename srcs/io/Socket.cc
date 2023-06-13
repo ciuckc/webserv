@@ -2,12 +2,12 @@
 
 #include <fcntl.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
 #include <cerrno>
 #include <iostream>
-#include <netinet/in.h>
 
 #include "IOException.h"
 
