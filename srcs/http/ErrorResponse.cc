@@ -1,6 +1,7 @@
 #include "ErrorResponse.h"
 
 #include <cstdio>
+#include <cstdlib>
 
 #include "Status.h"
 
@@ -13,10 +14,15 @@ ErrorResponse::ErrorResponse(int error) throw() {
   setMessage(error);
   addHeader("server", "webserv");
   addHeader("content-type", "text/html; charset=utf8");
-  // todo: lazy initialize body when possible (while writing to socket)
 
   std::string reason = http::getStatus(error);
   size_t len = errpage_template.length() + (reason.length() * 2) + 3 - 6;
+  {
+    std::stringstream str;
+    str << len;
+    addHeader("content-length", str.str());
+  }
+  // todo: lazy initialize body when possible (while writing to socket)
 
   char* body = new char[len + 1];
   std::snprintf(body, len + 1, errpage_template.c_str(), error, reason.c_str(), reason.c_str());
