@@ -27,5 +27,6 @@ void Response::write(Socket &socket) const {
   socket.write(message_);
   socket.write(headers_.begin(), headers_.end(), offs);
   socket.write("\r\n");
-  if (body_) socket.write(body_);
+  if (body_)
+    socket.write(body_);
 }
