@@ -52,7 +52,7 @@ Iter Socket::write(Iter begin, Iter end, size_t& str_off) const {
   size_t idx = 0;
 
   for (Iter cur = begin; cur < end; ++cur) {
-    const std::string& str = (std::string)*cur;
+    const std::string& str = *cur;
     const char* str_ptr = str.c_str();
     size_t str_len = str.length();
     if (cur == begin && str_off != 0) str_ptr += str_off, str_len -= str_off;
