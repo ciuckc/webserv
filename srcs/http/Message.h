@@ -18,7 +18,7 @@ class Message {
 
   const std::string& getMessage() const;
   void addHeader(const std::string& key, const std::string& val);
-  void setBody(char* body, size_t body_size); // ? This will change
+  void setBody(char* body, size_t body_size);  // ? This will change
 
   std::ostream& write(std::ostream& out) const;
 };
