@@ -10,6 +10,7 @@ project(
 
 # CMake variables
 # ------------------------------------------------------------------------------
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -20,6 +21,8 @@ set(CMAKE_CXX_COMPILER c++)
 # Compilation specifications
 # ------------------------------------------------------------------------------
 add_compile_options(-Wall -Wextra -Werror)
+# add_compile_options(-Wconversion -Wnull-dereference -Wnon-virtual-dtor
+# -Wcast-align)
 
 # Includes
 # ------------------------------------------------------------------------------

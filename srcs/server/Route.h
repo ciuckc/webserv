@@ -5,4 +5,5 @@
 class Route {
  public:
   virtual Response handle(const Request& request) = 0;
+  virtual ~Route();
 };
