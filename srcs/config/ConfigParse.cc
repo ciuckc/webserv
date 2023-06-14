@@ -19,7 +19,8 @@ ConfigParse::ConfigParse() {}
 
 ConfigParse::ConfigParse(const std::string& file_name_)
     : config_file_(file_name_.c_str(), std::ios_base::in) {
-  if (!config_file_.is_open()) throw std::exception();
+  if (!config_file_.is_open())
+    throw std::exception();
 }
 
 ConfigParse::~ConfigParse() {}
@@ -32,10 +33,13 @@ void parse_utils::split_on_white_space(std::ifstream& config_file, std::list<std
 
   while (true) {
     std::getline(config_file, buffer);
-    if (config_file.eof()) break;
-    if (buffer.empty()) continue;
+    if (config_file.eof())
+      break;
+    if (buffer.empty())
+      continue;
     buffer = buffer.substr(0, buffer.find("#"));  // ignore comments
-    if (buffer.empty()) continue;
+    if (buffer.empty())
+      continue;
     start_idx = 0;                                         // start of line
     end_idx = buffer.find_first_not_of("\t ", start_idx);  // star of the first word on that line
     while (end_idx != buffer.npos) {                       // loop that splits the line at white spaces
@@ -48,14 +52,19 @@ void parse_utils::split_on_white_space(std::ifstream& config_file, std::list<std
 }
 
 // i lost my skills in string operations:(
+// we are splitting on delimiters and we are also adding them to
+// the list. If we split a string we erase it and advance or if
+// we don't have any delimited on which we can split we just continue
+// forward
 void parse_utils::split_on_symbols(std::list<std::string>& tokens) {
   size_t symbol_idx = 0;
   size_t start_idx = 0;
   std::string word;
+  const std::string delimiters = "{}=;";
   std::list<std::string>::iterator it = tokens.begin();
 
   while (it != tokens.end()) {
-    symbol_idx = it->find_first_of("{}=;");
+    symbol_idx = it->find_first_of(delimiters);
     if (symbol_idx == it->npos) {
       ++it;
       continue;
@@ -69,7 +78,7 @@ void parse_utils::split_on_symbols(std::list<std::string>& tokens) {
       word = it->substr(symbol_idx, 1);
       tokens.insert(it, word);
       start_idx = symbol_idx + 1;
-      symbol_idx = it->find_first_of("{}=;", start_idx);
+      symbol_idx = it->find_first_of(delimiters, start_idx);
     }
     if (start_idx < it->length()) {
       word = it->substr(start_idx);
@@ -79,7 +88,9 @@ void parse_utils::split_on_symbols(std::list<std::string>& tokens) {
   }
 }
 
-void parse_utils::tokenize(std::list<std::string>& tokens) { (void)tokens; }
+void parse_utils::tokenize(std::list<std::string>& tokens) {
+  (void)tokens;
+}
 
 bool ConfigParse::parse(Config& config) {
   (void)config;
