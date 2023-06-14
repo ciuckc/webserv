@@ -3,8 +3,8 @@
 #include <string>
 
 #include "Headers.h"
-#include "io/Socket.h"
 #include "Message.h"
+#include "io/Socket.h"
 
 class Response : public Message {
  public:

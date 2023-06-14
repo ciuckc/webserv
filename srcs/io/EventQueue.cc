@@ -70,23 +70,22 @@ void EventQueue::del(event event) {
 
 #ifdef __linux__
 static void update_events(int queue, std::vector<EventQueue::event>& changes) {
-  if (changes.empty())
-    return;
+  if (changes.empty()) return;
 
   typedef std::vector<EventQueue::event>::iterator iter;
   for (iter i = changes.begin(); i < changes.end(); ++i) {
     int fd = EventQueue::getFileDes(*i);
     EventQueue::event* ptr = i.operator->();
 
-    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) == -1
-    && (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1))
+    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) == -1 &&
+        (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1))
       throw IOException("epoll", errno);
   }
 }
 #endif
 
 EventQueue::Data& EventQueue::getNext() {
-  poll_again:
+poll_again:
   while (event_index_ >= event_count_) {
     event_index_ = 0;
 #ifdef __linux__
@@ -105,11 +104,10 @@ EventQueue::Data& EventQueue::getNext() {
   // so that's why the goto is there
   while (isHangup(events_[event_index_]) || isError(events_[event_index_])) {
     // todo: print some fun messages about this?
-    std::cout << (isHangup(events_[event_index_]) ? "hangup " : "error ")
-              << getFileDes(events_[event_index_]) << ' ' << events_[event_index_].events << '\n';
+    std::cout << (isHangup(events_[event_index_]) ? "hangup " : "error ") << getFileDes(events_[event_index_])
+              << ' ' << events_[event_index_].events << '\n';
     del(events_[event_index_++]);
-    if (event_index_ >= event_count_)
-      goto poll_again;
+    if (event_index_ >= event_count_) goto poll_again;
   }
 
   std::cout << "Event flags: " << events_[event_index_].events << '\n';

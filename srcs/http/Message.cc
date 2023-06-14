@@ -1,6 +1,7 @@
+#include "Message.h"
+
 #include <cstring>
 #include <ostream>
-#include "Message.h"
 
 Message::Message() : body_(), body_size_() {}
 
@@ -34,8 +35,7 @@ void Message::setBody(char* body, size_t body_size) {
 std::ostream& Message::write(std::ostream& out) const {
   typedef std::vector<std::string>::const_iterator iter;
   out << message_;
-  for (iter i = headers_.begin(); i != headers_.end(); ++i)
-    out << *i;
+  for (iter i = headers_.begin(); i != headers_.end(); ++i) out << *i;
   out << "\r\n";
   if (body_) out.write(body_, body_size_);
   return out;
