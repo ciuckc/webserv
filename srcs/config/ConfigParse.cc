@@ -19,8 +19,7 @@ ConfigParse::ConfigParse() {}
 
 ConfigParse::ConfigParse(const std::string& file_name_)
     : config_file_(file_name_.c_str(), std::ios_base::in) {
-  if (!config_file_.is_open())
-    throw std::exception();
+  if (!config_file_.is_open()) throw std::exception();
 }
 
 ConfigParse::~ConfigParse() {}
@@ -33,13 +32,10 @@ void parse_utils::split_on_white_space(std::ifstream& config_file, std::list<std
 
   while (true) {
     std::getline(config_file, buffer);
-    if (config_file.eof())
-      break;
-    if (buffer.empty())
-      continue;
+    if (config_file.eof()) break;
+    if (buffer.empty()) continue;
     buffer = buffer.substr(0, buffer.find("#"));  // ignore comments
-    if (buffer.empty())
-      continue;
+    if (buffer.empty()) continue;
     start_idx = 0;                                         // start of line
     end_idx = buffer.find_first_not_of("\t ", start_idx);  // star of the first word on that line
     while (end_idx != buffer.npos) {                       // loop that splits the line at white spaces
@@ -88,13 +84,9 @@ void parse_utils::split_on_symbols(std::list<std::string>& tokens) {
 }
 
 <<<<<<< Updated upstream
-void parse_utils::tokenize(std::list<std::string>& tokens) {
-  (void)tokens;
-}
+void parse_utils::tokenize(std::list<std::string>& tokens) { (void)tokens; }
 =======
-void parse_utils::tokenize(std::list<std::string>& tokens) {
-  (void)tokens;
-}
+void parse_utils::tokenize(std::list<std::string>& tokens) { (void)tokens; }
 >>>>>>> Stashed changes
 
 bool ConfigParse::parse(Config& config) {
