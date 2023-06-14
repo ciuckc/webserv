@@ -53,6 +53,7 @@ class EventQueue {
   static int getFileDes(const event& ev);
   static Data* getUserData(const event& ev);
   static bool isError(const event& ev);
+  static bool isHangup(const event& ev);
 
  private:
   int queue_fd_;

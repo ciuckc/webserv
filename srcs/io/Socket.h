@@ -43,9 +43,12 @@ class Socket {
 
 template <class Iter>
 Iter Socket::write(Iter begin, Iter end, size_t& str_off) const {
-  const ptrdiff_t len = end - begin;
+  const std::ptrdiff_t len = end - begin;
   ssize_t total_len = 0;
   iovec vec[len];
+  msghdr message = {};
+  message.msg_iovlen = len;
+  message.msg_iov = vec;
   size_t idx = 0;
 
   for (Iter cur = begin; cur < end; ++cur) {
@@ -57,7 +60,7 @@ Iter Socket::write(Iter begin, Iter end, size_t& str_off) const {
     vec[idx++] = (iovec){(void*)str_ptr, str_len};
   }
 
-  ssize_t written = writev(fd_, (const iovec*)vec, (int)len);
+  ssize_t written = sendmsg(fd_, &message, MSG_NOSIGNAL);
   if (written == -1) throw IOException("Error writing to socket", errno);
   if (written == total_len) return end;
   while (total_len > written) total_len -= (ssize_t)vec[--idx].iov_len;

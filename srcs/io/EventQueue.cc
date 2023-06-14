@@ -4,6 +4,7 @@
 
 #include <cerrno>
 #include <exception>
+#include <iostream>
 
 #include "IOException.h"
 
@@ -55,7 +56,6 @@ void EventQueue::mod(int fd, void* context, uint32_t direction) { add(fd, contex
 void EventQueue::del(event event) {
   std::map<int, Data*>::iterator it = event_args_.find(getFileDes(event));
   if (it == event_args_.end()) return;
-  delete it->second;
 
 #ifdef __linux__
   epoll_ctl(queue_fd_, EPOLL_CTL_DEL, it->first, &event);
@@ -63,23 +63,30 @@ void EventQueue::del(event event) {
   event.flags = EV_DELETE;
   changelist_.push_back(event);
 #endif
+
+  delete it->second;
+  event_args_.erase(it);
 }
 
 #ifdef __linux__
 static void update_events(int queue, std::vector<EventQueue::event>& changes) {
-  typedef std::vector<EventQueue::event>::iterator iter;
+  if (changes.empty())
+    return;
 
+  typedef std::vector<EventQueue::event>::iterator iter;
   for (iter i = changes.begin(); i < changes.end(); ++i) {
     int fd = EventQueue::getFileDes(*i);
     EventQueue::event* ptr = i.operator->();
 
-    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) != -1) continue;
-    if (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1) throw IOException("epoll", errno);
+    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) == -1
+    && (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1))
+      throw IOException("epoll", errno);
   }
 }
 #endif
 
 EventQueue::Data& EventQueue::getNext() {
+  poll_again:
   while (event_index_ >= event_count_) {
     event_index_ = 0;
 #ifdef __linux__
@@ -93,6 +100,19 @@ EventQueue::Data& EventQueue::getNext() {
     //   timeout();
     changelist_.clear();
   }
+  // We need to remove all the sockets that don't work anymore
+  // I don't want to make this function recursive but also poll more
+  // so that's why the goto is there
+  while (isHangup(events_[event_index_]) || isError(events_[event_index_])) {
+    // todo: print some fun messages about this?
+    std::cout << (isHangup(events_[event_index_]) ? "hangup " : "error ")
+              << getFileDes(events_[event_index_]) << ' ' << events_[event_index_].events << '\n';
+    del(events_[event_index_++]);
+    if (event_index_ >= event_count_)
+      goto poll_again;
+  }
+
+  std::cout << "Event flags: " << events_[event_index_].events << '\n';
   return *getUserData(events_[event_index_++]);
 }
 
@@ -111,6 +131,12 @@ bool EventQueue::isError(const EventQueue::event& ev) {
   return (ev.events & EPOLLERR) != 0;
 #else
   return ev.flags == EV_ERROR;
+#endif
+}
+
+bool EventQueue::isHangup(const EventQueue::event& ev) {
+#ifdef __linux__
+  return (ev.events & EPOLLHUP) != 0;
 #endif
 }
 

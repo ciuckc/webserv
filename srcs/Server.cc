@@ -48,16 +48,21 @@ static void do_read(EventQueue& queue, EventQueue::Data& data) {
 }
 
 void Server::loop() {
+  std::cout << "[Server] Entering main loop!\n";
   while (true) {
-    EventQueue::Data& data = evqueue_.getNext();
-    if (data.socket.get_fd() == listen_socket_.get_fd()) {
-      evqueue_.add(listen_socket_.accept(), (void*)do_read, IN);
-    } else if (data.handler == do_read) {
-      do_read(evqueue_, data);
-    } else if (data.handler == send_error) {
-      send_error(evqueue_, data, 418);
-    }
+    try {
+      EventQueue::Data& data = evqueue_.getNext();
+      if (data.socket.get_fd() == listen_socket_.get_fd()) {
+        evqueue_.add(listen_socket_.accept(), (void*)do_read, IN);
+      } else if (data.handler == do_read) {
+        do_read(evqueue_, data);
+      } else if (data.handler == send_error) {
+        send_error(evqueue_, data, 418);
+      }
 
-    data();
+      data();
+    } catch (const IOException& err) {
+      std::cout << "IOException: " << err.what();
+    }
   }
 }
