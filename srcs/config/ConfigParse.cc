@@ -66,14 +66,16 @@ void parse_utils::split_on_symbols(std::list<std::string>& tokens) {
     }
     start_idx = 0;
     while (symbol_idx != it->npos) {
-      if (start_idx != symbol_idx) {
+      if (start_idx < symbol_idx) {
         word = it->substr(start_idx, symbol_idx - start_idx);
         tokens.insert(it, word);
       }
-      start_idx = symbol_idx;
-      symbol_idx = it->find_first_of("{}=;", symbol_idx + 1);
+      word = it->substr(symbol_idx, 1);
+      tokens.insert(it, word);
+      start_idx = symbol_idx + 1;
+      symbol_idx = it->find_first_of("{}=;", start_idx);
     }
-    if (start_idx != symbol_idx) {
+    if (start_idx < it->length()) {
       word = it->substr(start_idx);
       tokens.insert(it, word);
     }
