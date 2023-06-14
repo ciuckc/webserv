@@ -19,7 +19,8 @@ static int create_queue() {
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
   // cloexec, so cgi does not inherit the queue
   queue_fd_ = create_queue();
-  if (queue_fd_ == -1) throw IOException("Failed to create system event queue", errno);
+  if (queue_fd_ == -1)
+    throw IOException("Failed to create system event queue", errno);
 }
 
 EventQueue::~EventQueue() {
@@ -44,18 +45,22 @@ static EventQueue::event create_event(int fd, void* context, uint32_t direction)
 
 void EventQueue::add(int fd, void* context, uint32_t direction) {
   Data*& data = event_args_[fd];
-  if (data == NULL) data = new Data(fd);
+  if (data == NULL)
+    data = new Data(fd);
   data->handler = context;
 
   event ev = create_event(fd, data, direction);
   changelist_.push_back(ev);
 }
 
-void EventQueue::mod(int fd, void* context, uint32_t direction) { add(fd, context, direction); }
+void EventQueue::mod(int fd, void* context, uint32_t direction) {
+  add(fd, context, direction);
+}
 
 void EventQueue::del(event event) {
   std::map<int, Data*>::iterator it = event_args_.find(getFileDes(event));
-  if (it == event_args_.end()) return;
+  if (it == event_args_.end())
+    return;
 
 #ifdef __linux__
   epoll_ctl(queue_fd_, EPOLL_CTL_DEL, it->first, &event);
@@ -70,7 +75,8 @@ void EventQueue::del(event event) {
 
 #ifdef __linux__
 static void update_events(int queue, std::vector<EventQueue::event>& changes) {
-  if (changes.empty()) return;
+  if (changes.empty())
+    return;
 
   typedef std::vector<EventQueue::event>::iterator iter;
   for (iter i = changes.begin(); i < changes.end(); ++i) {
@@ -94,7 +100,8 @@ poll_again:
 #else
     event_count_ = kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, NULL);
 #endif
-    if (event_count_ == -1) throw IOException("EventQueue", errno);
+    if (event_count_ == -1)
+      throw IOException("EventQueue", errno);
     // if (event_count_ == 0)
     //   timeout();
     changelist_.clear();
@@ -107,14 +114,17 @@ poll_again:
     std::cout << (isHangup(events_[event_index_]) ? "hangup " : "error ") << getFileDes(events_[event_index_])
               << ' ' << events_[event_index_].events << '\n';
     del(events_[event_index_++]);
-    if (event_index_ >= event_count_) goto poll_again;
+    if (event_index_ >= event_count_)
+      goto poll_again;
   }
 
   std::cout << "Event flags: " << events_[event_index_].events << '\n';
   return *getUserData(events_[event_index_++]);
 }
 
-int EventQueue::getFileDes(const EventQueue::event& ev) { return getUserData(ev)->socket.get_fd(); }
+int EventQueue::getFileDes(const EventQueue::event& ev) {
+  return getUserData(ev)->socket.get_fd();
+}
 
 EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #ifdef __linux__
