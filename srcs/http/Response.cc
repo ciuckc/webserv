@@ -5,7 +5,9 @@
 
 Response::Response() : body_(), body_size_() {}
 
-Response::~Response() {}
+Response::~Response() {
+  delete[] body_;
+}
 
 Response::Response(const Response &other) : body_(), body_size_() {
   *this = other;

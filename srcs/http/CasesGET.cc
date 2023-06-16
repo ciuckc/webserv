@@ -82,7 +82,7 @@ Response  CaseFile::act(Request& req) const
   // std::cout << "proper handler called" << std::endl;
   // plop the file in a response
   (void) req;
-
+  std::cout << "spow" << std::endl;
   return (Response());
 }
 
@@ -122,7 +122,7 @@ bool  CaseFail::test(Request& req) const
 Response  CaseFail::act(Request& req) const
 {
   (void) req;
-  std::runtime_error("500 internal error");
+  std::runtime_error("400 invalid request");
   return (Response());
 }
 
