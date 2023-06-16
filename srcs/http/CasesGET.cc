@@ -79,10 +79,27 @@ bool  CaseFile::test(Request& req) const
 
 Response  CaseFile::act(Request& req) const
 {
-  // std::cout << "proper handler called" << std::endl;
-  // plop the file in a response
-  (void) req;
-  std::cout << "spow" << std::endl;
+  // when it works move this to a generic function!
+  std::ostringstream sstream;
+  std::ifstream file(st_prepend_path(req.GetPath())); // get MIME type to set openmode
+  if (!file.isOpen()) {
+    std::runtime_error("500 internal error");
+  }
+  sstream << file.rdbuf();
+  std::string str(sstream.str());
+  size_t body_size = str.length();
+  try {
+    char* body = new[](body_size);
+  }
+  catch (std::exception&) {
+    std::runtime_error("500 internal erro");
+  }
+  str.copy(body, body_size);
+  this->response_.setBody(body, body_size);
+  this->response_.addHeader("Content-Type", 
+  this->response_.addHeader("Content-Length", 
+  this->response_.addHeader("Server", 
+  this->response_.setMessage(200);
   return (Response());
 }
 
@@ -126,6 +143,7 @@ Response  CaseFail::act(Request& req) const
   return (Response());
 }
 
+// not efficient to do this for each request, figure out something better!!
 CasesGET::CasesGET()
 {
   try
