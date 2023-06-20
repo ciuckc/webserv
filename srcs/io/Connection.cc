@@ -22,8 +22,14 @@ void Connection::handle(EventQueue::event& event) {
   if (EventQueue::isWrite(event)) {
     out_status = WS::OK;
     handleOut(out_status);
+    writing_ = (out_status == WS::FULL);
   }
-  event_queue_.mod(socket_.get_fd(), iqueue_.empty() ? EV_OUT : EV_IN);
+  uint32_t flags = 0;
+  if (writing_ || !oqueue_.empty())
+    flags |= EV_OUT;
+  if (!iqueue_.empty())
+    flags |= EV_IN;
+  event_queue_.mod(socket_.get_fd(), flags);
   // For good measure?
   socket_.flush();
 }
@@ -49,7 +55,8 @@ void Connection::handleIn(WS::IOStatus& status) {
 }
 
 void Connection::handleOut(WS::IOStatus& status) {
-  while (status == WS::OK && (!oqueue_.empty() || buffer_.needWrite())) {
+  while (status == WS::OK &&
+        (!oqueue_.empty() || buffer_.needWrite())) {
     if (buffer_.needWrite()) {
       status = buffer_.writeOut(socket_);
       continue;

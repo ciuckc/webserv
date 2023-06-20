@@ -46,8 +46,15 @@ add_executable(webserv
         srcs/io/Socket.cc
         srcs/io/EventQueue.h
         srcs/io/EventQueue.cc
+        srcs/io/Connection.h
+        srcs/io/Connection.cc
+        srcs/io/ConnectionBuffer.h
+        srcs/io/ConnectionBuffer.cc
+        srcs/io/task/IOTask.h
+        srcs/io/task/IOTask.cc
+        srcs/io/BufferPool.h
         srcs/io/IOException.h
-        srcs/io/task/IOTask.h srcs/io/BufferPool.h srcs/io/Connection.h srcs/io/ConnectionBuffer.h srcs/util/WebServ.h srcs/io/ConnectionBuffer.cc srcs/io/Connection.cc srcs/io/task/IOTask.cc)
+        srcs/util/WebServ.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
         ${CMAKE_SOURCE_DIR})

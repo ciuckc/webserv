@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include <cerrno>
-#include <exception>
 #include <iostream>
 
 #include "IOException.h"
@@ -88,14 +87,9 @@ EventQueue::event& EventQueue::getNext() {
   // We need to remove all the sockets that don't work anymore
   // I don't want to make this function recursive but also poll more
   // so that's why the goto is there
-  if (isHangup(events_[event_index_]) || isError(events_[event_index_])) {
-    // todo: print some fun messages about this?
-    std::cout << (isHangup(events_[event_index_]) ? "hangup " : "error ")
-              << getFileDes(events_[event_index_]) << ' ' << events_[event_index_].events << '\n';
+  if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
     del(getFileDes(events_[event_index_]));
-  }
-
-  std::cout << "Event flags: " << events_[event_index_].events << '\n';
+  std::cout << "Event " << getFileDes(events_[event_index_]) << " flags: " << events_[event_index_].events << '\n';
   return events_[event_index_++];
 }
 

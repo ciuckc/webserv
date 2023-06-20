@@ -3,7 +3,7 @@
 ConnectionBuffer::ConnectionBuffer(BufferPool& pool)
   : pool_(pool), size_(pool.size()),
     i_offset_(), i_end_(), read_fail_(true),
-    o_start_(), o_offset_(), need_write_() {};
+    o_start_(), o_offset_(), need_write_() {}
 
 ConnectionBuffer::~ConnectionBuffer() {
   i_bufs_.clear();
@@ -101,8 +101,8 @@ WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
       o_start_ += written;
       return WS::FULL;
     }
+    o_offset_ -= to_write - o_start_;
     o_start_ = 0;
-    o_offset_ -= to_write;
     o_bufs_.pop_front();
   }
   need_write_ = false;
