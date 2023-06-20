@@ -54,6 +54,9 @@ void EventQueue::del(int fd) {
   event.flags = EV_DELETE;
   changelist_.push_back(event);
 #endif
+
+  delete it->second;
+  event_args_.erase(it);
 }
 
 #ifdef __linux__
