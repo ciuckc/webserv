@@ -17,8 +17,8 @@ Request& Request::operator=(const Request& rhs) {
   headers_ = rhs.headers_;
   body_size_ = rhs.body_size_;
   delete[] body_;
-  if (rhs.body_ == NULL) {
-    body_ = NULL;
+  if (rhs.body_ == nullptr) {
+    body_ = nullptr;
   } else {
     body_ = new char[body_size_];
     std::memcpy(body_, rhs.body_, body_size_);
@@ -82,7 +82,7 @@ void Request::write(std::ostream& out) const {
 
   out << methods[method_] << ' ' << uri_ << ' ' << ver_ << "\r\n";
   out << headers_;
-  if (body_ != NULL) out.write(body_, static_cast<std::streamsize>(body_size_));
+  if (body_ != nullptr) out.write(body_, static_cast<std::streamsize>(body_size_));
 }
 
 std::ostream& operator<<(std::ostream& out, const Request& req) {

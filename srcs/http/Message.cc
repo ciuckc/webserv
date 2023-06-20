@@ -14,7 +14,7 @@ Message& Message::operator=(const Message& rhs) {
   headers_ = rhs.headers_;
   body_size_ = rhs.body_size_;
   delete[] body_;
-  body_ = (rhs.body_ == NULL) ? NULL : new char[body_size_];
+  body_ = (rhs.body_ == nullptr) ? nullptr : new char[body_size_];
   if (body_) std::memcpy(body_, rhs.body_, body_size_);
   return *this;
 }

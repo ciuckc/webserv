@@ -45,7 +45,7 @@ void Socket::bind(const char* host, const char* port) const {
   }
 
   bool bound = false;
-  for (addrinfo* i = bind_info; i != NULL; i = i->ai_next) {
+  for (addrinfo* i = bind_info; i != nullptr; i = i->ai_next) {
     if (::bind(fd_, i->ai_addr, i->ai_addrlen) == 0) {
       bound = true;
       break;

@@ -77,7 +77,7 @@ EventQueue::event& EventQueue::getNext() {
     update_events(queue_fd_, changelist_);
     event_count_ = epoll_wait(queue_fd_, events_, MAX_EVENTS, -1);
 #else
-    event_count_ = kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, NULL);
+    event_count_ = kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, nullptr);
 #endif
     if (event_count_ == -1) throw IOException("EventQueue", errno);
     // if (event_count_ == 0)
