@@ -23,7 +23,8 @@ class BufferPool {
     : owner_(owner), data_(owner.front()) {
       owner.pop_front();
     };
-    BorrowedBuffer(BorrowedBuffer&& other) : owner_(other.owner_), data_(other.data_) {
+    BorrowedBuffer(BorrowedBuffer&& other)  noexcept
+      : owner_(other.owner_), data_(other.data_) {
       other.data_ = nullptr;
     };
     ~BorrowedBuffer() {
@@ -34,7 +35,8 @@ class BufferPool {
   };
   typedef struct BorrowedBuffer buf_t;
 
-  explicit BufferPool(size_t size = 8192) : buffer_size_(size), buffers_(), buffer_count_() {}
+  explicit BufferPool(size_t size = 8192)
+    : buffer_size_(size), buffers_(), buffer_count_() {}
   ~BufferPool() {
     if (buffers_.size() != buffer_count_)
       std::cerr << "Buffer pool: There are still buffers in use?!! LEAK!\n";

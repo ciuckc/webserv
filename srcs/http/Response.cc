@@ -1,20 +1,13 @@
 #include "Response.h"
 
-#include <cstring>
 #include <sstream>
 
 #include "Status.h"
 
-Response::Response() {}
-
-Response::~Response() {}
-
-Response::Response(const Response &other) : Message(other) {}
-
-Response &Response::operator=(const Response &rhs) {
-  Message::operator=(rhs);
-  return *this;
-}
+Response::Response() = default;
+Response::~Response() = default;
+Response::Response(const Response &other) = default;
+Response &Response::operator=(const Response &rhs) = default;
 
 void Response::setMessage(int status) {
   std::stringstream str;

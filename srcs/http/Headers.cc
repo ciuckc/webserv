@@ -4,7 +4,7 @@
 
 Headers::Headers() : headers_() {}
 
-Headers::~Headers() {}
+Headers::~Headers() = default;
 
 Headers::Headers(const Headers& other) : headers_(other.headers_.begin(), other.headers_.end()) {}
 

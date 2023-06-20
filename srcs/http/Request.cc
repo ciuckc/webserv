@@ -48,8 +48,8 @@ void Request::parse(std::istream& in) {
 }
 
 static Request::Method parseMethod(std::string method_str) {
-  for (size_t i = 0; i < method_str.length(); i++)
-    method_str[i] = static_cast<char>(std::toupper(method_str[i]));
+  for (char& i : method_str)
+    i = static_cast<char>(std::toupper(i));
 
   if (method_str == "GET") return Request::GET;
   if (method_str == "POST") return Request::POST;

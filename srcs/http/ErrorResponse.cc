@@ -9,7 +9,7 @@ const std::string& ErrorResponse::errpage_template =
     "<html><head><title>%d %s</title></head>"
     "<body><h1>%s</h1><p>(Google what it means yourself)</p></body></html>";
 
-ErrorResponse::ErrorResponse(int error) throw() {
+ErrorResponse::ErrorResponse(int error) noexcept {
   setMessage(error);
   addHeader("server", "webserv");
   addHeader("content-type", "text/html");
@@ -28,13 +28,13 @@ ErrorResponse::ErrorResponse(int error) throw() {
   setBody(body, len);
 }
 
-ErrorResponse::~ErrorResponse() throw() {}
+ErrorResponse::~ErrorResponse() noexcept = default;
 
-ErrorResponse::ErrorResponse(const ErrorResponse& other) throw() : Response(other) {}
+ErrorResponse::ErrorResponse(const ErrorResponse& other) noexcept : Response(other) {}
 
 ErrorResponse& ErrorResponse::operator=(const ErrorResponse& rhs) {
   this->Response::operator=(rhs);
   return *this;
 }
 
-const char* ErrorResponse::what() const throw() { return getMessage().c_str(); }
+const char* ErrorResponse::what() const noexcept { return getMessage().c_str(); }

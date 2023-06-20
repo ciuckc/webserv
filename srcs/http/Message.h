@@ -20,7 +20,7 @@ class Message {
 
   const std::string& getMessage() const;
   const header_t& getHeaders() const;
-  const std::string getBody() const;
+  std::string getBody() const;
   size_t getBodySize() const;
   void addHeader(const std::string& key, const std::string& val);
   void setBody(char* body, size_t body_size); // ? This will change
