@@ -5,7 +5,7 @@
 
 Message::Message() : body_(), body_size_() {}
 
-Message::~Message() {}
+Message::~Message() = default;
 
 Message::Message(const Message& other) : body_(), body_size_() {
   *this = other;
@@ -18,7 +18,7 @@ Message& Message::operator=(const Message& rhs) {
   headers_ = rhs.headers_;
   body_size_ = rhs.body_size_;
   delete[] body_;
-  body_ = (rhs.body_ == NULL) ? NULL : new char[body_size_];
+  body_ = (rhs.body_ == nullptr) ? nullptr : new char[body_size_];
   if (body_)
     std::memcpy(body_, rhs.body_, body_size_);
   return *this;
@@ -27,9 +27,20 @@ Message& Message::operator=(const Message& rhs) {
 const std::string& Message::getMessage() const {
   return message_;
 }
+const std::vector<std::string>& Message::getHeaders() const {
+  return headers_;
+}
 
 void Message::addHeader(const std::string& key, const std::string& val) {
   headers_.push_back(key + ": " + val + "\r\n");
+}
+
+std::string Message::getBody() const {
+  return {body_, body_size_};
+}
+
+size_t Message::getBodySize() const {
+  return body_size_;
 }
 
 void Message::setBody(char* body, size_t body_size) {
@@ -41,11 +52,11 @@ void Message::setBody(char* body, size_t body_size) {
 std::ostream& Message::write(std::ostream& out) const {
   typedef std::vector<std::string>::const_iterator iter;
   out << message_;
-  for (iter i = headers_.begin(); i != headers_.end(); ++i)
-    out << *i;
+  for (const auto& header : headers_)
+    out << header;
   out << "\r\n";
   if (body_)
-    out.write(body_, body_size_);
+    out.write(body_, std::streamsize(body_size_));
   return out;
 }
 

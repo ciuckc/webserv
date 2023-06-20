@@ -5,9 +5,6 @@
 
 class IOException : public std::exception {
  private:
-  IOException();                                   // = delete;
-  IOException& operator=(const IOException& rhs);  // = delete;
-
   std::string msg_;
 
  public:
@@ -19,8 +16,10 @@ class IOException : public std::exception {
     str += '\n';
     msg_ = str;
   }
-  ~IOException() throw(){};
-  IOException(const IOException& other) throw() : msg_(other.msg_) {}
+  IOException(const IOException& other) noexcept : msg_(other.msg_) {}
+  ~IOException() noexcept override = default;
+  IOException() = delete;
+  IOException& operator=(const IOException& rhs) = delete;
 
-  const char* what() const throw() { return msg_.c_str(); }
+  const char* what() const noexcept override { return msg_.c_str(); }
 };

@@ -10,10 +10,10 @@ const std::string& ErrorResponse::errpage_template =
     "<html><head><title>%d %s</title></head>"
     "<body><h1>%s</h1><p>(Google what it means yourself)</p></body></html>";
 
-ErrorResponse::ErrorResponse(int error) throw() {
+ErrorResponse::ErrorResponse(int error) noexcept {
   setMessage(error);
   addHeader("server", "webserv");
-  addHeader("content-type", "text/html; charset=utf8");
+  addHeader("content-type", "text/html");
 
   std::string reason = http::getStatus(error);
   size_t len = errpage_template.length() + (reason.length() * 2) + 3 - 6;
@@ -29,15 +29,15 @@ ErrorResponse::ErrorResponse(int error) throw() {
   setBody(body, len);
 }
 
-ErrorResponse::~ErrorResponse() throw() {}
+ErrorResponse::~ErrorResponse() noexcept = default;
 
-ErrorResponse::ErrorResponse(const ErrorResponse& other) throw() : Response(other) {}
+ErrorResponse::ErrorResponse(const ErrorResponse& other) noexcept : Response(other) {}
 
 ErrorResponse& ErrorResponse::operator=(const ErrorResponse& rhs) {
   this->Response::operator=(rhs);
   return *this;
 }
 
-const char* ErrorResponse::what() const throw() {
+const char* ErrorResponse::what() const noexcept {
   return getMessage().c_str();
 }

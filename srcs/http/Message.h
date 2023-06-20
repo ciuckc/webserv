@@ -4,9 +4,12 @@
 #include <vector>
 
 class Message {
+ public:
+  typedef std::vector<std::string> header_t;
+
  protected:
   std::string message_;
-  std::vector<std::string> headers_;
+  header_t headers_;
   char* body_;
   size_t body_size_;
 
@@ -17,6 +20,9 @@ class Message {
   Message& operator=(const Message& rhs);
 
   const std::string& getMessage() const;
+  const header_t& getHeaders() const;
+  std::string getBody() const;
+  size_t getBodySize() const;
   void addHeader(const std::string& key, const std::string& val);
   void setBody(char* body, size_t body_size);  // ? This will change
 

@@ -11,7 +11,7 @@ class Headers {
 
     explicit Header(const std::string& key);
     bool keyMatches(const std::string& key) const;
-    operator std::string() const {
+    explicit operator std::string() const {
       typedef std::vector<std::string>::const_iterator val_iter;
       std::stringstream stream;
       stream << key_ << ':';

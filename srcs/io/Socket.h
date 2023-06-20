@@ -37,8 +37,9 @@ class Socket {
   void flush();
   ssize_t write(char* buf, ssize_t len, size_t offs = 0) const;
   ssize_t write(const std::string& str, size_t offs = 0) const;
-  template <class Iter>
-  Iter write(Iter begin, Iter end, size_t& str_off) const;
+  ssize_t read(char* buf, ssize_t len, size_t offs = 0) const;
+
+  void shutdown() const;
 };
 
 template <class Iter>
