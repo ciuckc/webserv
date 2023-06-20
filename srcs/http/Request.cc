@@ -22,8 +22,8 @@ Request& Request::operator=(const Request& rhs) {
   headers_ = rhs.headers_;
   body_size_ = rhs.body_size_;
   delete[] body_;
-  if (rhs.body_ == nullptr) {
-    body_ = nullptr;
+  if (rhs.body_ == NULL) {
+    body_ = NULL;
   } else {
     body_ = new char[body_size_];
     std::memcpy(body_, rhs.body_, body_size_);
@@ -54,8 +54,8 @@ void Request::parse(std::istream& in) {
 }
 
 static Request::Method parseMethod(std::string method_str) {
-  for (char& i : method_str)
-    i = static_cast<char>(std::toupper(i));
+  for (size_t i = 0; i < method_str.length(); i++)
+    method_str[i] = static_cast<char>(std::toupper(method_str[i]));
 
   if (method_str == "GET")
     return Request::GET;
@@ -94,7 +94,7 @@ void Request::write(std::ostream& out) const {
 
   out << methods[method_] << ' ' << uri_ << ' ' << ver_ << "\r\n";
   out << headers_;
-  if (body_ != nullptr)
+  if (body_ != NULL)
     out.write(body_, static_cast<std::streamsize>(body_size_));
 }
 

@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <exception>
 #include <iostream>
 
 #include "IOException.h"
@@ -24,32 +25,45 @@ EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
 
 EventQueue::~EventQueue() {
   close(queue_fd_);
+  for (std::map<int, Data*>::iterator it = event_args_.begin(); it != event_args_.end(); ++it) {
+    delete it->second;
+  }
 }
 
-static EventQueue::event create_event(int fd, uint32_t direction) {
+static EventQueue::event create_event(int fd, void* context, uint32_t direction) {
 #ifdef __linux__
-  return (epoll_event){.events = direction, .data = {.fd = fd}};
+  (void)fd;
+  return (epoll_event){direction, {context}};
 #else
   EventQueue::event ev;
-  EV_SET(&ev, fd, direction, EV_ADD, 0, nullptr, nullptr);
+  EV_SET(&ev, fd, direction, EV_ADD, 0, NULL, context);
   // the first NULL here should be an int pointer, for listen sockets it will contain the backlog
   // and for read/write sockets it will contain the amount of bytes we can read/write
   return ev;
 #endif
 }
 
-void EventQueue::add(int fd, uint32_t direction) {
-  event ev = create_event(fd, direction);
+void EventQueue::add(int fd, void* context, uint32_t direction) {
+  Data*& data = event_args_[fd];
+  if (data == NULL)
+    data = new Data(fd);
+  data->handler = context;
+
+  event ev = create_event(fd, data, direction);
   changelist_.push_back(ev);
 }
 
-void EventQueue::mod(int fd, uint32_t direction) {
-  add(fd, direction);
+void EventQueue::mod(int fd, void* context, uint32_t direction) {
+  add(fd, context, direction);
 }
 
-void EventQueue::del(int fd) {
+void EventQueue::del(event event) {
+  std::map<int, Data*>::iterator it = event_args_.find(getFileDes(event));
+  if (it == event_args_.end())
+    return;
+
 #ifdef __linux__
-  epoll_ctl(queue_fd_, EPOLL_CTL_DEL, fd, nullptr);
+  epoll_ctl(queue_fd_, EPOLL_CTL_DEL, it->first, &event);
 #else
   event.flags = EV_DELETE;
   changelist_.push_back(event);
@@ -76,15 +90,15 @@ static void update_events(int queue, std::vector<EventQueue::event>& changes) {
 }
 #endif
 
-EventQueue::event& EventQueue::getNext() {
+EventQueue::Data& EventQueue::getNext() {
+poll_again:
   while (event_index_ >= event_count_) {
     event_index_ = 0;
 #ifdef __linux__
     update_events(queue_fd_, changelist_);
     event_count_ = epoll_wait(queue_fd_, events_, MAX_EVENTS, -1);
 #else
-    event_count_ =
-        kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, nullptr);
+    event_count_ = kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, NULL);
 #endif
     if (event_count_ == -1)
       throw IOException("EventQueue", errno);
@@ -95,17 +109,50 @@ EventQueue::event& EventQueue::getNext() {
   // We need to remove all the sockets that don't work anymore
   // I don't want to make this function recursive but also poll more
   // so that's why the goto is there
-  if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
-    del(getFileDes(events_[event_index_]));
-  std::cout << "Event " << getFileDes(events_[event_index_]) << " flags: " << events_[event_index_].events
-            << '\n';
-  return events_[event_index_++];
+  while (isHangup(events_[event_index_]) || isError(events_[event_index_])) {
+    // todo: print some fun messages about this?
+    std::cout << (isHangup(events_[event_index_]) ? "hangup " : "error ") << getFileDes(events_[event_index_])
+              << ' ' << events_[event_index_].events << '\n';
+    del(events_[event_index_++]);
+    if (event_index_ >= event_count_)
+      goto poll_again;
+  }
+
+  std::cout << "Event flags: " << events_[event_index_].events << '\n';
+  return *getUserData(events_[event_index_++]);
 }
 
 int EventQueue::getFileDes(const EventQueue::event& ev) {
+  return getUserData(ev)->socket.get_fd();
+}
+
+EventQueue::Data* EventQueue::getUserData(const EventQueue::event& ev) {
 #ifdef __linux__
-  return ev.data.fd;
+  return reinterpret_cast<Data*>(ev.data.ptr);
 #else
-  return ev.ident;
+  return reinterpret_cast<Data*>(ev.udata);
 #endif
+}
+
+bool EventQueue::isError(const EventQueue::event& ev) {
+#ifdef __linux__
+  return (ev.events & EPOLLERR) != 0;
+#else
+  return ev.flags == EV_ERROR;
+#endif
+}
+
+bool EventQueue::isHangup(const EventQueue::event& ev) {
+#ifdef __linux__
+  return (ev.events & EPOLLHUP) != 0;
+#endif
+}
+
+EventQueue::Data::Data(int fd) : socket(fd), handler() {}
+
+EventQueue::Data::~Data() {}
+
+void EventQueue::Data::operator()() {
+  (void)handler;
+  // handler.doIO();
 }

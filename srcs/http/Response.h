@@ -9,7 +9,7 @@
 class Response : public Message {
  public:
   Response();
-  ~Response() override;
+  ~Response();
   Response(const Response& other);
   Response& operator=(const Response& rhs);
 

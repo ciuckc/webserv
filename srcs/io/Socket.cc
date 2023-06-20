@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -48,7 +49,7 @@ void Socket::bind(const char* host, const char* port) const {
   }
 
   bool bound = false;
-  for (addrinfo* i = bind_info; i != nullptr; i = i->ai_next) {
+  for (addrinfo* i = bind_info; i != NULL; i = i->ai_next) {
     if (::bind(fd_, i->ai_addr, i->ai_addrlen) == 0) {
       bound = true;
       break;
@@ -70,7 +71,7 @@ int Socket::accept() const {
   socklen_t len = sizeof(sockaddr_in);
   int fd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
   if (fd < 0)
-    throw IOException("Failed to handle request", errno);
+    throw IOException("Failed to accept request", errno);
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
@@ -100,11 +101,4 @@ ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {
 
 ssize_t Socket::write(const std::string& str, size_t offs) const {
   return ::write(fd_, str.c_str() + offs, str.length() - offs);
-}
-ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
-  return ::read(fd_, buf + offs, len - offs);
-}
-
-void Socket::shutdown() const {
-  ::shutdown(fd_, SHUT_WR);
 }

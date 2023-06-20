@@ -1,13 +1,20 @@
 #include "Response.h"
 
+#include <cstring>
 #include <sstream>
 
 #include "Status.h"
 
-Response::Response() = default;
-Response::~Response() = default;
-Response::Response(const Response &other) = default;
-Response &Response::operator=(const Response &rhs) = default;
+Response::Response() {}
+
+Response::~Response() {}
+
+Response::Response(const Response &other) : Message(other) {}
+
+Response &Response::operator=(const Response &rhs) {
+  Message::operator=(rhs);
+  return *this;
+}
 
 void Response::setMessage(int status) {
   std::stringstream str;
@@ -16,12 +23,9 @@ void Response::setMessage(int status) {
 }
 
 void Response::write(Socket &socket) const {
-  // size_t offs = 0;
+  size_t offs = 0;
   socket.write(message_);
-  for (auto i = headers_.begin(); i < headers_.end(); ++i) {
-    socket.write(*i);
-  }
-  // socket.write(headers_.begin(), headers_.end(), offs);
+  socket.write(headers_.begin(), headers_.end(), offs);
   socket.write("\r\n");
   if (body_)
     socket.write(body_);

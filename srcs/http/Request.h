@@ -13,14 +13,14 @@ class Request {
   };
 
  private:
-  Method method_ = INVALID;
+  Method method_;
   std::string uri_;
   std::string ver_;
 
   Headers headers_;
 
-  char* body_ = nullptr;
-  size_t body_size_ = 0;
+  char* body_;
+  size_t body_size_;
 
   void parseStatus(std::istream& in);
 

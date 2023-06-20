@@ -18,40 +18,42 @@ class EventQueue {
 
  public:
 #ifdef __linux__
-#define EV_IN EPOLLIN
-#define EV_OUT EPOLLOUT
+#define IN EPOLLIN
+#define OUT EPOLLOUT
   typedef struct epoll_event event;
 #else
-#define EV_IN EVFILT_READ
-#define EV_OUT EVFILT_WRITE
+#define IN EVFILT_READ
+#define OUT EVFILT_WRITE
   typedef struct kevent event;
 #endif
+
+  struct Data {
+    explicit Data(int fd);
+    ~Data();
+
+    void operator()();
+
+    Socket socket;  // dst/src
+    void* handler;  // todo: replace this with a handler reference. Maybe the
+                    //  IOTask type would be nice for this? We do still need this
+                    //  struct though as the task will change for the fd, so if
+                    //  we dynamically allocate the handler we will have to track
+                    //  more memory
+  };
 
   EventQueue();
   ~EventQueue();
 
-  void add(int fd, uint32_t direction);
-  void mod(int fd, uint32_t direction);
-  void del(int fd);
+  void add(int fd, void* context, uint32_t direction);
+  void mod(int fd, void* context, uint32_t direction);
+  void del(event ev);
 
-  event& getNext();
+  Data& getNext();
 
   static int getFileDes(const event& ev);
-  static inline bool isFlag(const event& ev, uint32_t flag) {
-    return (ev.events & flag) != 0;
-  }
-  static inline bool isRead(const event& ev) {
-    return isFlag(ev, EPOLLIN);
-  };
-  static inline bool isWrite(const event& ev) {
-    return isFlag(ev, EPOLLOUT);
-  };
-  static inline bool isError(const event& ev) {
-    return isFlag(ev, EPOLLERR);
-  };
-  static inline bool isHangup(const event& ev) {
-    return isFlag(ev, EPOLLHUP);
-  };
+  static Data* getUserData(const event& ev);
+  static bool isError(const event& ev);
+  static bool isHangup(const event& ev);
 
  private:
   int queue_fd_;
@@ -60,5 +62,6 @@ class EventQueue {
   int event_count_;
   int event_index_;
 
+  std::map<int, Data*> event_args_;
   std::vector<event> changelist_;
 };
