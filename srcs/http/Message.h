@@ -6,6 +6,7 @@
 class Message {
  public:
   typedef std::vector<std::string> header_t;
+
  protected:
   std::string message_;
   header_t headers_;
@@ -23,7 +24,7 @@ class Message {
   std::string getBody() const;
   size_t getBodySize() const;
   void addHeader(const std::string& key, const std::string& val);
-  void setBody(char* body, size_t body_size); // ? This will change
+  void setBody(char* body, size_t body_size);  // ? This will change
 
   std::ostream& write(std::ostream& out) const;
 };

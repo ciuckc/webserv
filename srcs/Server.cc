@@ -17,13 +17,11 @@ Server::Server() {
 
 Server::~Server() = default;
 
-
 void Server::open_connection(const EventQueue::event& event) {
   if (EventQueue::isHangup(event) || EventQueue::isError(event) || EventQueue::isWrite(event))
     throw IOException("Hangup/err/write on listen socket?! The world has gone mad..\n");
   int conn_fd = listen_socket_.accept();
-  connections_.emplace(std::piecewise_construct,
-                       std::forward_as_tuple(conn_fd),
+  connections_.emplace(std::piecewise_construct, std::forward_as_tuple(conn_fd),
                        std::forward_as_tuple(conn_fd, evqueue_, buffer_manager_));
 }
 
@@ -39,7 +37,7 @@ void Server::loop() {
       }
       auto found_connection = connections_.find(ev_fd);
       if (found_connection == connections_.end())
-        continue; // This should be impossible
+        continue;  // This should be impossible
       if (EventQueue::isHangup(ev) || EventQueue::isError(ev)) {
         std::cout << "Closed connection on socket " << ev_fd << '\n';
         connections_.erase(found_connection);

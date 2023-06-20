@@ -1,9 +1,14 @@
 #include "ConnectionBuffer.h"
 
 ConnectionBuffer::ConnectionBuffer(BufferPool& pool)
-  : pool_(pool), size_(pool.size()),
-    i_offset_(), i_end_(), read_fail_(true),
-    o_start_(), o_offset_(), need_write_() {}
+    : pool_(pool),
+      size_(pool.size()),
+      i_offset_(),
+      i_end_(),
+      read_fail_(true),
+      o_start_(),
+      o_offset_(),
+      need_write_() {}
 
 ConnectionBuffer::~ConnectionBuffer() {
   i_bufs_.clear();
@@ -15,8 +20,7 @@ size_t ConnectionBuffer::available(WS::Dir direction) const {
     if (o_bufs_.empty())
       return 0;
     return size_ - (o_offset_ % size_);
-  }
-  else {
+  } else {
     if (i_bufs_.empty())
       return 0;
     return i_end_ - i_offset_;
@@ -53,7 +57,8 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
     char c = buf_iter->getData()[block_i];
     if (c == '\n')
       break;
-    ++i; ++block_i;
+    ++i;
+    ++block_i;
   }
   if (i < aval)
     str = get_str(i + 1);
@@ -64,13 +69,14 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
 std::string ConnectionBuffer::get_str(size_t len) {
   std::string str(len, '\0');
   size_t str_idx = 0;
-  while (len > 0){
+  while (len > 0) {
     char* data = i_bufs_.front().getData() + i_offset_;
     size_t to_get = std::min(len, size_ - (i_offset_ % size_));
     if (to_get == 0)
       to_get = size_;
     str.replace(str_idx, to_get, data, to_get);
-    str_idx += to_get; len -= to_get;
+    str_idx += to_get;
+    len -= to_get;
     i_offset_ += to_get;
     if (i_offset_ >= size_)
       pop_inbuf();

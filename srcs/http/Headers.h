@@ -18,7 +18,8 @@ class Headers {
 
       for (val_iter j = values_.begin(); j < values_.end(); ++j) {
         stream << ' ' << *j;
-        if (j != values_.end() - 1) stream << ',';
+        if (j != values_.end() - 1)
+          stream << ',';
       }
       stream << "\r\n";
       return stream.str();

@@ -2,8 +2,7 @@
 
 // =========== SendResponse ===========
 SendResponse::SendResponse(const Response& response)
-    : response_(response),
-      header_(response_.getHeaders().begin()) {}
+    : response_(response), header_(response_.getHeaders().begin()) {}
 
 bool SendResponse::operator()(Connection& connection) {
   while (!connection.getBuffer().needWrite()) {
@@ -32,7 +31,7 @@ bool SendResponse::operator()(Connection& connection) {
 }
 
 void SendResponse::onDone(Connection& connection) {
-  //todo: Add task to read next request!
+  // todo: Add task to read next request!
   connection.close();
 }
 

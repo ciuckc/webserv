@@ -1,14 +1,14 @@
 #pragma once
 
 #include <list>
-#include <stack>
 #include <memory>
+#include <stack>
 
-#include "Socket.h"
-#include "EventQueue.h"
-#include "http/Request.h"
 #include "BufferPool.h"
 #include "ConnectionBuffer.h"
+#include "EventQueue.h"
+#include "Socket.h"
+#include "http/Request.h"
 
 class ITask;
 class OTask;
@@ -41,4 +41,3 @@ class Connection {
   inline bool shouldClose() const { return should_close_ && !writing_; }
   inline void close() { should_close_ = true; }
 };
-

@@ -16,12 +16,13 @@ void Response::setMessage(int status) {
 }
 
 void Response::write(Socket &socket) const {
-  //size_t offs = 0;
+  // size_t offs = 0;
   socket.write(message_);
   for (auto i = headers_.begin(); i < headers_.end(); ++i) {
     socket.write(*i);
   }
-  //socket.write(headers_.begin(), headers_.end(), offs);
+  // socket.write(headers_.begin(), headers_.end(), offs);
   socket.write("\r\n");
-  if (body_) socket.write(body_);
+  if (body_)
+    socket.write(body_);
 }

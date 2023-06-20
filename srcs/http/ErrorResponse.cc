@@ -37,4 +37,6 @@ ErrorResponse& ErrorResponse::operator=(const ErrorResponse& rhs) {
   return *this;
 }
 
-const char* ErrorResponse::what() const noexcept { return getMessage().c_str(); }
+const char* ErrorResponse::what() const noexcept {
+  return getMessage().c_str();
+}

@@ -18,7 +18,8 @@ static int create_queue() {
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
   // cloexec, so cgi does not inherit the queue
   queue_fd_ = create_queue();
-  if (queue_fd_ == -1) throw IOException("Failed to create system event queue", errno);
+  if (queue_fd_ == -1)
+    throw IOException("Failed to create system event queue", errno);
 }
 
 EventQueue::~EventQueue() {
@@ -42,7 +43,9 @@ void EventQueue::add(int fd, uint32_t direction) {
   changelist_.push_back(ev);
 }
 
-void EventQueue::mod(int fd, uint32_t direction) { add(fd, direction); }
+void EventQueue::mod(int fd, uint32_t direction) {
+  add(fd, direction);
+}
 
 void EventQueue::del(int fd) {
 #ifdef __linux__
@@ -63,8 +66,8 @@ static void update_events(int queue, std::vector<EventQueue::event>& changes) {
     int fd = EventQueue::getFileDes(*i);
     EventQueue::event* ptr = i.operator->();
 
-    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) == -1
-    && (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1))
+    if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) == -1 &&
+        (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1))
       throw IOException("epoll", errno);
   }
 }
@@ -77,9 +80,11 @@ EventQueue::event& EventQueue::getNext() {
     update_events(queue_fd_, changelist_);
     event_count_ = epoll_wait(queue_fd_, events_, MAX_EVENTS, -1);
 #else
-    event_count_ = kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, nullptr);
+    event_count_ =
+        kevent(queue_fd_, changelist_.data(), (int)changelist_.size(), events_, MAX_EVENTS, nullptr);
 #endif
-    if (event_count_ == -1) throw IOException("EventQueue", errno);
+    if (event_count_ == -1)
+      throw IOException("EventQueue", errno);
     // if (event_count_ == 0)
     //   timeout();
     changelist_.clear();
@@ -89,7 +94,8 @@ EventQueue::event& EventQueue::getNext() {
   // so that's why the goto is there
   if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
     del(getFileDes(events_[event_index_]));
-  std::cout << "Event " << getFileDes(events_[event_index_]) << " flags: " << events_[event_index_].events << '\n';
+  std::cout << "Event " << getFileDes(events_[event_index_]) << " flags: " << events_[event_index_].events
+            << '\n';
   return events_[event_index_++];
 }
 

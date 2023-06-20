@@ -1,4 +1,5 @@
 #include "Connection.h"
+
 #include "io/task/IOTask.h"
 
 Connection::Connection(int fd, EventQueue& event_queue, BufferPool& buf_mgr)
@@ -55,8 +56,7 @@ void Connection::handleIn(WS::IOStatus& status) {
 }
 
 void Connection::handleOut(WS::IOStatus& status) {
-  while (status == WS::OK &&
-        (!oqueue_.empty() || buffer_.needWrite())) {
+  while (status == WS::OK && (!oqueue_.empty() || buffer_.needWrite())) {
     if (buffer_.needWrite()) {
       status = buffer_.writeOut(socket_);
       continue;
@@ -67,7 +67,7 @@ void Connection::handleOut(WS::IOStatus& status) {
       oqueue_.pop_front();
     }
   }
-  if (status == WS::OK) // We can't let this sit in the buffer
+  if (status == WS::OK)  // We can't let this sit in the buffer
     status = buffer_.writeOut(socket_);
 }
 

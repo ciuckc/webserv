@@ -1,5 +1,6 @@
 #pragma once
 #include <streambuf>
+
 #include "BufferPool.h"
 #include "Socket.h"
 #include "util/WebServ.h"
@@ -59,7 +60,7 @@ class ConnectionBuffer {
   inline bool readFailed() const { return read_fail_; };
   // Get the next line (including \n) from the buffer, sets read_fail if no newline
   // has been found
-  ConnectionBuffer& getline(std::string &str);
+  ConnectionBuffer& getline(std::string& str);
 
   // =========== OUT ==========
   // Write from buffer into socket. Should only be called when the socket is
@@ -77,10 +78,8 @@ class ConnectionBuffer {
     return *this;
   }
   inline ConnectionBuffer& operator<<(char c) {
-    put(&c, 1); // lol
+    put(&c, 1);  // lol
     return *this;
   }
-  inline ConnectionBuffer& operator<<(int num) {
-    return operator<<(std::to_string(num));
-  }
+  inline ConnectionBuffer& operator<<(int num) { return operator<<(std::to_string(num)); }
 };

@@ -3,11 +3,11 @@
 #include <set>
 
 #include "config/Config.h"
+#include "io/BufferPool.h"
+#include "io/Connection.h"
 #include "io/EventQueue.h"
 #include "io/Socket.h"
 #include "server/VServer.h"
-#include "io/Connection.h"
-#include "io/BufferPool.h"
 
 class Server {
  private:

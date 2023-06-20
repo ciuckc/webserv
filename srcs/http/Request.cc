@@ -5,12 +5,17 @@
 
 Request::Request() : method_(), body_(), body_size_() {}
 
-Request::~Request() { delete[] body_; }
+Request::~Request() {
+  delete[] body_;
+}
 
-Request::Request(const Request& other) : body_() { *this = other; }
+Request::Request(const Request& other) : body_() {
+  *this = other;
+}
 
 Request& Request::operator=(const Request& rhs) {
-  if (this == &rhs) return *this;
+  if (this == &rhs)
+    return *this;
   method_ = rhs.method_;
   uri_ = rhs.uri_;
   ver_ = rhs.ver_;
@@ -35,7 +40,8 @@ void Request::parse(std::istream& in) {
     if (cl_idx != headers_.end()) {
       char* end;
       body_size_ = std::strtol(cl_idx->values_.front().c_str(), &end, 10);
-      if (*end != '\0') throw std::exception();  // invalid content-length?
+      if (*end != '\0')
+        throw std::exception();  // invalid content-length?
     }
   }
 
@@ -51,29 +57,35 @@ static Request::Method parseMethod(std::string method_str) {
   for (char& i : method_str)
     i = static_cast<char>(std::toupper(i));
 
-  if (method_str == "GET") return Request::GET;
-  if (method_str == "POST") return Request::POST;
+  if (method_str == "GET")
+    return Request::GET;
+  if (method_str == "POST")
+    return Request::POST;
 
   throw std::exception();  // Right? can't do much with wrong method
 }
 
 void Request::parseStatus(std::istream& in) {
   std::string line;
-  if (!std::getline(in, line)) throw std::exception();  // todo
+  if (!std::getline(in, line))
+    throw std::exception();  // todo
 
   size_t start = 0;
   size_t end = line.find(' ');
-  if (end == std::string::npos) throw std::exception();
+  if (end == std::string::npos)
+    throw std::exception();
   method_ = parseMethod(line.substr(start, end - start));
 
   start = end + 1;
   end = line.find(' ', start);
-  if (end == std::string::npos) throw std::exception();
+  if (end == std::string::npos)
+    throw std::exception();
   uri_ = line.substr(start, end - start);
 
   start = end + 1;
   end = line.find('\r', start);
-  if (start >= line.length()) throw std::exception();
+  if (start >= line.length())
+    throw std::exception();
   ver_ = line.substr(start, end - start);
 }
 
@@ -82,7 +94,8 @@ void Request::write(std::ostream& out) const {
 
   out << methods[method_] << ' ' << uri_ << ' ' << ver_ << "\r\n";
   out << headers_;
-  if (body_ != nullptr) out.write(body_, static_cast<std::streamsize>(body_size_));
+  if (body_ != nullptr)
+    out.write(body_, static_cast<std::streamsize>(body_size_));
 }
 
 std::ostream& operator<<(std::ostream& out, const Request& req) {
