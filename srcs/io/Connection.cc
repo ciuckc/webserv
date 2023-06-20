@@ -60,6 +60,8 @@ void Connection::handleOut(WS::IOStatus& status) {
       oqueue_.pop_front();
     }
   }
+  if (status == WS::OK) // We can't let this sit in the buffer
+    status = buffer_.writeOut(socket_);
 }
 
 void Connection::addTask(ITask* task) {
