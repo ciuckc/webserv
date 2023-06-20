@@ -27,8 +27,13 @@ Message& Message::operator=(const Message& rhs) {
 const std::string& Message::getMessage() const {
   return message_;
 }
+
 const std::vector<std::string>& Message::getHeaders() const {
   return headers_;
+}
+
+void Message::addHeader(const std::string& kv_pair) {
+  headers_.push_back(kv_pair);
 }
 
 void Message::addHeader(const std::string& key, const std::string& val) {
@@ -50,7 +55,6 @@ void Message::setBody(char* body, size_t body_size) {
 }
 
 std::ostream& Message::write(std::ostream& out) const {
-  typedef std::vector<std::string>::const_iterator iter;
   out << message_;
   for (const auto& header : headers_)
     out << header;

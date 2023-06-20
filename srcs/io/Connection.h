@@ -20,6 +20,7 @@ class Connection {
   EventQueue& event_queue_;
   std::list<std::unique_ptr<ITask>> iqueue_;
   std::list<std::unique_ptr<OTask>> oqueue_;
+  Request request_;
 
   bool writing_ = false;
   bool should_close_ = false;

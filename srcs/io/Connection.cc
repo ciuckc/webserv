@@ -1,10 +1,11 @@
 #include "Connection.h"
 
 #include "io/task/IOTask.h"
+#include "io/task/ReadRequest.h"
 
 Connection::Connection(int fd, EventQueue& event_queue, BufferPool& buf_mgr)
     : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue), should_close_() {
-  addTask(new ReadRequest());
+  addTask(new ReadRequest(request_));
 }
 
 Connection::~Connection() {

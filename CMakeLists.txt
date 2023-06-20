@@ -50,10 +50,13 @@ add_executable(webserv
         srcs/io/Connection.cc
         srcs/io/ConnectionBuffer.h
         srcs/io/ConnectionBuffer.cc
-        srcs/io/task/IOTask.h
-        srcs/io/task/IOTask.cc
         srcs/io/BufferPool.h
         srcs/io/IOException.h
+        srcs/io/task/IOTask.h
+        srcs/io/task/ReadRequest.h
+        srcs/io/task/ReadRequest.cc
+        srcs/io/task/SendResponse.h
+        srcs/io/task/SendResponse.cc
         srcs/util/WebServ.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY

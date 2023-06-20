@@ -24,6 +24,7 @@ class Message {
   std::string getBody() const;
   size_t getBodySize() const;
   void addHeader(const std::string& key, const std::string& val);
+  void addHeader(const std::string& kv_pair);
   void setBody(char* body, size_t body_size);  // ? This will change
 
   std::ostream& write(std::ostream& out) const;

@@ -73,6 +73,7 @@ static void update_events(int queue, std::vector<EventQueue::event>& changes) {
 }
 #endif
 
+static const bool debug_evqueue = false;
 EventQueue::event& EventQueue::getNext() {
   while (event_index_ >= event_count_) {
     event_index_ = 0;
@@ -94,8 +95,10 @@ EventQueue::event& EventQueue::getNext() {
   // so that's why the goto is there
   if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
     del(getFileDes(events_[event_index_]));
-  std::cout << "Event " << getFileDes(events_[event_index_]) << " flags: " << events_[event_index_].events
-            << '\n';
+  if (debug_evqueue)
+    std::cout << "Event " << getFileDes(events_[event_index_])
+              << " flags: " << events_[event_index_].events
+              << '\n';
   return events_[event_index_++];
 }
 
