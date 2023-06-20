@@ -107,6 +107,10 @@ const std::string& Request::GetPath() {
   return (this->uri_);
 }
 
+Headers::iterator Request::GetHeader(const std::string& key) {
+  return (this->headers_.find(key));
+}
+
 std::ostream& operator<<(std::ostream& out, const Request& req) {
   req.write(out);
   return out;

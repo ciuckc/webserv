@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <exception>
 #include <iostream>
+#include <fstream>
 #include "Cases.h"
 
 using namespace get;
@@ -11,8 +12,7 @@ static void st_prepend_cwd(std::string& str)
 {
   char* cwd;
   cwd = getcwd(NULL, 0);
-  if (cwd == NULL)
-  {
+  if (cwd == NULL) {
     std::runtime_error("500 internal error");
   }
   str.insert(0, cwd);
@@ -53,8 +53,7 @@ bool  CaseCGI::test(Request& req) const
   // for now just check if it ends in .py
   std::string path = req.GetPath();
   st_prepend_cwd(path);
-  if (path.length() < 4)
-  {
+  if (path.length() < 4) {
     return (false);
   }
   return (!path.compare(path.length() - 3, 3, ".py")); // doesn't work with cgi params
@@ -80,26 +79,36 @@ bool  CaseFile::test(Request& req) const
 Response  CaseFile::act(Request& req) const
 {
   // when it works move this to a generic function!
-  std::ostringstream sstream;
-  std::ifstream file(st_prepend_path(req.GetPath())); // get MIME type to set openmode
-  if (!file.isOpen()) {
-    std::runtime_error("500 internal error");
-  }
-  sstream << file.rdbuf();
-  std::string str(sstream.str());
-  size_t body_size = str.length();
+  Response res;
+  uint8_t openmode = 0;
   try {
-    char* body = new[](body_size);
+    std::vector<std::string> types = req.GetHeader("Content-Type")->values_;
+    openmode &= types[0].find("text") == std::string::npos ? std::ios::in : std::ios::binary;
   }
   catch (std::exception&) {
-    std::runtime_error("500 internal erro");
+    openmode &= std::ios::in; 
+  }
+  std::string path = req.GetPath();
+  st_prepend_cwd(path);
+  std::ifstream file(path, openmode); // get MIME type to set openmode
+  if (!file.is_open()) {
+    std::runtime_error("500 internal error");
+  }
+  std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  size_t body_size = str.length();
+  char* body;
+  try {
+    body = new char[body_size];
+  }
+  catch (std::exception&) {
+    std::runtime_error("500 internal error");
   }
   str.copy(body, body_size);
-  this->response_.setBody(body, body_size);
-  this->response_.addHeader("Content-Type", 
-  this->response_.addHeader("Content-Length", 
-  this->response_.addHeader("Server", 
-  this->response_.setMessage(200);
+  res.setBody(body, body_size);
+  // res.addHeader("Content-Type", 
+  // res.addHeader("Content-Length", 
+  // res.addHeader("Server", 
+  res.setMessage(200);
   return (Response());
 }
 

@@ -33,6 +33,7 @@ class Request {
   void parse(std::istream& in);
   void write(std::ostream& out) const;
   Method GetMethod() const;
+  Headers::iterator GetHeader(const std::string& key);
   const std::string& GetPath();
 };
 
