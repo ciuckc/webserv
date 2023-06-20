@@ -1,7 +1,6 @@
 #include "ErrorResponse.h"
 
 #include <cstdio>
-#include <cstdlib>
 
 #include "Status.h"
 
@@ -13,7 +12,7 @@ const std::string& ErrorResponse::errpage_template =
 ErrorResponse::ErrorResponse(int error) throw() {
   setMessage(error);
   addHeader("server", "webserv");
-  addHeader("content-type", "text/html; charset=utf8");
+  addHeader("content-type", "text/html");
 
   std::string reason = http::getStatus(error);
   size_t len = errpage_template.length() + (reason.length() * 2) + 3 - 6;

@@ -1,7 +1,7 @@
 #include <cstring>
 #include <ostream>
 #include "Message.h"
-
+#include <fstream>
 Message::Message() : body_(), body_size_() {}
 
 Message::~Message() {}
@@ -20,9 +20,18 @@ Message& Message::operator=(const Message& rhs) {
 }
 
 const std::string& Message::getMessage() const { return message_; }
+const std::vector<std::string>& Message::getHeaders() const { return headers_; }
 
 void Message::addHeader(const std::string& key, const std::string& val) {
   headers_.push_back(key + ": " + val + "\r\n");
+}
+
+const std::string Message::getBody() const {
+  return std::string(body_, body_size_);
+}
+
+size_t Message::getBodySize() const {
+  return body_size_;
 }
 
 void Message::setBody(char* body, size_t body_size) {

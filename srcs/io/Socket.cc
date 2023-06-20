@@ -64,7 +64,7 @@ int Socket::accept() const {
   sockaddr_in addr = {};
   socklen_t len = sizeof(sockaddr_in);
   int fd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
-  if (fd < 0) throw IOException("Failed to accept request", errno);
+  if (fd < 0) throw IOException("Failed to handle request", errno);
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) throw IOException("Failed to set fd to NONBLOCK", errno);
 
   char* ip_pointer = reinterpret_cast<char*>(&addr.sin_addr.s_addr);
@@ -88,4 +88,11 @@ ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const { return ::writ
 
 ssize_t Socket::write(const std::string& str, size_t offs) const {
   return ::write(fd_, str.c_str() + offs, str.length() - offs);
+}
+ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
+  return ::read(fd_, buf + offs, len - offs);
+}
+
+void Socket::shutdown() const {
+  ::shutdown(fd_, SHUT_WR);
 }

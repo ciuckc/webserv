@@ -13,7 +13,7 @@ project(
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER c++)
 
@@ -47,7 +47,7 @@ add_executable(webserv
         srcs/io/EventQueue.h
         srcs/io/EventQueue.cc
         srcs/io/IOException.h
-        srcs/io/IOTask.h)
+        srcs/io/task/IOTask.h srcs/io/BufferPool.h srcs/io/Connection.h srcs/io/ConnectionBuffer.h srcs/util/WebServ.h srcs/io/ConnectionBuffer.cc srcs/io/Connection.cc srcs/io/task/IOTask.cc)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
         ${CMAKE_SOURCE_DIR})
