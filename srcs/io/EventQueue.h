@@ -42,7 +42,7 @@ class EventQueue {
       return (ev.events & flag) != 0;
     }
     static inline bool checkFilter(const event_t& ev, filt_t filter) {
-      return checkFlag(ev, filter)
+      return checkFlag(ev, filter);
     }
     static inline void printEvent(const event_t& ev) {
       std::cout << "Event fd: " << getFileDes(ev)

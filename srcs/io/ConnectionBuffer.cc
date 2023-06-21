@@ -1,5 +1,7 @@
 #include "ConnectionBuffer.h"
 
+#include <algorithm>
+
 ConnectionBuffer::ConnectionBuffer(BufferPool<>& pool)
     : pool_(pool),
       size_(pool.size()),
@@ -43,12 +45,12 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
     bool last_iteration = buf_iter == std::prev(i_bufs_.end());
 
     auto& arr = buf_iter->getData();
-    auto char_iter = arr.begin() + (first_iteration ? i_offset_ : 0);
-    auto char_end = last_iteration ? arr.begin() + (i_end_ % size_) : arr.end();
-    auto found_nl = std::find(char_iter, char_end, '\n');
+    char* buf_begin = arr.begin() + (first_iteration ? i_offset_ : 0);
+    char* buf_end = last_iteration ? arr.begin() + (i_end_ % size_) : arr.end();
+    char* found_nl = std::find(buf_begin, buf_end, '\n');
 
-    const bool done = found_nl != char_end;
-    offs += std::distance(char_iter, found_nl) + done;
+    const bool done = found_nl != buf_end;
+    offs += std::distance(buf_begin, found_nl) + done;
     if (done) {
       str = get_str(offs - old_offs);
       return *this;

@@ -35,14 +35,14 @@ void EventQueue::del(int fd) {
 }
 
 #ifdef __linux__
-static void update_events(int queue, std::vector<EventQueue::event>& changes) {
+static void update_events(int queue, std::vector<EventQueue::event_t>& changes) {
   if (changes.empty())
     return;
 
-  typedef std::vector<EventQueue::event>::iterator iter;
+  typedef std::vector<EventQueue::event_t>::iterator iter;
   for (iter i = changes.begin(); i < changes.end(); ++i) {
     int fd = EventQueue::getFileDes(*i);
-    EventQueue::event* ptr = i.operator->();
+    EventQueue::event_t* ptr = i.operator->();
 
     if (epoll_ctl(queue, EPOLL_CTL_ADD, fd, ptr) == -1 &&
         (errno != EEXIST || epoll_ctl(queue, EPOLL_CTL_MOD, fd, ptr) == -1))
