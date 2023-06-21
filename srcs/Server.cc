@@ -12,12 +12,12 @@ Server::Server() {
   // the event queue gets destructed this file descriptor will be invalidated
   // twice, in the socket here and in the queue.
   // Server::addListenSocket() could work? We're gonna need multiple anyway
-  evqueue_.add(listen_socket_.get_fd(), EV_IN);
+  evqueue_.add(listen_socket_.get_fd(), EventQueue::in);
 }
 
 Server::~Server() = default;
 
-void Server::open_connection(const EventQueue::event& event) {
+void Server::open_connection(const EventQueue::event_t& event) {
   if (EventQueue::isHangup(event) || EventQueue::isError(event) || EventQueue::isWrite(event))
     throw IOException("Hangup/err/write on listen socket?! The world has gone mad..\n");
   int conn_fd = listen_socket_.accept();
@@ -29,7 +29,7 @@ void Server::loop() {
   std::cout << "[Server] Entering main loop!\n";
   while (true) {
     try {
-      EventQueue::event& ev = evqueue_.getNext();
+      EventQueue::event_t& ev = evqueue_.getNext();
       int ev_fd = EventQueue::getFileDes(ev);
       if (ev_fd == listen_socket_.get_fd()) {
         open_connection(ev);
@@ -47,7 +47,7 @@ void Server::loop() {
       conn.handle(ev);
       if (conn.shouldClose()) {
         conn.getSocket().shutdown();
-        evqueue_.mod(ev_fd, EPOLLHUP);
+        evqueue_.mod(ev_fd, 0);
       }
     } catch (const IOException& err) {
       std::cout << "IOException: " << err.what();

@@ -46,7 +46,7 @@ WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
   return WS::OK;
 }
 ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
-  size_t old_offs = i_offset_;
+/*  size_t old_offs = i_offset_;
   size_t offs = old_offs;
 
   for (auto buf_iter = i_bufs_.begin(); buf_iter != i_bufs_.end(); ++buf_iter) {
@@ -67,7 +67,7 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
       }
       ++offs;
     }
-  }
+  }*/
   size_t i = 0;
   size_t block_i = i_offset_;
   size_t aval = available(WS::IN);
@@ -93,7 +93,7 @@ std::string ConnectionBuffer::get_str(size_t len) {
   std::string str(len, '\0');
   size_t str_idx = 0;
   while (len > 0) {
-    char* data = i_bufs_.front().getData() + i_offset_;
+    char* data = i_bufs_.front().getData().data() + i_offset_;
     size_t to_get = std::min(len, size_ - (i_offset_ % size_));
     if (to_get == 0)
       to_get = size_;
@@ -121,7 +121,7 @@ void ConnectionBuffer::pop_inbuf() {
 WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
   while (!o_bufs_.empty()) {
     auto& buffer = o_bufs_.front();
-    char* data = buffer.getData() + o_start_;
+    char* data = buffer.getData().data() + o_start_;
     ssize_t to_write = static_cast<ssize_t>(std::max(size_, o_offset_) - o_start_);
     ssize_t written = socket.write(data, to_write, 0);
     if (written < 0)
@@ -143,7 +143,7 @@ void ConnectionBuffer::put(const char* data, size_t len) {
     o_offset_ = o_start_ = 0;
   }
   size_t to_wr = std::min(len, available(WS::OUT));
-  char* dst = o_bufs_.back().getData() + (o_offset_ % size_);
+  char* dst = o_bufs_.back().getData().data() + (o_offset_ % size_);
   std::memcpy(dst, data, to_wr);
   o_offset_ += to_wr;
   if (len > to_wr)

@@ -22,7 +22,7 @@ class Server {
   // request perfectly so maybe another map for that?
   // std::multiset<VServer, std::less<VServer> > vservers_;
 
-  void open_connection(const EventQueue::event& event);
+  void open_connection(const EventQueue::event_t& event);
 
  public:
   Server();

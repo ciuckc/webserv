@@ -26,10 +26,10 @@ class Connection {
   bool should_close_ = false;
 
  public:
-  Connection(int fd, EventQueue& event_queue, BufferPool& buf_mgr);
+  Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr);
   ~Connection();
 
-  void handle(EventQueue::event& event);
+  void handle(EventQueue::event_t& event);
   void handleIn(WS::IOStatus& status);
   void handleOut(WS::IOStatus& status);
 

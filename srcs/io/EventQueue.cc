@@ -3,21 +3,11 @@
 #include <unistd.h>
 
 #include <cerrno>
-#include <iostream>
 
 #include "IOException.h"
 
-static int create_queue() {
-#ifdef __linux__
-  return epoll_create1(EPOLL_CLOEXEC);
-#else
-  return kqueue();
-#endif
-}
-
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
-  // cloexec, so cgi does not inherit the queue
-  queue_fd_ = create_queue();
+  queue_fd_ = Platform::create_queue();
   if (queue_fd_ == -1)
     throw IOException("Failed to create system event queue", errno);
 }
@@ -26,24 +16,11 @@ EventQueue::~EventQueue() {
   close(queue_fd_);
 }
 
-static EventQueue::event create_event(int fd, uint32_t direction) {
-#ifdef __linux__
-  return (epoll_event){.events = direction, .data = {.fd = fd}};
-#else
-  EventQueue::event ev;
-  EV_SET(&ev, fd, direction, EV_ADD, 0, nullptr, nullptr);
-  // the first NULL here should be an int pointer, for listen sockets it will contain the backlog
-  // and for read/write sockets it will contain the amount of bytes we can read/write
-  return ev;
-#endif
+void EventQueue::add(int fd, filt_t direction) {
+  changelist_.push_back(Platform::create_event(fd, direction));
 }
 
-void EventQueue::add(int fd, uint32_t direction) {
-  event ev = create_event(fd, direction);
-  changelist_.push_back(ev);
-}
-
-void EventQueue::mod(int fd, uint32_t direction) {
+void EventQueue::mod(int fd, filt_t direction) {
   add(fd, direction);
 }
 
@@ -51,8 +28,9 @@ void EventQueue::del(int fd) {
 #ifdef __linux__
   epoll_ctl(queue_fd_, EPOLL_CTL_DEL, fd, nullptr);
 #else
-  event.flags = EV_DELETE;
-  changelist_.push_back(event);
+  event_t ev = Platform::create_event(fd, 0);
+  ev.flags = EV_DELETE;
+  changelist_.push_back(ev);
 #endif
 }
 
@@ -74,7 +52,7 @@ static void update_events(int queue, std::vector<EventQueue::event>& changes) {
 #endif
 
 static const bool debug_evqueue = false;
-EventQueue::event& EventQueue::getNext() {
+EventQueue::event_t& EventQueue::getNext() {
   while (event_index_ >= event_count_) {
     event_index_ = 0;
 #ifdef __linux__
@@ -96,16 +74,6 @@ EventQueue::event& EventQueue::getNext() {
   if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
     del(getFileDes(events_[event_index_]));
   if (debug_evqueue)
-    std::cout << "Event " << getFileDes(events_[event_index_])
-              << " flags: " << events_[event_index_].events
-              << '\n';
+    Platform::printEvent(events_[event_index_]);
   return events_[event_index_++];
-}
-
-int EventQueue::getFileDes(const EventQueue::event& ev) {
-#ifdef __linux__
-  return ev.data.fd;
-#else
-  return ev.ident;
-#endif
 }

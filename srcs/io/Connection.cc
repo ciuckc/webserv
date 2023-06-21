@@ -3,7 +3,7 @@
 #include "io/task/IOTask.h"
 #include "io/task/ReadRequest.h"
 
-Connection::Connection(int fd, EventQueue& event_queue, BufferPool& buf_mgr)
+Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr)
     : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue), should_close_() {
   addTask(new ReadRequest(request_));
 }
@@ -14,7 +14,7 @@ Connection::~Connection() {
   oqueue_.clear();
 }
 
-void Connection::handle(EventQueue::event& event) {
+void Connection::handle(EventQueue::event_t& event) {
   WS::IOStatus in_status = WS::FULL;
   WS::IOStatus out_status = WS::FULL;
   if (EventQueue::isRead(event)) {
@@ -26,11 +26,11 @@ void Connection::handle(EventQueue::event& event) {
     handleOut(out_status);
     writing_ = (out_status == WS::FULL);
   }
-  uint32_t flags = 0;
+  EventQueue::filt_t flags = 0;
   if (writing_ || !oqueue_.empty())
-    flags |= EV_OUT;
+    flags |= EventQueue::out;
   if (!iqueue_.empty())
-    flags |= EV_IN;
+    flags |= EventQueue::in;
   event_queue_.mod(socket_.get_fd(), flags);
   // For good measure?
   socket_.flush();
@@ -74,13 +74,13 @@ void Connection::handleOut(WS::IOStatus& status) {
 
 void Connection::addTask(ITask* task) {
   if (iqueue_.empty())
-    event_queue_.add(socket_.get_fd(), EV_IN);
+    event_queue_.add(socket_.get_fd(), EventQueue::in);
   iqueue_.push_back(std::unique_ptr<ITask>(task));
 }
 
 void Connection::addTask(OTask* task) {
   if (oqueue_.empty())
-    event_queue_.add(socket_.get_fd(), EV_OUT);
+    event_queue_.add(socket_.get_fd(), EventQueue::out);
   oqueue_.push_back(std::unique_ptr<OTask>(task));
 }
 
