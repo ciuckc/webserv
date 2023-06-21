@@ -67,10 +67,16 @@ EventQueue::event_t& EventQueue::getNext() {
     // if (event_count_ == 0)
     //   timeout();
     changelist_.clear();
+#ifndef __linux__
+    // Todo: check why this happens to begin with?
+    // This happens when the only errors had to do with changing the event list
+    // because the same event would be readded in the if statement below, this would loop infinitely
+    if (Platform::checkFlag(events_[event_index_], KEVENT_FLAG_ERROR_EVENTS)) {
+      // All events were just failed changes... smh my head
+      event_count_ = 0;
+    }
+#endif
   }
-  // We need to remove all the sockets that don't work anymore
-  // I don't want to make this function recursive but also poll more
-  // so that's why the goto is there
   if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
     del(getFileDes(events_[event_index_]));
   if (debug_evqueue)

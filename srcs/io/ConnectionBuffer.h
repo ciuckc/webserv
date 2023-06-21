@@ -30,10 +30,6 @@ class ConnectionBuffer {
   // Is at least one buffer full?
   bool need_write_;
 
-  // For input: How many characters are left in the buffer
-  // For output: How many characters can we still write to the buffer before needing a new one
-  size_t available(WS::Dir direction) const;
-
   // =========== IN ===========
   // Get a string of certain length from the buffer
   // does not check bounds!
