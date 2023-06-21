@@ -1,6 +1,6 @@
 #include "ConnectionBuffer.h"
 
-ConnectionBuffer::ConnectionBuffer(BufferPool& pool)
+ConnectionBuffer::ConnectionBuffer(BufferPool<>& pool)
     : pool_(pool),
       size_(pool.size()),
       i_offset_(),
@@ -34,7 +34,8 @@ WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
     i_bufs_.push_back(pool_.getBuffer());
     to_read += (int)size_;
   }
-  char* dst = i_bufs_.back().getData() + (size_ - to_read);
+  BufferPool<>::buf_t& buf = i_bufs_.back().getData();
+  char* dst = &buf[size_ - to_read];
   ssize_t readed = socket.read(dst, to_read);
   if (readed < 0)
     return WS::ERR;
@@ -45,6 +46,28 @@ WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
   return WS::OK;
 }
 ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
+  size_t old_offs = i_offset_;
+  size_t offs = old_offs;
+
+  for (auto buf_iter = i_bufs_.begin(); buf_iter != i_bufs_.end(); ++buf_iter) {
+    auto char_iter = buf_iter->getData().begin() + (buf_iter == i_bufs_.begin() ? i_offset_ : 0);
+    while (char_iter != buf_iter->getData().end()) {
+      if (*char_iter == '\n') {
+        str = std::string();
+        auto app_iter = i_bufs_.begin();
+        do {
+          of
+
+        } while (&*(app_iter++) != &buf_iter);
+        auto app_iter = i_bufs_.begin();
+        while (app_iter <= buf_iter) {
+
+        }
+
+      }
+      ++offs;
+    }
+  }
   size_t i = 0;
   size_t block_i = i_offset_;
   size_t aval = available(WS::IN);

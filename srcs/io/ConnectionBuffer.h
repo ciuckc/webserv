@@ -8,12 +8,12 @@
 class ConnectionBuffer {
  private:
   // To reuse buffers instead of allocating new ones every time
-  BufferPool& pool_;
+  BufferPool<>& pool_;
   // The size of every buffer
   size_t size_;
 
   // Input buffers (that are read into, and we can get lines out of)
-  std::list<BufferPool::buf_t> i_bufs_;
+  std::list<BufferPool<>::Buf> i_bufs_;
   // The current input position
   size_t i_offset_;
   // The end of the input sequence
@@ -22,7 +22,7 @@ class ConnectionBuffer {
   bool read_fail_;
 
   // Output buffers (that are written out of, and we can put stuff in)
-  std::list<BufferPool::buf_t> o_bufs_;
+  std::list<BufferPool<>::Buf> o_bufs_;
   // The first unwritten output index
   size_t o_start_;
   // The current output position
@@ -49,7 +49,7 @@ class ConnectionBuffer {
   void overflow(const char* data, size_t len);
 
  public:
-  explicit ConnectionBuffer(BufferPool& pool);
+  explicit ConnectionBuffer(BufferPool<>& pool);
   virtual ~ConnectionBuffer();
 
   // =========== IN ===========
