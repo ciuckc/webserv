@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "Cases.h"
+#include "ErrorResponse.h"
 
 using namespace get;
 
@@ -21,17 +22,16 @@ static void st_prepend_cwd(std::string& str)
 
 // make an overload that reads from some kinda buf
 // function to read file into body of response passed as param
-void makeBody(Request& req, Response& res, const std::string& path)
+size_t makeBody(Request& req, Response& res, const std::string& path)
 {
   uint8_t openmode = 0;
-  try {
-    std::vector<std::string> types = req.getHeader("Content-Type")->values_;
-    openmode &= types[0].find("text") == std::string::npos ? std::ios::in : std::ios::binary;
-  }
-  catch (std::exception&) {
+  const std::string* type = req.getHeader("Content-Type");
+  if (type == NULL) {
     openmode &= std::ios::in; 
   }
-  openmode &= std::ios::in;
+  else {
+    openmode &= type->find("text") == std::string::npos ? std::ios::in : std::ios::binary;
+  }
   std::ifstream file(path, openmode);
   if (!file.is_open()) {
     std::runtime_error("500 internal error");
@@ -48,6 +48,7 @@ void makeBody(Request& req, Response& res, const std::string& path)
   }
   str.copy(body, body_size);
   res.setBody(body, body_size);
+  return (body_size);
 }
 
 bool  CaseRedirect::test(Request& req) const
@@ -74,8 +75,7 @@ bool  CaseNoFile::test(Request& req) const
 Response  CaseNoFile::act(Request& req) const
 {
   (void) req;
-  std::runtime_error("404 file not found");
-  return (Response());
+  return (ErrorResponse(404));
 }
 
 bool  CaseCGI::test(Request& req) const
@@ -109,16 +109,18 @@ bool  CaseFile::test(Request& req) const
 
 Response  CaseFile::act(Request& req) const
 {
-  // when it works move this to a generic function!
   Response res;
   std::string path = req.getPath();
   st_prepend_cwd(path);
-  makeBody(req, res, path);
-  // res.addHeader("Content-Type", 
-  // res.addHeader("Content-Length", 
-  // res.addHeader("Server", 
+  size_t body_size = makeBody(req, res, path);
+  res.addHeader("Server", "Unix HTTP/1.1");
+  const std::string* type = req.getHeader("Content-Type");
+  if (type != NULL) {
+    res.addHeader(*type);
+  }
+  res.addHeader("Content-Length", std::to_string(body_size));
   res.setMessage(200);
-  return (Response());
+  return (res);
 }
 
 bool  CaseDir::test(Request& req) const
@@ -161,7 +163,6 @@ Response  CaseFail::act(Request& req) const
   return (Response());
 }
 
-// not efficient to do this for each request, figure out something better!!
 CasesGET::CasesGET()
 {
   try

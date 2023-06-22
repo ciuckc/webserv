@@ -6,12 +6,13 @@
 class RequestHandler {
   public:
     RequestHandler();
+    RequestHandler(const Request&);
     RequestHandler(const RequestHandler& that);
     ~RequestHandler();
 
     RequestHandler& operator=(const RequestHandler& that);
     // maybe some return values or something to know it's ok to proceed?
-    void            readRequest(int fd);
+    // void            readRequest(int fd);
     void            execRequest();
     const Response& getResponse() const;
 

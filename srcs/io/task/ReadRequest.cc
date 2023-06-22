@@ -1,4 +1,5 @@
 #include "ReadRequest.h"
+#include "http/RequestHandler.h"
 #include "SendResponse.h"
 
 // =========== ReadRequest ===========
@@ -27,8 +28,11 @@ bool ReadRequest::operator()(Connection& connection) {
 void ReadRequest::onDone(Connection& connection) {
   if (error_ != 0)
     connection.addTask(new SendResponse(ErrorResponse(error_)));
-  else
-    connection.addTask(new SendResponse(ErrorResponse(419)));
+  else {
+    RequestHandler rq(request_);
+    rq.execRequest();
+    connection.addTask(new SendResponse(rq.getResponse()));
+  }
   // else do something with what we learnt from the request
   // find correct route? read the body in a special way? That sounds mildly sexual
 }
