@@ -1,5 +1,6 @@
 #pragma once
 #include <exception>
+
 #include "Response.h"
 
 class ErrorResponse : public Response, public std::exception {
@@ -7,11 +8,10 @@ class ErrorResponse : public Response, public std::exception {
   static const std::string& errpage_template;
 
  public:
-  explicit ErrorResponse(int error = 500) throw();
-  ~ErrorResponse() throw();
-  ErrorResponse(const ErrorResponse& other) throw();
+  explicit ErrorResponse(int error = 500) noexcept;
+  ~ErrorResponse() noexcept override;
+  ErrorResponse(const ErrorResponse& other) noexcept;
   ErrorResponse& operator=(const ErrorResponse& rhs);
 
-  const char* what() const throw();
+  const char* what() const noexcept override;
 };
-

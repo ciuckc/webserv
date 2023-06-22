@@ -1,14 +1,25 @@
 #pragma once
+
+#include <netinet/tcp.h>
 #include <sys/socket.h>
-#include <netdb.h>
+#include <sys/uio.h>
+#include <unistd.h>
+
+#include <cerrno>
 #include <string>
+
+#include "IOException.h"
+
+#ifdef __linux__
+#define CORK_OPT TCP_CORK
+#else
+#define CORK_OPT TCP_NOPUSH
+#endif
 
 class Socket {
  private:
-  static const protoent* tcp;
-
-  Socket(const Socket& other); // = delete
-  Socket& operator=(const Socket& rhs); // = delete
+  Socket(const Socket& other);           // = delete
+  Socket& operator=(const Socket& rhs);  // = delete
 
   int fd_;
 
@@ -22,4 +33,11 @@ class Socket {
   int accept() const;
 
   int get_fd() const;
+
+  void flush();
+  ssize_t write(char* buf, ssize_t len, size_t offs = 0) const;
+  ssize_t write(const std::string& str, size_t offs = 0) const;
+  ssize_t read(char* buf, ssize_t len, size_t offs = 0) const;
+
+  void shutdown() const;
 };

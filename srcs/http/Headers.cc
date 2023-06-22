@@ -4,10 +4,9 @@
 
 Headers::Headers() : headers_() {}
 
-Headers::~Headers() {}
+Headers::~Headers() = default;
 
-Headers::Headers(const Headers& other)
-    : headers_(other.headers_.begin(), other.headers_.end()) {}
+Headers::Headers(const Headers& other) : headers_(other.headers_.begin(), other.headers_.end()) {}
 
 Headers& Headers::operator=(const Headers& rhs) {
   if (this == &rhs)
@@ -62,8 +61,7 @@ bool Headers::Header::keyMatches(const std::string& key) const {
   return true;
 }
 
-static void parseValues(Headers::Header& header, const std::string& line,
-                        size_t start) {
+static void parseValues(Headers::Header& header, const std::string& line, size_t start) {
   size_t end;
   do {
     if (line[start] == '\r')
@@ -90,8 +88,7 @@ void Headers::parse(std::istream& in) {
     bool continuation = (colon == std::string::npos);
     if (!continuation) {
       header = find_or_create(line.substr(0, colon));
-    } else if (header == headers_.end() ||
-               line.find_first_not_of(" \t\r") == std::string::npos) {
+    } else if (header == headers_.end() || line.find_first_not_of(" \t\r") == std::string::npos) {
       throw std::exception();  // Invalid header
     }
 
@@ -100,17 +97,8 @@ void Headers::parse(std::istream& in) {
 }
 
 std::ostream& operator<<(std::ostream& out, const Headers& headers) {
-  typedef std::vector<std::string>::const_iterator val_iter;
-
   for (Headers::citerator i = headers.cbegin(); i < headers.cend(); ++i) {
-    out << i->key_ << ':';
-
-    for (val_iter j = i->values_.begin(); j < i->values_.end(); ++j) {
-      out << ' ' << *j;
-      if (j != i->values_.end() - 1)
-        out << ',';
-    }
-    out << "\r\n";
+    out << i->operator std::string();
   }
   out << "\r\n";
   return out;

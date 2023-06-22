@@ -1,4 +1,5 @@
 #pragma once
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -10,6 +11,19 @@ class Headers {
 
     explicit Header(const std::string& key);
     bool keyMatches(const std::string& key) const;
+    explicit operator std::string() const {
+      typedef std::vector<std::string>::const_iterator val_iter;
+      std::stringstream stream;
+      stream << key_ << ':';
+
+      for (val_iter j = values_.begin(); j < values_.end(); ++j) {
+        stream << ' ' << *j;
+        if (j != values_.end() - 1)
+          stream << ',';
+      }
+      stream << "\r\n";
+      return stream.str();
+    };
   };
 
  private:

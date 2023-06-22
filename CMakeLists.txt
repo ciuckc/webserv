@@ -13,8 +13,9 @@ project(
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_COMPILER c++)
 
 # Compilation specifications
 # ------------------------------------------------------------------------------
@@ -31,10 +32,12 @@ add_executable(webserv
         srcs/config/Config.h
         srcs/server/Route.h
         srcs/server/VServer.h
-		srcs/http/ACase.h
-		srcs/http/Cases.h
-		srcs/http/Cases.cc
-		srcs/http/CasesGET.cc
+	srcs/http/ACase.h
+	srcs/http/Cases.h
+	srcs/http/Cases.cc
+	srcs/http/CasesGET.cc
+        srcs/http/Message.h
+        srcs/http/Message.cc
         srcs/http/Request.h
         srcs/http/Request.cc
         srcs/http/Response.h
@@ -43,14 +46,24 @@ add_executable(webserv
         srcs/http/Headers.cc
         srcs/http/ErrorResponse.h
         srcs/http/ErrorResponse.cc
-		srcs/http/RequestHandler.cc
-		srcs/http/RequestHandler.h
+	srcs/http/RequestHandler.cc
+	srcs/http/RequestHandler.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
         srcs/io/EventQueue.h
         srcs/io/EventQueue.cc
+        srcs/io/Connection.h
+        srcs/io/Connection.cc
+        srcs/io/ConnectionBuffer.h
+        srcs/io/ConnectionBuffer.cc
+        srcs/io/BufferPool.h
         srcs/io/IOException.h
-        srcs/io/IOTask.h)
+        srcs/io/task/IOTask.h
+        srcs/io/task/ReadRequest.h
+        srcs/io/task/ReadRequest.cc
+        srcs/io/task/SendResponse.h
+        srcs/io/task/SendResponse.cc
+        srcs/util/WebServ.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
         ${CMAKE_SOURCE_DIR})

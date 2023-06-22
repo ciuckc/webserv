@@ -3,8 +3,9 @@
 #include <string>
 
 #include "Headers.h"
+#include "Message.h"
 
-class Request {
+class Request : public Message {
  public:
   enum Method {
     INVALID = 0,
@@ -13,29 +14,18 @@ class Request {
   };
 
  private:
-  Method method_;
+  Method method_ = INVALID;
   std::string uri_;
-  std::string ver_;
-
-  Headers headers_;
-
-  char* body_;
-  size_t body_size_;
-
-  void parseStatus(std::istream& in);
 
  public:
-  Request();
-  ~Request();
+  Request() = default;
+  ~Request() override = default;
   Request(const Request& other);
   Request& operator=(const Request& rhs);
 
-  void parse(std::istream& in);
-  void write(std::ostream& out) const;
+  bool setMessage(const std::string& msg);
   Method getMethod() const;
-  Headers::iterator getHeader(const std::string& key);
-  const std::string& getPath();
-};
+  const std::string& getUri() const;
+  // todo: getVersion()? Are we ?
 
-std::ostream& operator<<(std::ostream& out, const Request& req);
-std::istream& operator>>(std::istream& in, Request& req);
+};
