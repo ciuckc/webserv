@@ -98,16 +98,16 @@ void Request::write(std::ostream& out) const {
     out.write(body_, static_cast<std::streamsize>(body_size_));
 }
 
-Request::Method Request::GetMethod() const {
+Request::Method Request::getMethod() const {
   return (this->method_);
 }
 
-const std::string& Request::GetPath() {
+const std::string& Request::getPath() {
   // strip params and such
   return (this->uri_);
 }
 
-Headers::iterator Request::GetHeader(const std::string& key) {
+Headers::iterator Request::getHeader(const std::string& key) {
   return (this->headers_.find(key));
 }
 

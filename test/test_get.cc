@@ -13,6 +13,7 @@ Test(RequestHandler, get_index) {
   if (fd < 0) {
     std::runtime_error("can't open file");
   }
-  rh.ReadRequest(fd);
-  rh.ExecRequest(); 
+  rh.readRequest(fd);
+  rh.execRequest(); 
+  std::cout << rh.getResponse() << std::endl;
 }

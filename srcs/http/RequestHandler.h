@@ -11,17 +11,17 @@ class RequestHandler {
 
     RequestHandler& operator=(const RequestHandler& that);
     // maybe some return values or something to know it's ok to proceed?
-    void            ReadRequest(int fd);
-    void            ExecRequest();
-    const Response& GetResponse() const;
+    void            readRequest(int fd);
+    void            execRequest();
+    const Response& getResponse() const;
 
   private:
     static const size_t buffer_size_ = 512;
     Request   request_;
     Response  response_;
 
-    void DoGET_();
-    void DoPOST_();
+    void doGET_();
+    void doPOST_();
 };
 
 #endif

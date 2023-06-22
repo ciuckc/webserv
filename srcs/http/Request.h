@@ -32,9 +32,9 @@ class Request {
 
   void parse(std::istream& in);
   void write(std::ostream& out) const;
-  Method GetMethod() const;
-  Headers::iterator GetHeader(const std::string& key);
-  const std::string& GetPath();
+  Method getMethod() const;
+  Headers::iterator getHeader(const std::string& key);
+  const std::string& getPath();
 };
 
 std::ostream& operator<<(std::ostream& out, const Request& req);

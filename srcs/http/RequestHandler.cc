@@ -35,21 +35,21 @@ static std::string fil2str(int fd, size_t buffer_size)
   return (result);
 }
 
-void  RequestHandler::ReadRequest(int fd)
+void  RequestHandler::readRequest(int fd)
 {
   std::istringstream raw(fil2str(fd, buffer_size_));
   this->request_.parse(raw); 
 }
 
-void  RequestHandler::ExecRequest()
+void  RequestHandler::execRequest()
 {
-  switch (this->request_.GetMethod())
+  switch (this->request_.getMethod())
   {
     case (Request::GET):
-      this->DoGET_();
+      this->doGET_();
       break;
     case (Request::POST):
-      this->DoPOST_();
+      this->doPOST_();
       break;
     default:
       std::runtime_error("400 invalid request");
@@ -57,7 +57,12 @@ void  RequestHandler::ExecRequest()
   }
 }
 
-void  RequestHandler::DoGET_()
+const Response& RequestHandler::getResponse() const
+{
+  return (this->response_);
+}
+
+void  RequestHandler::doGET_()
 {
   // call config method to 
   // mod path if necessary
@@ -67,16 +72,15 @@ void  RequestHandler::DoGET_()
   CasesGET cases;
   for (size_t i = 0; i < cases.size(); i++)
   {
-    std::cout << i << std::endl;
     if (cases[i]->test(this->request_))
     {
-      cases[i]->act(this->request_);
+      this->response_ = cases[i]->act(this->request_);
       break;
     }
   }
 }
 
-void  RequestHandler::DoPOST_()
+void  RequestHandler::doPOST_()
 {
   // cases:
   // redirect

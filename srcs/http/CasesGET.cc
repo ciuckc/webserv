@@ -19,6 +19,37 @@ static void st_prepend_cwd(std::string& str)
   free(cwd);
 }
 
+// make an overload that reads from some kinda buf
+// function to read file into body of response passed as param
+void makeBody(Request& req, Response& res, const std::string& path)
+{
+  uint8_t openmode = 0;
+  try {
+    std::vector<std::string> types = req.getHeader("Content-Type")->values_;
+    openmode &= types[0].find("text") == std::string::npos ? std::ios::in : std::ios::binary;
+  }
+  catch (std::exception&) {
+    openmode &= std::ios::in; 
+  }
+  openmode &= std::ios::in;
+  std::ifstream file(path, openmode);
+  if (!file.is_open()) {
+    std::runtime_error("500 internal error");
+  }
+  std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  file.close();
+  size_t body_size = str.length();
+  char* body;
+  try {
+    body = new char[body_size];
+  }
+  catch (std::exception&) {
+    std::runtime_error("500 internal error");
+  }
+  str.copy(body, body_size);
+  res.setBody(body, body_size);
+}
+
 bool  CaseRedirect::test(Request& req) const
 {
   // need config to check this
@@ -35,7 +66,7 @@ Response  CaseRedirect::act(Request& req) const
 bool  CaseNoFile::test(Request& req) const
 {
   struct stat s;
-  std::string path = req.GetPath();
+  std::string path = req.getPath();
   st_prepend_cwd(path);
   return (stat(path.c_str(), &s));
 }
@@ -51,7 +82,7 @@ bool  CaseCGI::test(Request& req) const
 {
   // need config for this
   // for now just check if it ends in .py
-  std::string path = req.GetPath();
+  std::string path = req.getPath();
   st_prepend_cwd(path);
   if (path.length() < 4) {
     return (false);
@@ -70,7 +101,7 @@ Response  CaseCGI::act(Request& req) const
 bool  CaseFile::test(Request& req) const
 {
   struct stat s;
-  std::string path = req.GetPath();
+  std::string path = req.getPath();
   st_prepend_cwd(path);
   stat(path.c_str(), &s);
   return (s.st_mode & S_IFREG);
@@ -80,31 +111,9 @@ Response  CaseFile::act(Request& req) const
 {
   // when it works move this to a generic function!
   Response res;
-  uint8_t openmode = 0;
-  try {
-    std::vector<std::string> types = req.GetHeader("Content-Type")->values_;
-    openmode &= types[0].find("text") == std::string::npos ? std::ios::in : std::ios::binary;
-  }
-  catch (std::exception&) {
-    openmode &= std::ios::in; 
-  }
-  std::string path = req.GetPath();
+  std::string path = req.getPath();
   st_prepend_cwd(path);
-  std::ifstream file(path, openmode); // get MIME type to set openmode
-  if (!file.is_open()) {
-    std::runtime_error("500 internal error");
-  }
-  std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-  size_t body_size = str.length();
-  char* body;
-  try {
-    body = new char[body_size];
-  }
-  catch (std::exception&) {
-    std::runtime_error("500 internal error");
-  }
-  str.copy(body, body_size);
-  res.setBody(body, body_size);
+  makeBody(req, res, path);
   // res.addHeader("Content-Type", 
   // res.addHeader("Content-Length", 
   // res.addHeader("Server", 
@@ -115,7 +124,7 @@ Response  CaseFile::act(Request& req) const
 bool  CaseDir::test(Request& req) const
 {
   struct stat s;
-  std::string path = req.GetPath();
+  std::string path = req.getPath();
   st_prepend_cwd(path);
   stat(path.c_str(), &s);
   return (s.st_mode & S_IFDIR);
@@ -124,7 +133,7 @@ bool  CaseDir::test(Request& req) const
 Response  CaseDir::act(Request& req) const
 {
   struct stat s;
-  std::string path = req.GetPath();
+  std::string path = req.getPath();
   st_prepend_cwd(path);
   path.append("index.html");   // or other file specified in config
   if (stat(path.c_str(), &s))
