@@ -5,6 +5,9 @@
 #include "io/IOException.h"
 
 Server::Server() {
+  const int one = 1;
+  setsockopt(listen_socket_.get_fd(), SOL_SOCKET, SO_REUSEADDR, &one, 1);
+  setsockopt(listen_socket_.get_fd(), SOL_SOCKET, SO_REUSEPORT, &one, 1);
   listen_socket_.bind(nullptr, "6969");
   listen_socket_.listen(128);
   // This is weird for now, as the socket in here will share the file descriptor

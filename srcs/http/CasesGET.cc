@@ -113,11 +113,7 @@ Response  CaseFile::act(Request& req) const
   std::string path = req.getPath();
   st_prepend_cwd(path);
   size_t body_size = makeBody(req, res, path);
-  res.addHeader("Server", "Unix HTTP/1.1");
-  const std::string* type = req.getHeader("Content-Type");
-  if (type != NULL) {
-    res.addHeader(*type);
-  }
+  res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   res.addHeader("Content-Length", std::to_string(body_size));
   res.setMessage(200);
   return (res);
@@ -134,19 +130,22 @@ bool  CaseDir::test(Request& req) const
 
 Response  CaseDir::act(Request& req) const
 {
+  Response res;
   struct stat s;
   std::string path = req.getPath();
   st_prepend_cwd(path);
-  path.append("index.html");   // or other file specified in config
-  if (stat(path.c_str(), &s))
-  {
-    // no file, list directory if enabled in config
+  path.append("index.html");     // or other file specified in config
+  if (stat(path.c_str(), &s)) {  // no file, list directory if enabled in config
+    return (ErrorResponse(403));
   }
-  else
-  {
-    // put index in response
+  else {                         // file exists, serve it
+    std::cout << "enters" << std::endl;
+    size_t body_size = makeBody(req, res, path);
+    res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
+    res.addHeader("Content-Length", std::to_string(body_size));
+    res.setMessage(200);
   }
-  return (Response());
+  return (res);
 }
 
 // if we hit this case it must be a failure
@@ -163,6 +162,7 @@ Response  CaseFail::act(Request& req) const
   return (Response());
 }
 
+// make it static or some singleton shit
 CasesGET::CasesGET()
 {
   try

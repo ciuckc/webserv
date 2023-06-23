@@ -5,7 +5,11 @@
 
 Message::Message() : body_(), body_size_() {}
 
-Message::~Message() = default;
+Message::~Message() {
+  if (body_size_ > 0) {
+    delete[] body_;
+  }
+}
 
 Message::Message(const Message& other) : body_(), body_size_() {
   *this = other;
