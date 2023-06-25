@@ -5,6 +5,7 @@
 #include <cerrno>
 
 #include "IOException.h"
+#include "util/Log.h"
 
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
   queue_fd_ = Platform::create_queue();
@@ -79,7 +80,6 @@ EventQueue::event_t& EventQueue::getNext() {
   }
   if (isHangup(events_[event_index_]) || isError(events_[event_index_]))
     del(getFileDes(events_[event_index_]));
-  if (debug_evqueue)
-    Platform::printEvent(events_[event_index_]);
+  Log::debug(events_[event_index_]);
   return events_[event_index_++];
 }

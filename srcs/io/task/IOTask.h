@@ -1,9 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <string>
-
-#include "http/ErrorResponse.h"
 #include "io/Connection.h"
 
 class IOTask {

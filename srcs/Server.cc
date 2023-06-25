@@ -1,8 +1,7 @@
 #include "Server.h"
 
-#include <iostream>
-
 #include "io/IOException.h"
+#include "util/Log.h"
 
 Server::Server() {
   listen_socket_.bind(nullptr, "6969");
@@ -26,7 +25,7 @@ void Server::open_connection(const EventQueue::event_t& event) {
 }
 
 void Server::loop() {
-  std::cout << "[Server] Entering main loop!\n";
+  Log::log("[Server] Entering main loop!\n");
   while (true) {
     try {
       EventQueue::event_t& ev = evqueue_.getNext();
@@ -39,7 +38,7 @@ void Server::loop() {
       if (found_connection == connections_.end())
         continue;  // This should be impossible
       if (EventQueue::isHangup(ev) || EventQueue::isError(ev)) {
-        std::cout << "Closed connection on socket " << ev_fd << '\n';
+        Log::info('[', ev_fd, "]\tClosed connection\n");
         connections_.erase(found_connection);
         continue;
       }
@@ -50,7 +49,7 @@ void Server::loop() {
         evqueue_.mod(ev_fd, 0);
       }
     } catch (const IOException& err) {
-      std::cout << "IOException: " << err.what();
+      Log::warn("IOException: ", err.what());
     }
   }
 }
