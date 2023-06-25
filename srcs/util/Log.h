@@ -20,8 +20,6 @@ using log_disable_t = typename std::enable_if<(lvl > log_level), void>::type;
 // Using the info/warn/debug/error/trace functions may be easier, but info is default
 template<Level lvl = INFO, typename... Ts>
 static inline log_enable_t<lvl> log(const Ts&... args) {
-  if (log_level < lvl)
-    return;
   constexpr std::ostream& out = (lvl == ERROR || lvl == WARN) ? std::cerr : std::cout;
   // This looks and feels dirty... The , is the comma operator so this just creates an empty array
   // but prints all arguments as a byproduct
