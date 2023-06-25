@@ -1,5 +1,4 @@
 #include <csignal>
-#include <iostream>
 
 #include "Server.h"
 
@@ -11,6 +10,6 @@ int main() {
     Server server;
     server.loop();
   } catch (const std::exception& ex) {
-    std::cerr << "Uncaught exception: " << ex.what();
+    Log::error("Uncaught exception: ", ex.what());
   }
 }

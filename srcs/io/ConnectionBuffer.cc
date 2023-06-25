@@ -76,7 +76,7 @@ std::string ConnectionBuffer::get_str(size_t len) {
 void ConnectionBuffer::pop_inbuf() {
   i_bufs_.pop_front();
   if (i_offset_ < size_) {
-    std::cerr << "uhh, popping last input buffer?\n";
+    Log::warn("uhh, popping last input buffer?\n");
     i_offset_ = i_end_ = 0;
   } else {
     i_offset_ -= size_;
@@ -120,7 +120,7 @@ void ConnectionBuffer::put(const char* data, size_t len) {
 }
 void ConnectionBuffer::overflow(const char* data, size_t len) {
   if (need_write_)
-    std::cerr << "You're writing into a buffer that has already overflowed before..\n";
+    Log::warn("You're writing into a buffer that has already overflowed before..\n");
   need_write_ = true;
   o_bufs_.push_back(pool_.getBuffer());
   put(data, len);

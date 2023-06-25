@@ -1,5 +1,6 @@
 #include "ReadRequest.h"
 #include "SendResponse.h"
+#include "http/ErrorResponse.h"
 
 // =========== ReadRequest ===========
 ReadRequest::ReadRequest(Request& req) : request_(req) {}
@@ -37,7 +38,7 @@ void ReadRequest::onDone(Connection& connection) {
 bool ReadRequest::use_line(std::string& line) {
   switch (state_) {
     case MSG:
-      std::cout << "IN: " << line;
+      Log::info("IN: ", line);
       if (!request_.setMessage(line)) {
         error_ = 400; // Bad Request, note 505 for version? also uri length etc
         return true;

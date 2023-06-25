@@ -5,7 +5,6 @@
 #include <sys/event.h>
 #endif
 
-#include <map>
 #include <vector>
 #include <iostream>
 
@@ -44,10 +43,8 @@ class EventQueue {
     static inline bool checkFilter(const event_t& ev, filt_t filter) {
       return checkFlag(ev, filter);
     }
-    static inline void printEvent(const event_t& ev) {
-      std::cout << "Event fd: " << getFileDes(ev)
-                << "\tEvents: " << ev.events
-                << '\n';
+    static inline std::ostream& printEvent(std::ostream& stream, const event_t& ev) {
+      return stream << '[' << getFileDes(ev) << "]\tEvent\tFlags: " << ev.events << '\n';
     }
 #else
     typedef struct kevent event_t;
@@ -76,12 +73,11 @@ class EventQueue {
     static inline bool checkFilter(const event_t& ev, filt_t filter) {
       return (ev.filter == filter);
     }
-    static inline void printEvent(const event_t& ev) {
-      std::cout << "Event fd: " << getFileDes(ev)
-                << "\tFilter: " << ev.filter
-                << "\tFlags: " << ev.flags
-                << "\tFFlags: " << ev.fflags
-                << '\n';
+    static inline std::ostream& printEvent(std::ostream& stream, const event_t& ev) {
+      return stream << '[' << getFileDes(ev) << "]\tEvent"
+                    << "\tFilter: " << ev.filter
+                    << "\tFlags: " << ev.flags
+                    << "\tFFlags: " << ev.fflags << '\n';
     }
 #endif
   };
@@ -120,6 +116,9 @@ class EventQueue {
   static inline bool isHangup(const event_t& ev) {
     return Platform::checkFlag(ev, eof);
   };
+  static inline std::ostream& print_event(std::ostream& stream, const event_t& ev) {
+    return Platform::printEvent(stream, ev);
+  }
 
  private:
   int queue_fd_;
@@ -130,3 +129,7 @@ class EventQueue {
 
   std::vector<event_t> changelist_;
 };
+
+inline std::ostream& operator<<(std::ostream& out, const EventQueue::event_t& event) {
+  return EventQueue::print_event(out, event);
+}

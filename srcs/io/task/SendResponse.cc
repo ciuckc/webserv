@@ -7,7 +7,7 @@ bool SendResponse::operator()(Connection& connection) {
   while (!connection.getBuffer().needWrite()) {
     switch (state_) {
       case MSG:
-        std::cout << "OUT: " << response_.getMessage();
+        Log::info("OUT: ", response_.getMessage());
         connection.getBuffer() << response_.getMessage();
         state_ = HEADERS;
         break;

@@ -6,9 +6,10 @@
 #include <unistd.h>
 
 #include <cerrno>
-#include <iostream>
+#include <arpa/inet.h>
 
 #include "IOException.h"
+#include "util/Log.h"
 
 Socket::Socket() {
   fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -74,12 +75,8 @@ int Socket::accept() const {
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
-  char* ip_pointer = reinterpret_cast<char*>(&addr.sin_addr.s_addr);
-  std::cout << "[6969] Accept ";
-  for (int i = 0; i < 4; i++)
-    std::cout << static_cast<int>(*ip_pointer++) << ((i == 3) ? ':' : '.');
-  std::cout << addr.sin_port << '\n';
-
+  Log::info('[', fd_, "] Accept\t", inet_ntoa(addr.sin_addr), ':', ntohs(addr.sin_port),
+            "\tfd: ", fd, '\n');
   return fd;
 }
 

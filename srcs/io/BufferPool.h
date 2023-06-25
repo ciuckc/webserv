@@ -1,12 +1,10 @@
 #pragma once
 
-#include <cstdint>
-#include <iostream>
 #include <list>
-#include <sstream>
-#include <streambuf>
 #include <array>
-#include <memory>
+#include <cstdint>
+
+#include "util/Log.h"
 
 template<size_t size_ = 8192> class BufferPool {
  public:
@@ -49,6 +47,7 @@ typename BufferPool<size_>::Buf BufferPool<size_>::getBuffer() {
     buffers_.push_front(buf_t());
     ++buffer_count_;
   }
+  log_info();
   return Buf(buffers_);
 }
 
@@ -57,10 +56,12 @@ inline size_t BufferPool<size_>::size() const { return size_; }
 
 template<size_t size_>
 void BufferPool<size_>::log_info() const {
+  if (Log::log_level != Log::TRACE)
+    return;
   size_t used_bufs = buffer_count_ - buffers_.size();
   float total_mb = (float) (size_ * buffer_count_) / (1024.f * 1024.f);
   float used_mb = (float) (size_ * used_bufs) / (1024.f * 1024.f);
-  std::cout << "Buffer pool: "
-               "Alloc: " << buffer_count_ << " (" << total_mb << "M)"
-               "Used: " << used_bufs << " (" << used_mb << "M)" << '\n';
+  Log::trace("Buffer pool: "
+             "Alloc: ", buffer_count_, " (", total_mb, "M)"
+             "Used: ", used_bufs, " (", used_mb, "M)", '\n');
 }
