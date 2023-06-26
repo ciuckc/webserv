@@ -46,6 +46,7 @@ bool ReadRequest::use_line(std::string& line) {
       state_ = HEADERS;
       break;
     case HEADERS:
+      Log::trace("Header\t", line);
       if (line == "\r\n" || line == "\n") {
         state_ = BODY;
         return true;

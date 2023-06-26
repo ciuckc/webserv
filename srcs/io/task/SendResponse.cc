@@ -12,6 +12,7 @@ bool SendResponse::operator()(Connection& connection) {
         state_ = HEADERS;
         break;
       case HEADERS:
+        Log::trace("Header\t", *header_);
         connection.getBuffer() << *header_++;
         if (header_ == response_.getHeaders().end())
           state_ = SEPARATOR;
