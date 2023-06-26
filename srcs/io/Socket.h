@@ -22,8 +22,8 @@ class Socket {
   Socket& operator=(const Socket& rhs);  // = delete
 
   int fd_;
-  bool in_open_ = false;
-  bool out_open_ = false;
+  bool in_open_ = true;
+  bool out_open_ = true;
 
  public:
   Socket();
