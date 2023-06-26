@@ -21,8 +21,9 @@ ConnectionBuffer::~ConnectionBuffer() {
 WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
   ssize_t to_read = static_cast<ssize_t>(i_end_ % size_);
   if (to_read == 0) {  // We've already fully filled the buffers
-    i_bufs_.push_back(pool_.getBuffer());
+    i_bufs_.emplace_back(pool_.getBuffer());
     to_read += (int)size_;
+    pool_.log_info();
   }
   auto& buf = i_bufs_.back().getData();
   ssize_t readed = socket.read(&buf[size_ - to_read], to_read);
@@ -105,7 +106,7 @@ WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
 }
 void ConnectionBuffer::put(const char* data, size_t len) {
   if (o_bufs_.empty()) {
-    o_bufs_.push_back(pool_.getBuffer());
+    o_bufs_.emplace_back(pool_.getBuffer());
     o_offset_ = o_start_ = 0;
   }
 
@@ -122,6 +123,7 @@ void ConnectionBuffer::overflow(const char* data, size_t len) {
   if (need_write_)
     Log::warn("You're writing into a buffer that has already overflowed before..\n");
   need_write_ = true;
-  o_bufs_.push_back(pool_.getBuffer());
+  o_bufs_.emplace_back(pool_.getBuffer());
+  pool_.log_info();
   put(data, len);
 }
