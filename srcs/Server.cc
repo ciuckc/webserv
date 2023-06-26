@@ -25,7 +25,7 @@ void Server::open_connection(const EventQueue::event_t& event) {
 }
 
 void Server::loop() {
-  Log::log("[Server] Entering main loop!\n");
+  Log::info("[Server] Entering main loop!\n");
   while (true) {
     try {
       EventQueue::event_t& ev = evqueue_.getNext();

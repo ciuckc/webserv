@@ -75,7 +75,7 @@ int Socket::accept() const {
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
-  Log::info('[', fd_, "] Accept\t", inet_ntoa(addr.sin_addr), ':', ntohs(addr.sin_port),
+  Log::info('[', fd_, "]\tAccept\t", inet_ntoa(addr.sin_addr), ':', ntohs(addr.sin_port),
             "\tfd: ", fd, '\n');
   return fd;
 }
