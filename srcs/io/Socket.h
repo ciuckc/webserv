@@ -22,6 +22,8 @@ class Socket {
   Socket& operator=(const Socket& rhs);  // = delete
 
   int fd_;
+  bool in_open_ = false;
+  bool out_open_ = false;
 
  public:
   Socket();
@@ -39,5 +41,5 @@ class Socket {
   ssize_t write(const std::string& str, size_t offs = 0) const;
   ssize_t read(char* buf, ssize_t len, size_t offs = 0) const;
 
-  void shutdown() const;
+  void shutdown(int channel);
 };

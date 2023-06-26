@@ -32,6 +32,6 @@ bool SendResponse::operator()(Connection& connection) {
 }
 
 void SendResponse::onDone(Connection& connection) {
-  // todo: Add task to read next request!
-  connection.close();
+  if (connection.shouldClose())
+    connection.getSocket().shutdown(SHUT_WR);
 }

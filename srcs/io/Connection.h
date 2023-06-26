@@ -39,6 +39,6 @@ class Connection {
   void addTask(ITask* task);
   void addTask(OTask* task);
 
-  inline bool shouldClose() const { return should_close_ && !writing_; }
-  inline void close() { should_close_ = true; }
+  inline bool shouldClose() const { return should_close_ && !writing_ && oqueue_.empty(); }
+  void close();
 };

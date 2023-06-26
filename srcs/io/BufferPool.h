@@ -11,7 +11,7 @@ template<size_t size_ = 8192> class BufferPool {
   BufferPool() = default;
   ~BufferPool() = default;
 
-  typedef std::array<char, size_> buf_t;
+  using buf_t = std::array<char, size_>;
   struct Buf;
 
   Buf getBuffer();
