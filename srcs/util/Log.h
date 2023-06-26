@@ -17,7 +17,12 @@ using log_enable_t = typename std::enable_if<(lvl <= log_level), void>::type;
 template<Level lvl>
 using log_disable_t = typename std::enable_if<(lvl > log_level), void>::type;
 
-// Using the info/warn/debug/error/trace functions may be easier, but info is default
+/**
+ * Log some stuff to a terminal
+ *
+ * if lvl is WARN or ERROR, logs to stderr, otherwise log to stdout
+ * This function does not prefix the output with the log level.
+ */
 template<Level lvl = INFO, typename... Ts>
 static inline log_enable_t<lvl> log(const Ts&... args) {
   constexpr std::ostream& out = (lvl == ERROR || lvl == WARN) ? std::cerr : std::cout;
@@ -30,9 +35,16 @@ static inline log_enable_t<lvl> log(const Ts&... args) {
 template<Level lvl = INFO, typename... Ts>
 static inline log_disable_t<lvl> log(const Ts&...) {}
 
-template<typename... Ts> static inline void error(const Ts&... args) { log<ERROR>(args...); }
-template<typename... Ts> static inline void warn(const Ts&... args) { log<WARN>(args...); }
-template<typename... Ts> static inline void info(const Ts&... args) { log<INFO>(args...); }
-template<typename... Ts> static inline void debug(const Ts&... args) { log<DEBUG>(args...); }
-template<typename... Ts> static inline void trace(const Ts&... args) { log<TRACE>(args...); }
+/*
+ * All these functions log with a certain debug level.
+ * the output will be prefixed with the level:
+ *
+ * info("Surf's up", ',', " hi ", 5, '\n')
+ * would print "Surf's up, hi 5\n" to stdout (unless log level is set to ERROR or WARN
+ */
+template<typename... Ts> static inline void error(const Ts&... args) { log<ERROR>("[ERROR]\t", args...); }
+template<typename... Ts> static inline void warn(const Ts&... args) { log<WARN>("[WARN]\t", args...); }
+template<typename... Ts> static inline void info(const Ts&... args) { log<INFO>("[INFO]\t", args...); }
+template<typename... Ts> static inline void debug(const Ts&... args) { log<DEBUG>("[DEBUG]\t", args...); }
+template<typename... Ts> static inline void trace(const Ts&... args) { log<TRACE>("[TRACE]\t", args...); }
 }
