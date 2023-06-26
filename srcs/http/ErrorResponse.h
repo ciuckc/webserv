@@ -5,7 +5,9 @@
 
 class ErrorResponse : public Response, public std::exception {
  private:
-  static const std::string& errpage_template;
+  static constexpr const char* errpage_template =       "<!DOCTYPE html>"
+                                "<html><head><title>%d %s</title></head>"
+  "<body><h1>%s</h1><p>(Google what it means yourself)</p></body></html>";
 
  public:
   explicit ErrorResponse(int error = 500) noexcept;
