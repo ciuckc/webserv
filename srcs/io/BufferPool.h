@@ -28,13 +28,21 @@ template<size_t size_ = 8192> class BufferPool {
    private:
     std::list<buf_t>& buf_return_;
     buf_t data_;
+    bool valid_ = true;
 
    public:
     explicit Buf(std::list<buf_t>& cart_return)
       : buf_return_(cart_return), data_(std::move(cart_return.front())) {
       cart_return.pop_front();
     };
-    ~Buf() { buf_return_.push_front(std::move(data_)); }
+    Buf(Buf&& other) noexcept
+      : buf_return_(other.buf_return_), data_(std::move(other.data_)) {
+      other.valid_ = false;
+    }
+    ~Buf() {
+      if (valid_)
+        buf_return_.push_front(std::move(data_));
+    }
     inline buf_t& getData() { return data_; };
     inline buf_t& operator()() { return data_; };
   };
@@ -47,7 +55,6 @@ typename BufferPool<size_>::Buf BufferPool<size_>::getBuffer() {
     buffers_.push_front(buf_t());
     ++buffer_count_;
   }
-  log_info();
   return Buf(buffers_);
 }
 
