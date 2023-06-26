@@ -1,6 +1,5 @@
 #pragma once
 #include <exception>
-
 #include "Response.h"
 
 class ErrorResponse : public Response, public std::exception {

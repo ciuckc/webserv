@@ -1,6 +1,7 @@
 #include "ErrorResponse.h"
 
 #include <cstdio>
+#include <sstream>
 
 #include "Status.h"
 
@@ -11,11 +12,7 @@ ErrorResponse::ErrorResponse(int error) noexcept {
 
   std::string reason = http::getStatus(error);
   size_t len = strlen(errpage_template) + (reason.length() * 2) + 3 - 6;
-  {
-    std::stringstream str;
-    str << len;
-    addHeader("content-length", str.str());
-  }
+  addHeader("content-length", std::to_string(len));
   // todo: lazy initialize body when possible (while writing to socket)
 
   char* body = new char[len + 1];

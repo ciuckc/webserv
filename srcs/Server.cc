@@ -44,10 +44,6 @@ void Server::loop() {
       }
       Connection& conn = found_connection->second;
       conn.handle(ev);
-      if (conn.shouldClose()) {
-        conn.getSocket().shutdown();
-        evqueue_.mod(ev_fd, 0);
-      }
     } catch (const IOException& err) {
       Log::warn("IOException: ", err.what());
     }

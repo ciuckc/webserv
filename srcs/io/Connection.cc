@@ -25,6 +25,8 @@ void Connection::handle(EventQueue::event_t& event) {
     out_status = WS::OK;
     handleOut(out_status);
     writing_ = (out_status == WS::FULL);
+    if (should_close_ && !writing_)
+      socket_.shutdown(SHUT_WR);
   }
   EventQueue::filt_t flags = 0;
   if (writing_ || !oqueue_.empty())
@@ -54,6 +56,8 @@ void Connection::handleIn(WS::IOStatus& status) {
       iqueue_.pop_front();
     }
   }
+  if (should_close_)
+    socket_.shutdown(SHUT_RD);
 }
 
 void Connection::handleOut(WS::IOStatus& status) {
@@ -89,4 +93,10 @@ Socket& Connection::getSocket() {
 }
 ConnectionBuffer& Connection::getBuffer() {
   return buffer_;
+}
+
+void Connection::close() {
+  socket_.shutdown(SHUT_RD);
+  if (!writing_)
+    socket_.shutdown(SHUT_WR);
 }
