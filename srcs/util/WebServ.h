@@ -8,9 +8,9 @@ enum Dir {
   BOTH = 3
 };
 enum IOStatus {
-  OK,
-  FULL,
-  ERR
+  IO_GOOD,
+  IO_WAIT,
+  IO_FAIL
 };
 
 // Maximum length of a http request (message and headers)

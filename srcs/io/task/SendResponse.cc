@@ -31,7 +31,6 @@ bool SendResponse::operator()(Connection& connection) {
   return false;
 }
 
-void SendResponse::onDone(Connection& connection) {
-  if (connection.shouldClose())
-    connection.getSocket().shutdown(SHUT_WR);
+void SendResponse::onDone(Connection&) {
+  Log::trace("Completed response\n");
 }

@@ -33,6 +33,8 @@ void ReadRequest::onDone(Connection& connection) {
     connection.addTask(new SendResponse(ErrorResponse(419)));
   // else do something with what we learnt from the request
   // find correct route? read the body in a special way? That sounds mildly sexual
+  if (connection.keepAlive())
+    connection.addTask(new ReadRequest(request_));
 }
 
 // return true if we should stop
@@ -122,8 +124,8 @@ std::pair<std::string, std::string> ReadRequest::split_header(std::string& line)
 const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
     HEADER_HOOK("connection", {
       (void) request;
-      if (strncasecmp(value.c_str(), "close", strlen("close")) != 0)
-        connection.close();
+      if (strncasecmp(value.c_str(), "close", strlen("close")) == 0)
+        connection.setKeepAlive(false);
       return 0;
     }),
     HEADER_HOOK("connection", {

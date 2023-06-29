@@ -24,6 +24,7 @@ Socket::Socket() {
 }
 
 Socket::~Socket() {
+  Log::debug('[', fd_, "]\tSocket destroyed\n");
   close(fd_);
 }
 
@@ -92,32 +93,16 @@ void Socket::flush() {
 }
 
 ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {
-  if (!out_open_) {
-    Log::error('[', fd_, "]\tAttempting to write ", len, " bytes into closed socket!\n");
-    return -1;
-  }
   return ::write(fd_, buf + offs, len);
 }
 
 ssize_t Socket::write(const std::string& str, size_t offs) const {
-  if (!out_open_) {
-    Log::error('[', fd_, "]\tAttempting to write ", str.size(), " bytes into closed socket!\n");
-    return -1;
-  }
   return ::write(fd_, str.c_str() + offs, str.length() - offs);
 }
 ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
-  if (!in_open_) {
-    Log::error('[', fd_, "]\tAttempting to read ", len, " bytes from closed socket!\n");
-    return -1;
-  }
   return ::read(fd_, buf + offs, len - offs);
 }
 
 void Socket::shutdown(int channel) {
   ::shutdown(fd_, channel);
-  if (channel == SHUT_RDWR || channel == SHUT_RD)
-    in_open_ = false;
-  if (channel == SHUT_RDWR || channel == SHUT_WR)
-    out_open_ = false;
 }
