@@ -4,51 +4,58 @@
 #include "io/task/ReadRequest.h"
 
 Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr)
-    : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue), should_close_() {
+    : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue) {
   addTask(new ReadRequest(request_));
+  event_queue_.add(fd);
 }
 
 Connection::~Connection() {
-  event_queue_.del(socket_.get_fd());
+  // Destructing the socket removes the connection from the eventqueue
   iqueue_.clear();
   oqueue_.clear();
 }
 
-void Connection::handle(EventQueue::event_t& event) {
-  WS::IOStatus in_status = WS::FULL;
-  WS::IOStatus out_status = WS::FULL;
+bool Connection::handle(EventQueue::event_t& event) {
+  if (EventQueue::isWrHangup(event)) {
+    Log::info('[', socket_.get_fd(), "]\tClient dropped connection\n");
+    return true;
+  }
   if (EventQueue::isRead(event)) {
-    in_status = WS::OK;
-    handleIn(in_status);
+    WS::IOStatus in_status = handleIn();
+    if (in_status == WS::IO_FAIL)
+      return true;
   }
   if (EventQueue::isWrite(event)) {
-    out_status = WS::OK;
-    handleOut(out_status);
-    writing_ = (out_status == WS::FULL);
-    if (should_close_ && !writing_)
-      socket_.shutdown(SHUT_WR);
+    WS::IOStatus out_status = handleOut();
+    if (out_status == WS::IO_FAIL)
+      return true;
+    if (out_status == WS::IO_GOOD && oqueue_.empty()) {
+      if (!keepAlive())
+        shutdown();
+      event_queue_.mod(socket_.get_fd(), EventQueue::in);
+    }
   }
-  EventQueue::filt_t flags = 0;
-  if (writing_ || !oqueue_.empty())
-    flags |= EventQueue::out;
-  if (!iqueue_.empty())
-    flags |= EventQueue::in;
-  event_queue_.mod(socket_.get_fd(), flags);
-  // For good measure?
+  if (EventQueue::isRdHangup(event)) {
+    Log::debug('[', socket_.get_fd(), "]\tClient done transmitting\n");
+    client_fin_ = true;
+  }
   socket_.flush();
+  if (client_fin_ && oqueue_.empty() && !buffer_.needWrite()) {
+    return true;
+  }
+  // For good measure?
+  return false;
 }
 
-void Connection::handleIn(WS::IOStatus& status) {
+WS::IOStatus Connection::handleIn() {
+  WS::IOStatus status = WS::IO_GOOD;
   while (!iqueue_.empty()) {
     if (buffer_.readFailed()) {
-      if (status != WS::OK) {
-        return;
-      }
+      if (status == WS::IO_WAIT)
+        return status; // We've already read all we can
       status = buffer_.readIn(socket_);
-    }
-    if (status == WS::ERR) {
-      should_close_ = true;
-      return;
+      if (status == WS::IO_FAIL)
+        return status;
     }
     ITask& task = *iqueue_.front();
     if (task(*this)) {
@@ -56,14 +63,19 @@ void Connection::handleIn(WS::IOStatus& status) {
       iqueue_.pop_front();
     }
   }
-  if (should_close_)
-    socket_.shutdown(SHUT_RD);
+  return status;
 }
 
-void Connection::handleOut(WS::IOStatus& status) {
-  while (status == WS::OK && (!oqueue_.empty() || buffer_.needWrite())) {
+WS::IOStatus Connection::handleOut() {
+  WS::IOStatus status = WS::IO_GOOD;
+
+  while (!oqueue_.empty() || buffer_.needWrite()) {
     if (buffer_.needWrite()) {
+      if (status == WS::IO_WAIT)
+        return status;
       status = buffer_.writeOut(socket_);
+      if (status == WS::IO_FAIL)
+        return status;
       continue;
     }
     OTask& task = *oqueue_.front();
@@ -72,19 +84,18 @@ void Connection::handleOut(WS::IOStatus& status) {
       oqueue_.pop_front();
     }
   }
-  if (status == WS::OK)  // We can't let this sit in the buffer
+  if (status == WS::IO_GOOD)  // We can't let this sit in the buffer
     status = buffer_.writeOut(socket_);
+  return status;
 }
 
 void Connection::addTask(ITask* task) {
-  if (iqueue_.empty())
-    event_queue_.add(socket_.get_fd(), EventQueue::in);
   iqueue_.push_back(std::unique_ptr<ITask>(task));
 }
 
 void Connection::addTask(OTask* task) {
   if (oqueue_.empty())
-    event_queue_.add(socket_.get_fd(), EventQueue::out);
+    event_queue_.mod(socket_.get_fd(), EventQueue::both);
   oqueue_.push_back(std::unique_ptr<OTask>(task));
 }
 
@@ -94,9 +105,7 @@ Socket& Connection::getSocket() {
 ConnectionBuffer& Connection::getBuffer() {
   return buffer_;
 }
-
-void Connection::close() {
-  socket_.shutdown(SHUT_RD);
-  if (!writing_)
-    socket_.shutdown(SHUT_WR);
+void Connection::shutdown() {
+  Log::debug('[', socket_.get_fd(), "]\tServer done transmitting\n");
+  socket_.shutdown(SHUT_WR);
 }

@@ -19,7 +19,7 @@ ConnectionBuffer::~ConnectionBuffer() {
 
 // =========== IN ===========
 WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
-  ssize_t to_read = static_cast<ssize_t>(i_end_ % size_);
+  ssize_t to_read = static_cast<ssize_t>((size_ - i_end_) % size_);
   if (to_read == 0) {  // We've already fully filled the buffers
     i_bufs_.emplace_back(pool_.getBuffer());
     to_read += (int)size_;
@@ -28,12 +28,12 @@ WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
   auto& buf = i_bufs_.back().getData();
   ssize_t readed = socket.read(&buf[size_ - to_read], to_read);
   if (readed < 0)
-    return WS::ERR;
+    return WS::IO_FAIL;
   read_fail_ = false;
   i_end_ += readed;
   if (readed < to_read)
-    return WS::FULL;
-  return WS::OK;
+    return WS::IO_WAIT;
+  return WS::IO_GOOD;
 }
 ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
   str = std::string();
@@ -89,20 +89,20 @@ void ConnectionBuffer::pop_inbuf() {
 WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
   while (!o_bufs_.empty()) {
     auto& buffer = o_bufs_.front().getData();
-    ssize_t to_write = static_cast<ssize_t>(std::max(size_, o_offset_) - o_start_);
+    ssize_t to_write = static_cast<ssize_t>(std::min(size_, o_offset_) - o_start_);
     ssize_t written = socket.write(&buffer[o_start_], to_write, 0);
     if (written < 0)
-      return WS::ERR;
+      return WS::IO_FAIL;
     if (written < to_write) {
       o_start_ += written;
-      return WS::FULL;
+      return WS::IO_WAIT;
     }
-    o_offset_ -= to_write + o_start_;
+    o_offset_ -= to_write;
     o_start_ = 0;
     o_bufs_.pop_front();
   }
   need_write_ = false;
-  return WS::OK;
+  return WS::IO_GOOD;
 }
 void ConnectionBuffer::put(const char* data, size_t len) {
   if (o_bufs_.empty()) {
