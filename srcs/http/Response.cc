@@ -3,9 +3,12 @@
 #include <sstream>
 
 #include "Status.h"
+#include "util/WebServ.h"
 
 // very big class like this i love it so far
-Response::Response() = default;
+Response::Response() {
+  addHeader(WS::get_date_header());
+}
 Response::~Response() = default;
 Response::Response(const Response &other) = default;
 Response &Response::operator=(const Response &rhs) = default;
