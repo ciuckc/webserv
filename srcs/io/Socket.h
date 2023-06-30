@@ -10,12 +10,6 @@
 
 #include "IOException.h"
 
-#ifdef __linux__
-#define CORK_OPT TCP_CORK
-#else
-#define CORK_OPT TCP_NOPUSH
-#endif
-
 class Socket {
  private:
   Socket(const Socket& other);           // = delete

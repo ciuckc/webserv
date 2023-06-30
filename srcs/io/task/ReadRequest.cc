@@ -30,7 +30,7 @@ void ReadRequest::onDone(Connection& connection) {
   if (error_ != 0)
     connection.addTask(new SendResponse(ErrorResponse(error_)));
   else
-    connection.addTask(new SendResponse(ErrorResponse(419)));
+    connection.addTask(new SendResponse(ErrorResponse(418)));
   // else do something with what we learnt from the request
   // find correct route? read the body in a special way? That sounds mildly sexual
   if (connection.keepAlive())
@@ -126,31 +126,6 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
       (void) request;
       if (strncasecmp(value.c_str(), "close", strlen("close")) == 0)
         connection.setKeepAlive(false);
-      return 0;
-    }),
-    HEADER_HOOK("connection", {
-      (void) request; (void) value; (void) connection;
-      Log::debug("test 1\n");
-      return 0;
-    }),
-    HEADER_HOOK("connection", {
-      (void) request; (void) value; (void) connection;
-      Log::debug("test 2\n");
-      return 0;
-    }),
-    HEADER_HOOK("connection", {
-      (void) request; (void) value; (void) connection;
-      Log::debug("test 3\n");
-      return 0;
-    }),
-    HEADER_HOOK("connection", {
-      (void) request; (void) value; (void) connection;
-      Log::debug("test 4\n");
-      return 0;
-    }),
-    HEADER_HOOK("connection", {
-      (void) request; (void) value; (void) connection;
-      Log::debug("test 5\n");
       return 0;
     }),
 };

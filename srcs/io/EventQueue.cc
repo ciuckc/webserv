@@ -38,8 +38,6 @@ EventQueue::event_t& EventQueue::getNext() {
     // if (event_count_ == 0)
     //   timeout();
   }
-  if (isError(events_[event_index_]))
-    del(getFileDes(events_[event_index_]));
   Log::debug(events_[event_index_]);
   return events_[event_index_++];
 }
