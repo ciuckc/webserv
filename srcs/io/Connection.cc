@@ -32,7 +32,7 @@ bool Connection::handle(EventQueue::event_t& event) {
     if (out_status == WS::IO_GOOD && oqueue_.empty()) {
       if (!keepAlive())
         shutdown();
-      event_queue_.mod(socket_.get_fd(), EventQueue::in);
+      event_queue_.del(socket_.get_fd(), EventQueue::out);
     }
   }
   if (EventQueue::isRdHangup(event)) {
@@ -95,7 +95,7 @@ void Connection::addTask(ITask* task) {
 
 void Connection::addTask(OTask* task) {
   if (oqueue_.empty())
-    event_queue_.mod(socket_.get_fd(), EventQueue::both);
+    event_queue_.add(socket_.get_fd(), EventQueue::out);
   oqueue_.push_back(std::unique_ptr<OTask>(task));
 }
 
