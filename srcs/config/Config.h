@@ -1,18 +1,23 @@
 #pragma once
 
-#include <string>
+#include <cstddef>
+#include <memory>
 #include <vector>
 
-#include "ConfigBlock.h"
+#include "BlockDirective.h"
 
 class Config {
  public:
-  Config();
-  Config(const Config& rhs);
-  ~Config();
-  Config& operator=(const Config& rhs);
-  void addServerDirective(const ConfigBlock& server);
+  Config() = default;
+  Config(const Config& rhs) = delete;
+  Config& operator=(const Config& rhs) = delete;
+  ~Config() = default;
+
+  void addServerBlock(std::unique_ptr<BlockDirective> server_block);
+  std::vector<std::unique_ptr<BlockDirective> >::iterator begin();
+  std::vector<std::unique_ptr<BlockDirective> >::iterator end();
+  size_t vServerCount() const;
 
  private:
-  std::vector<ConfigBlock> server_directives_;
+  std::vector<std::unique_ptr<BlockDirective> > server_blocks_;
 };

@@ -6,13 +6,13 @@
 class ConfigParse {
  public:
   ConfigParse();
+  ConfigParse(const ConfigParse&) = delete;
+  ConfigParse operator=(const ConfigParse&) = delete;
   explicit ConfigParse(const std::string& file_name);
   ~ConfigParse();
 
   bool parse(Config& config);
 
  private:
-  ConfigParse(const ConfigParse&);            // = delete
-  ConfigParse operator=(const ConfigParse&);  // = delete
   std::ifstream config_file_;
 };

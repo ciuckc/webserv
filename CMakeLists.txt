@@ -14,13 +14,15 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_CXX_STANDARD 98)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER c++)
 
 # Compilation specifications
 # ------------------------------------------------------------------------------
-add_compile_options(-Wall -Wextra -Werror)
+add_compile_options(-Wall -Wextra -Werror -g -fsanitize=address)
+add_link_options(-fsanitize=address)
+add_link_options(-g)
 # add_compile_options(-Wconversion -Wnull-dereference -Wnon-virtual-dtor
 # -Wcast-align)
 
@@ -41,8 +43,7 @@ add_executable(
   srcs/config/Config.cc
   srcs/config/ConfigParse.h
   srcs/config/ConfigParse.cc
-  srcs/config/ConfigBlock.h
-  srcs/config/ConfigBlock.cc
+  srcs/config/SimpleDirective.cc
   srcs/server/Route.h
   srcs/server/VServer.h
   srcs/http/Request.h

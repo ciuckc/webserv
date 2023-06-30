@@ -1,15 +1,23 @@
 #include "Config.h"
 
-Config::Config() : server_directives_() {}
+#include <cstddef>
+#include <memory>
+#include <vector>
 
-Config::Config(const Config& rhs) : server_directives_(rhs.server_directives_) {}
+#include "BlockDirective.h"
 
-Config::~Config() {}
-
-Config& Config::operator=(const Config& rhs) {
-  if (this == &rhs) return *this;
-  this->server_directives_ = rhs.server_directives_;
-  return *this;
+void Config::addServerBlock(std::unique_ptr<BlockDirective> server_block) {
+  server_blocks_.push_back(std::move(server_block));
 }
 
-void Config::addServerDirective(const ConfigBlock& server) { server_directives_.push_back(server); }
+std::vector<std::unique_ptr<BlockDirective> >::iterator Config::begin() {
+  return server_blocks_.begin();
+}
+
+std::vector<std::unique_ptr<BlockDirective> >::iterator Config::end() {
+  return server_blocks_.end();
+}
+
+size_t Config::vServerCount() const {
+  return server_blocks_.size();
+}
