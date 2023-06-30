@@ -14,21 +14,18 @@
 
 class EventQueue {
  private:
-  EventQueue(const EventQueue& other);           // = delete;
-  EventQueue& operator=(const EventQueue& rhs);  // = delete;
-
   struct Platform {
 #ifdef __linux__
     typedef struct epoll_event event_t;
     typedef uint32_t filt_t;
     typedef uint32_t flag_t;
 
-    static const filt_t in = EPOLLIN;
-    static const filt_t out = EPOLLOUT;
-    static const filt_t both = EPOLLIN | EPOLLOUT;
-    static const flag_t err = EPOLLERR;
-    static const flag_t w_hup = EPOLLHUP;
-    static const flag_t r_hup = EPOLLRDHUP;
+    static constexpr filt_t in = EPOLLIN;
+    static constexpr filt_t out = EPOLLOUT;
+    static constexpr filt_t both = EPOLLIN | EPOLLOUT;
+    static constexpr flag_t err = EPOLLERR;
+    static constexpr flag_t w_hup = EPOLLHUP;
+    static constexpr flag_t r_hup = EPOLLRDHUP;
 
     static inline int create_queue() {
       return epoll_create1(EPOLL_CLOEXEC);
@@ -69,19 +66,24 @@ class EventQueue {
     typedef int16_t filt_t;
     typedef uint16_t flag_t;
 
-    static const filt_t in = EVFILT_READ;
-    static const filt_t out = EVFILT_WRITE;
-    static const flag_t err = EV_ERROR;
-    static const flag_t w_hup = EV_EOF;
-    static const flag_t r_hup = w_hup;
-    static const flag_t flag_add = EV_ADD;
-    static const flag_t flag_enable = EV_ENABLE;
-    static const flag_t flag_disable = EV_DISABLE;
+    static constexpr filt_t in = EVFILT_READ;
+    static constexpr filt_t out = EVFILT_WRITE;
+    static constexpr filt_t both = 0; // Not actually supported by kqueue, hacky
+    static constexpr flag_t err = EV_ERROR;
+    static constexpr flag_t w_hup = EV_EOF;
+    static constexpr flag_t r_hup = w_hup;
+    static constexpr flag_t flag_add = EV_ADD;
+    static constexpr flag_t flag_enable = EV_ENABLE;
+    static constexpr flag_t flag_disable = EV_DISABLE;
 
     static inline int create_queue() {
       return kqueue();
     }
     static inline void add(EventQueue& q, int fd, filt_t direction) {
+      if (direction == both) {
+        add(q, fd, in);
+        add(q, fd, out);
+      }
       q.changelist_.push_back(create_event(fd, direction, flag_add | flag_enable));
     }
     static inline void mod(EventQueue& q, int fd, filt_t new_direction) {
@@ -133,19 +135,37 @@ class EventQueue {
  public:
   EventQueue();
   ~EventQueue();
+  EventQueue(const EventQueue& other) = delete;
+  EventQueue& operator=(const EventQueue& rhs) = delete;
 
   using event_t = Platform::event_t;
   using filt_t = Platform::filt_t;
   using flag_t = Platform::flag_t;
 
-  static const filt_t in = Platform::in;
-  static const filt_t out = Platform::out;
-  static const flag_t err = Platform::err;
-  static const flag_t w_hup = Platform::w_hup; // Connection is completely closed
-  static const flag_t r_hup = Platform::r_hup; // Peer closed their side of connection
+  static constexpr filt_t in = Platform::in;
+  static constexpr filt_t out = Platform::out;
+  static constexpr filt_t both = Platform::both;
+  static constexpr flag_t err = Platform::err;
+  static constexpr flag_t w_hup = Platform::w_hup; // Connection is completely closed
+  static constexpr flag_t r_hup = Platform::r_hup; // Peer closed their side of connection
 
+  /**
+   * Add a new file descriptor we want events for
+   * @param fd The file descriptor
+   * @param direction The direction we want events for
+   */
   void add(int fd, filt_t direction = in);
-  void mod(int fd, filt_t new_direction);
+  /**
+   * Change the direction we want events for
+   * @param fd The file descriptor we want to modify
+   * @param new_direction The new direction we want events for
+   */
+  void mod(int fd, filt_t new_direction = both);
+  /**
+   * Remove a certain file descriptor
+   * @param fd
+   * @param dir
+   */
   void del(int fd, filt_t dir);
 
   event_t& getNext();
