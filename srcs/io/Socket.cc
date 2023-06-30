@@ -21,7 +21,7 @@ Socket::Socket() {
 #ifdef __linux__
   // Wait until uncorked to send partial packets, require flush!
   int cork = true;
-  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
+  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
 #endif
 }
 
