@@ -13,4 +13,5 @@ class Response : public Message {
   Response& operator=(const Response& rhs);
 
   void setMessage(int status);
+  void setKeepAlive(uint32_t timeout, uint32_t max_requests);
 };

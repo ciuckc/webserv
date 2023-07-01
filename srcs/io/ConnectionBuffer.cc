@@ -35,6 +35,7 @@ WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
     return WS::IO_WAIT;
   return WS::IO_GOOD;
 }
+
 ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
   str = std::string();
 
@@ -60,6 +61,7 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
   read_fail_ = true;
   return *this;
 }
+
 std::string ConnectionBuffer::get_str(size_t len) {
   std::string str(len, '\0');
   size_t pos = 0;
@@ -74,6 +76,7 @@ std::string ConnectionBuffer::get_str(size_t len) {
   }
   return str;
 }
+
 void ConnectionBuffer::pop_inbuf() {
   i_bufs_.pop_front();
   if (i_offset_ < size_) {
@@ -104,6 +107,7 @@ WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
   need_write_ = false;
   return WS::IO_GOOD;
 }
+
 void ConnectionBuffer::put(const char* data, size_t len) {
   if (o_bufs_.empty()) {
     o_bufs_.emplace_back(pool_.getBuffer());
@@ -119,6 +123,7 @@ void ConnectionBuffer::put(const char* data, size_t len) {
   if (len > copy_len)
     overflow(data + copy_len, len - copy_len);
 }
+
 void ConnectionBuffer::overflow(const char* data, size_t len) {
   if (need_write_)
     Log::warn("You're writing into a buffer that has already overflowed before..\n");
