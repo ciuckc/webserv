@@ -40,9 +40,12 @@ bool Request::setMessage(const std::string& msg) {
   if (!next_word(uri_, msg, pos))
     return false;
 
-  if (!next_word(word, msg, pos) || word != "HTTP/1.1")
+  if (!next_word(word, msg, pos))
     return false;
-
+  if (word != "HTTP/1.1")
+    version_ = HttpVersion::VER_INVALID;
+  else
+    version_ = HttpVersion::VER_1_1;
   return true;
 }
 
