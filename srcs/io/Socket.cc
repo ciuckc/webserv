@@ -47,6 +47,8 @@ Socket& Socket::operator=(Socket&& other) noexcept {
 void Socket::bind(const char* host, const char* port) const {
   addrinfo* bind_info;
 
+  int yes = 1;
+  setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
   {
     addrinfo hints = {};
     hints.ai_family = AF_INET;
