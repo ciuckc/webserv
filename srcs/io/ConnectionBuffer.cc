@@ -19,15 +19,20 @@ ConnectionBuffer::~ConnectionBuffer() {
 
 // =========== IN ===========
 WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
-  ssize_t to_read = static_cast<ssize_t>((size_ - i_end_) % size_);
+  ssize_t to_read = (ssize_t)toBuffer(size_ - i_end_);
   if (to_read == 0) {  // We've already fully filled the buffers
     i_bufs_.emplace_back(pool_.getBuffer());
-    to_read += (int)size_;
+    to_read += (ssize_t)size_;
     pool_.log_info();
   }
   auto& buf = i_bufs_.back().getData();
   ssize_t readed = socket.read(&buf[size_ - to_read], to_read);
-  if (readed < 0)
+  // todo: check requirements for this:
+  //  according to the eval sheet we need to check <=
+  //  but what if our last read call returned IO_GOOD by emptying the
+  //  socket buffer while simultaneously filling the input buffer?
+  //  Same applies for writeOut
+  if (readed <= 0)
     return WS::IO_FAIL;
   read_fail_ = false;
   i_end_ += readed;
@@ -48,7 +53,7 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
 
     auto& arr = buf_iter->getData();
     char* buf_begin = arr.begin() + (first_iteration ? i_offset_ : 0);
-    char* buf_end = last_iteration ? arr.begin() + (i_end_ % size_) : arr.end();
+    char* buf_end = last_iteration ? arr.begin() + toBuffer(i_end_) : arr.end();
     char* found_nl = std::find(buf_begin, buf_end, '\n');
 
     const bool done = found_nl != buf_end;
@@ -92,9 +97,9 @@ void ConnectionBuffer::pop_inbuf() {
 WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
   while (!o_bufs_.empty()) {
     auto& buffer = o_bufs_.front().getData();
-    ssize_t to_write = static_cast<ssize_t>(std::min(size_, o_offset_) - o_start_);
+    ssize_t to_write = (ssize_t)(std::min(size_, o_offset_) - o_start_);
     ssize_t written = socket.write(&buffer[o_start_], to_write, 0);
-    if (written < 0)
+    if (written <= 0)
       return WS::IO_FAIL;
     if (written < to_write) {
       o_start_ += written;
@@ -115,9 +120,10 @@ void ConnectionBuffer::put(const char* data, size_t len) {
   }
 
   BufferPool<>::buf_t& buf = o_bufs_.back().getData();
-  size_t copy_len = std::min(len, size_ - (o_offset_ % size_));
+  const auto buf_ofs = toBuffer(o_offset_);
+  size_t copy_len = std::min(len, size_ - buf_ofs);
 
-  std::memcpy(&buf[o_offset_ % size_], data, copy_len);
+  std::memcpy(&buf[buf_ofs], data, copy_len);
 
   o_offset_ += copy_len;
   if (len > copy_len)
