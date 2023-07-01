@@ -2,11 +2,14 @@
 
 #include "io/task/IOTask.h"
 #include "io/task/ReadRequest.h"
+#include "io/task/SendResponse.h"
+#include "http/ErrorResponse.h"
 
 Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr)
     : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue) {
-  addTask(new ReadRequest(request_));
+  awaitRequest();
   event_queue_.add(fd);
+  last_event_ = std::time(nullptr);
 }
 
 Connection::~Connection() {
@@ -43,7 +46,7 @@ bool Connection::handle(EventQueue::event_t& event) {
   if (client_fin_ && oqueue_.empty() && !buffer_.needWrite()) {
     return true;
   }
-  // For good measure?
+  last_event_ = std::time(nullptr);
   return false;
 }
 
@@ -94,18 +97,49 @@ void Connection::addTask(ITask* task) {
 }
 
 void Connection::addTask(OTask* task) {
-  if (oqueue_.empty())
-    event_queue_.mod(socket_.get_fd(), keep_alive_ ? EventQueue::both : EventQueue::out);
   oqueue_.push_back(std::unique_ptr<OTask>(task));
 }
-
 Socket& Connection::getSocket() {
   return socket_;
 }
+
 ConnectionBuffer& Connection::getBuffer() {
   return buffer_;
 }
+
 void Connection::shutdown() {
   Log::debug('[', socket_.get_fd(), "]\tServer done transmitting\n");
   socket_.shutdown(SHUT_WR);
+}
+
+void Connection::awaitRequest() {
+  //todo: rename ReadRequest RequestReader and make class var instead of the request itself?
+  //  will we still need the RequestReader while writing output?
+  addTask(new ReadRequest(request_));
+}
+
+void Connection::enqueueResponse(Response&& response) {
+  if (++request_count_ > WS::max_requests) {
+    keep_alive_ = false;
+    Log::debug('[', socket_.get_fd(), "] Max requests reached\n");
+  }
+  if (oqueue_.empty()) {
+    auto dir = keep_alive_ ? EventQueue::both : EventQueue::out;
+    event_queue_.mod(socket_.get_fd(), dir);
+  }
+  if (!keep_alive_)
+    response.addHeader("connection: close\r\n");
+  response.setKeepAlive(WS::timeout, WS::max_requests);
+  addTask(new SendResponse(response));
+}
+
+void Connection::timeout() {
+  Log::debug('[', socket_.get_fd(), "] Timed out\n");
+  keep_alive_ = false;
+  request_count_ = 0; // so we don't get 2 log messages
+  enqueueResponse(ErrorResponse(408));
+}
+
+bool Connection::stale(time_t now) const {
+  return now - last_event_ > WS::timeout;
 }
