@@ -5,6 +5,7 @@
 #include <cerrno>
 
 #include "IOException.h"
+#include "Server.h"
 #include "util/Log.h"
 
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
@@ -29,14 +30,13 @@ void EventQueue::del(int fd, filt_t dir) {
   Platform::del(*this, fd, dir);
 }
 
-EventQueue::event_t& EventQueue::getNext() {
+EventQueue::event_t& EventQueue::getNext(Server& server) {
   while (event_index_ >= event_count_) {
+    server.purge_connections(); // Purge every time we collect new events from the queue
     event_index_ = 0;
     Platform::wait(*this);
     if (event_count_ == -1)
       throw IOException("EventQueue", errno);
-    // if (event_count_ == 0)
-    //   timeout();
   }
   Log::debug(events_[event_index_]);
   return events_[event_index_++];

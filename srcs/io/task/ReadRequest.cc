@@ -27,14 +27,11 @@ bool ReadRequest::operator()(Connection& connection) {
 }
 
 void ReadRequest::onDone(Connection& connection) {
-  if (error_ != 0)
-    connection.addTask(new SendResponse(ErrorResponse(error_)));
-  else
-    connection.addTask(new SendResponse(ErrorResponse(418)));
+  connection.enqueueResponse(ErrorResponse(error_ == 0 ? 418 : error_));
   // else do something with what we learnt from the request
   // find correct route? read the body in a special way? That sounds mildly sexual
   if (connection.keepAlive())
-    connection.addTask(new ReadRequest(request_));
+    connection.awaitRequest();
 }
 
 // return true if we should stop
@@ -55,8 +52,8 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
   __builtin_unreachable();
 }
 
-bool ReadRequest::handle_msg(Connection&, std::string& line) {
-  Log::info("IN: ", line);
+bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
+  Log::info('[', connection.getSocket().get_fd(), "]\tIN:\t", line);
 
   if (!request_.setMessage(line)) {
     if (request_.getMethod() == Request::INVALID) {
@@ -75,7 +72,7 @@ bool ReadRequest::handle_msg(Connection&, std::string& line) {
 
 
 bool ReadRequest::handle_header(Connection& connection, std::string& line) {
-  Log::trace("HEADER\t", line);
+  Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", line);
   if (line.size() > WS::header_maxlen) {
     error_ = 431;
     return true;

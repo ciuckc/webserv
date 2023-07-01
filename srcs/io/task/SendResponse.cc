@@ -7,12 +7,12 @@ bool SendResponse::operator()(Connection& connection) {
   while (!connection.getBuffer().needWrite()) {
     switch (state_) {
       case MSG:
-        Log::info("OUT: ", response_.getMessage());
+        Log::info('[', connection.getSocket().get_fd(), "]\tOUT:\t", response_.getMessage());
         connection.getBuffer() << response_.getMessage();
         state_ = HEADERS;
         break;
       case HEADERS:
-        Log::trace("Header\t", *header_);
+        Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", *header_);
         connection.getBuffer() << *header_++;
         if (header_ == response_.getHeaders().end())
           state_ = SEPARATOR;
