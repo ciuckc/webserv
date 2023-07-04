@@ -82,11 +82,12 @@ class EventQueue {
       return kqueue();
     }
     static inline void add(EventQueue& q, int fd, filt_t direction) {
-      if (direction == both) {
+      if (direction != both) {
+        q.changelist_.push_back(create_event(fd, direction, flag_add | flag_enable));
+      } else {
         add(q, fd, in);
         add(q, fd, out);
       }
-      q.changelist_.push_back(create_event(fd, direction, flag_add | flag_enable));
     }
     static inline void mod(EventQueue& q, int fd, filt_t new_direction) {
       if (new_direction == in)
