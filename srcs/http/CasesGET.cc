@@ -14,27 +14,27 @@ static void st_prepend_cwd(std::string& str)
   char* cwd;
   cwd = getcwd(NULL, 0);
   if (cwd == NULL) {
-    std::runtime_error("500 internal error");
+    ErrorResponse(500);
   }
   str.insert(0, cwd);
   free(cwd);
 }
 
-// make an overload that reads from some kinda buf
+// maybe make this a member of response class?
 // function to read file into body of response passed as param
-size_t makeBody(Request& req, Response& res, const std::string& path)
+size_t makeBody(Response& res, const char* type, const std::string& path)
 {
   uint8_t openmode = 0;
-  const std::string* type = req.getHeader("Content-Type");
   if (type == NULL) {
     openmode &= std::ios::in; 
   }
   else {
-    openmode &= type->find("text") == std::string::npos ? std::ios::in : std::ios::binary;
+    std::string type_str(type);
+    openmode &= type_str.find("text") == std::string::npos ? std::ios::in : std::ios::binary;
   }
   std::ifstream file(path, openmode);
   if (!file.is_open()) {
-    std::runtime_error("500 internal error");
+    ErrorResponse(500);
   }
   std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
   file.close();
@@ -44,7 +44,7 @@ size_t makeBody(Request& req, Response& res, const std::string& path)
     body = new char[body_size];
   }
   catch (std::exception&) {
-    std::runtime_error("500 internal error");
+    ErrorResponse(500);
   }
   str.copy(body, body_size);
   res.setBody(body, body_size);
@@ -112,7 +112,8 @@ Response  CaseFile::act(Request& req) const
   Response res;
   std::string path = req.getPath();
   st_prepend_cwd(path);
-  size_t body_size = makeBody(req, res, path);
+  const char* type = req.getHeader("Content-Type");
+  size_t body_size = makeBody(res, type, path);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   res.addHeader("Content-Length", std::to_string(body_size));
   res.setMessage(200);
@@ -140,7 +141,8 @@ Response  CaseDir::act(Request& req) const
   }
   else {                         // file exists, serve it
     std::cout << "enters" << std::endl;
-    size_t body_size = makeBody(req, res, path);
+    const char* type = req.getHeader("Content-Type");
+    size_t body_size = makeBody(res, type, path);
     res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
     res.addHeader("Content-Length", std::to_string(body_size));
     res.setMessage(200);
@@ -176,7 +178,7 @@ CasesGET::CasesGET()
   }
   catch (std::exception&)
   {
-    std::runtime_error("500 internal error");
+    ErrorResponse(500);
   }
 }
 

@@ -27,7 +27,7 @@ class Request : public Message {
   Method getMethod() const;
   const std::string& getUri() const;
   const std::string getPath() const;
-  const std::string* getHeader(const std::string& key);
+  const char* getHeader(const std::string& key);
   // todo: getVersion()? Are we ?
 
 };

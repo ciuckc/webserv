@@ -54,10 +54,10 @@ const std::string Request::getPath() const {
   return (uri_.substr(uri_.find('/'), uri_.find('?')));
 }
 
-const std::string* Request::getHeader(const std::string& key) {
+const char* Request::getHeader(const std::string& key) {
   for (const auto& elem : headers_) {
     if (elem.find(key) != std::string::npos) {
-      return (&elem);
+      return (elem.c_str());
     }
   }
   return (NULL);
