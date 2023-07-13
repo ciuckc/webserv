@@ -201,6 +201,30 @@ srcs/http/CasesGET.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/CasesGET.cc.s
 .PHONY : srcs/http/CasesGET.cc.s
 
+srcs/http/Cgi.o: srcs/http/Cgi.cc.o
+.PHONY : srcs/http/Cgi.o
+
+# target to build an object file
+srcs/http/Cgi.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Cgi.cc.o
+.PHONY : srcs/http/Cgi.cc.o
+
+srcs/http/Cgi.i: srcs/http/Cgi.cc.i
+.PHONY : srcs/http/Cgi.i
+
+# target to preprocess a source file
+srcs/http/Cgi.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Cgi.cc.i
+.PHONY : srcs/http/Cgi.cc.i
+
+srcs/http/Cgi.s: srcs/http/Cgi.cc.s
+.PHONY : srcs/http/Cgi.s
+
+# target to generate assembly for a file
+srcs/http/Cgi.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Cgi.cc.s
+.PHONY : srcs/http/Cgi.cc.s
+
 srcs/http/ErrorResponse.o: srcs/http/ErrorResponse.cc.o
 .PHONY : srcs/http/ErrorResponse.o
 
@@ -531,6 +555,9 @@ help:
 	@echo "... srcs/http/CasesGET.o"
 	@echo "... srcs/http/CasesGET.i"
 	@echo "... srcs/http/CasesGET.s"
+	@echo "... srcs/http/Cgi.o"
+	@echo "... srcs/http/Cgi.i"
+	@echo "... srcs/http/Cgi.s"
 	@echo "... srcs/http/ErrorResponse.o"
 	@echo "... srcs/http/ErrorResponse.i"
 	@echo "... srcs/http/ErrorResponse.s"

@@ -1,0 +1,18 @@
+#ifndef CGI_H
+#define CGI_H
+#include <string>
+#include "Request.h"
+
+class Cgi {
+  public:
+    Cgi(Request&);
+    ~Cgi();
+    std::string operator()();
+
+  private:
+    char** envp_;
+    int    pipe_in_[2];
+    int    pipe_out_[2];
+};
+
+#endif
