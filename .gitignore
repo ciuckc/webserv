@@ -47,3 +47,6 @@ cmake_install.cmake
 
 # Compile commands
 compile_commands.json
+
+# mathijs' personal access token (very good and secure)
+.pat
