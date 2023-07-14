@@ -7,12 +7,16 @@ class Cgi {
   public:
     Cgi(Request&);
     ~Cgi();
-    std::string operator()();
+    std::string execute();
 
   private:
-    char** envp_;
-    int    pipe_in_[2];
-    int    pipe_out_[2];
+    std::string body_;
+    char**      envp_;
+    int         pipe_in_[2];
+    int         pipe_out_[2];
+
+    void exec_child();
+    std::string exec_parent();
 };
 
 #endif

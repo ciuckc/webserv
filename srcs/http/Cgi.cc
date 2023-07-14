@@ -59,12 +59,7 @@ static char** st_make_env(Request& req)
 Cgi::Cgi(Request& req)
 {
   this->envp_ = st_make_env(req);
-  if (pipe(this->pipe_in_) == -1) {
-    throw (ErrorResponse(500));
-  }
-  if (pipe(this->pipe_out_) == -1) {
-    throw (ErrorResponse(500));
-  }
+  this->body_ = req.getBody();
 }
 
 Cgi::~Cgi()
@@ -72,6 +67,48 @@ Cgi::~Cgi()
   st_del_arr(this->envp_);
 }
 
-// std::string Cgi::operator()()
-// {
-// }
+void Cgi::exec_child()
+{
+  
+}
+
+std::string Cgi::exec_parent()
+{
+  if (this->body_.length() > 0) {
+    dup2(this->pipe_in_[1], STDOUT_FILENO);
+    close(this->pipe_in_[0]);
+    close(this->pipe_in_[1]);
+  }
+  dup2(this->pipe_out_[0], STDIN_FILENO);
+  close(this->pipe_out_[0]);
+  close(this->pipe_out_[1]);
+  std::cout << this->body_;
+  waitpid(pid, NULL, 0);
+  std::string result;
+  std::cin >> result;
+  return (result);
+}
+
+std::string Cgi::execute()
+{
+  // open pipes, input pipe is only necessary if there is a body to write
+  if (this->body_.length() > 0) {
+    if (pipe(this->pipe_in_) == -1) {
+      throw (ErrorResponse(500));
+    }
+  }
+  if (pipe(this->pipe_out_) == -1) {
+    throw (ErrorResponse(500));
+  }
+
+  // fork and run the parent and child process in separate functions
+  int pid = fork();
+  if (pid < 0) {
+    throw(ErrorResponse(500));
+  }
+  if (pid == 0) {
+    exec_child(this);
+    return (NULL); // not sure if this is necessary after execve
+  }
+  return (exec_parent(this));
+}
