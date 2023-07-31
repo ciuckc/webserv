@@ -99,6 +99,7 @@ void Connection::addTask(ITask* task) {
 void Connection::addTask(OTask* task) {
   oqueue_.push_back(std::unique_ptr<OTask>(task));
 }
+
 Socket& Connection::getSocket() {
   return socket_;
 }
