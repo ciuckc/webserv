@@ -11,6 +11,7 @@ class Cgi {
 
   private:
     std::string body_;
+    std::string path_;
     char**      envp_;
     int         pipe_in_[2];
     int         pipe_out_[2];

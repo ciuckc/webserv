@@ -1,5 +1,6 @@
 #include <array>
 #include <unistd.h>
+#include <iostream>
 #include "Cgi.h"
 #include "ErrorResponse.h"
 
@@ -56,11 +57,11 @@ static char** st_make_env(Request& req)
   return (env);
 }
 
-Cgi::Cgi(Request& req)
-{
-  this->envp_ = st_make_env(req);
-  this->body_ = req.getBody();
-}
+Cgi::Cgi(Request& req) :
+    body_(req.getBody()),
+    path_(req.getPath()),
+    envp_(st_make_env(req))
+{}
 
 Cgi::~Cgi()
 {
@@ -69,8 +70,16 @@ Cgi::~Cgi()
 
 void Cgi::exec_child()
 {
-  
-}
+  if (this->body_.length() > 0) {
+    dup2(this->pipe_in_[0], STDIN_FILENO);
+    close(this->pipe_in_[0]);
+    close(this->pipe_in_[1]);
+  }
+  dup2(this->pipe_out_[1], STDOUT_FILENO);
+  close(this->pipe_out_[0]);
+  close(this->pipe_out_[1]);
+  execve(this->path_.c_str(), NULL, this->envp_);
+} // close last fd king?
 
 std::string Cgi::exec_parent()
 {
@@ -83,15 +92,15 @@ std::string Cgi::exec_parent()
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
   std::cout << this->body_;
-  waitpid(pid, NULL, 0);
   std::string result;
   std::cin >> result;
   return (result);
-}
+} // close last fd king?
 
 std::string Cgi::execute()
 {
   // open pipes, input pipe is only necessary if there is a body to write
+  // both stdin are redirected the the other process stdout
   if (this->body_.length() > 0) {
     if (pipe(this->pipe_in_) == -1) {
       throw (ErrorResponse(500));
@@ -104,11 +113,13 @@ std::string Cgi::execute()
   // fork and run the parent and child process in separate functions
   int pid = fork();
   if (pid < 0) {
-    throw(ErrorResponse(500));
+    throw (ErrorResponse(500));
   }
   if (pid == 0) {
-    exec_child(this);
+    exec_child();
     return (NULL); // not sure if this is necessary after execve
   }
-  return (exec_parent(this));
+  std::string result = exec_parent();
+  waitpid(pid, NULL, 0);
+  return (result);
 }

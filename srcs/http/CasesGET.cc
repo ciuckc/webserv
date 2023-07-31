@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "Cases.h"
+#include "Cgi.h"
 #include "ErrorResponse.h"
 
 using namespace get;
@@ -92,10 +93,18 @@ bool  CaseCGI::test(Request& req) const
 
 Response  CaseCGI::act(Request& req) const
 {
-  (void) req;
-  // fork and exec
-  // read std out back into response
-  return (Response());
+  Cgi cgi(req);
+  std::string result = cgi.execute();
+  std::cout << result << std::endl;
+  Response res;
+  char* dup = new char[result.length()];
+  result.copy(dup, result.length());
+  res.setBody(dup, result.length());
+  res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
+  res.addHeader("Content-Length", std::to_string(result.length()));
+  res.addHeader("Content-Type", "text/text");
+  res.setMessage(200);
+  return (res);
 }
 
 bool  CaseFile::test(Request& req) const
