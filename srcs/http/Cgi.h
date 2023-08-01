@@ -10,14 +10,14 @@ class Cgi {
     std::string execute();
 
   private:
-    std::string body_;
-    std::string path_;
-    char**      envp_;
-    int         pipe_in_[2];
-    int         pipe_out_[2];
+    const std::string body_;
+    const std::string path_;
+    char**            envp_;
+    int               pipe_in_[2];
+    int               pipe_out_[2];
 
     void exec_child();
-    std::string exec_parent();
+    std::string exec_parent(int pid);
 };
 
 #endif

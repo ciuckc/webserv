@@ -59,7 +59,7 @@ static char** st_make_env(Request& req)
 
 Cgi::Cgi(Request& req) :
     body_(req.getBody()),
-    path_(req.getPath()),
+    path_("." + req.getPath()), // fix getPath() !!! (or confirm that it's working)
     envp_(st_make_env(req))
 {}
 
@@ -78,22 +78,26 @@ void Cgi::exec_child()
   dup2(this->pipe_out_[1], STDOUT_FILENO);
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
-  execve(this->path_.c_str(), NULL, this->envp_);
+  if (execve(this->path_.c_str(), NULL, this->envp_) == -1) {
+    throw (ErrorResponse(500));
+  }
 } // close last fd king?
 
-std::string Cgi::exec_parent()
+std::string Cgi::exec_parent(int pid)
 {
   if (this->body_.length() > 0) {
-    dup2(this->pipe_in_[1], STDOUT_FILENO);
     close(this->pipe_in_[0]);
-    close(this->pipe_in_[1]);
   }
-  dup2(this->pipe_out_[0], STDIN_FILENO);
-  close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
-  std::cout << this->body_;
+  write(this->pipe_in_[1], this->body_.c_str(), this->body_.length());
+  char buf[32];
   std::string result;
-  std::cin >> result;
+  while (read(this->pipe_out_[0], buf, 32) > 0) {
+    result += std::string(buf);
+  }
+  waitpid(pid, NULL, 0);
+  close(this->pipe_in_[1]);
+  close(this->pipe_out_[0]);
   return (result);
 } // close last fd king?
 
@@ -117,9 +121,7 @@ std::string Cgi::execute()
   }
   if (pid == 0) {
     exec_child();
-    return (NULL); // not sure if this is necessary after execve
   }
-  std::string result = exec_parent();
-  waitpid(pid, NULL, 0);
+  std::string result = exec_parent(pid);
   return (result);
 }

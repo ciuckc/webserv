@@ -95,14 +95,13 @@ Response  CaseCGI::act(Request& req) const
 {
   Cgi cgi(req);
   std::string result = cgi.execute();
-  std::cout << result << std::endl;
   Response res;
   char* dup = new char[result.length()];
   result.copy(dup, result.length());
   res.setBody(dup, result.length());
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   res.addHeader("Content-Length", std::to_string(result.length()));
-  res.addHeader("Content-Type", "text/text");
+  res.addHeader("Content-Type", "text/plain");
   res.setMessage(200);
   return (res);
 }
