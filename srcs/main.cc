@@ -1,18 +1,18 @@
+#include <cstdlib>
 #include <iostream>
 
+#include "ConfigFile.h"
 #include "ConfigParse.h"
 #include "Server.h"
 
-#define DEFAULT_CONFIG_FILE "./webserv.conf"
-
 int main(int argc, char* argv[]) {
+  constexpr const char* default_cfg_file = "./webserv.conf";
   try {
-    Config cfg;
-    ConfigParse parser(argc > 1 ? argv[1] : DEFAULT_CONFIG_FILE);
-    if (!parser.parse(cfg)) {
-      exit(1);
-    }
-    exit(1);
+    ConfigFile config_file(argc == 2 ? argv[1] : default_cfg_file);
+    ConfigParse parser(config_file.getFileData());
+    Config cfg = parser.parse();
+    (void)cfg;
+    std::abort();
     Server server;
     server.loop();
   } catch (const std::exception& ex) {

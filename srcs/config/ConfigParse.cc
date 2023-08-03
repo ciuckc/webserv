@@ -1,57 +1,75 @@
 #include "ConfigParse.h"
 
-#include <algorithm>
 #include <exception>
 #include <iostream>
 #include <sstream>
 #include <string>
 
-namespace parse_utils {
+#include "ConfigFile.h"
+
+namespace {
 enum { EMPTY };
-std::vector<std::string> split_on_white_space(std::ifstream& config_file);
-std::vector<std::string> split_on_symbols(const std::vector<std::string>& tokens);
-}  // namespace parse_utils
 
-ConfigParse::ConfigParse() {}
+using tokens_t = std::vector<std::string>;
 
-ConfigParse::ConfigParse(const std::string& file_name_) : config_file_(file_name_.c_str(), std::ios_base::in) {
-  if (!config_file_.is_open())
-    throw std::exception();
+Config semantic_parse(tokens_t tokens) {
+  for (auto it = tokens.begin(); it != tokens.end(); ++it) {}
+  return Config();
 }
 
-ConfigParse::~ConfigParse() {}
+}  // namespace
 
-std::vector<std::string> parse_utils::split_on_white_space(std::ifstream& config_file) {
-  std::string buffer;
-  std::string token;
-  std::vector<std::string> tokens;
-  size_t start_idx = 0;
-  size_t end_idx = 0;
+const char* ConfigParse::InvalidDirective::what() const throw() {
+  return this->reason_.c_str();
+}
 
-  while (true) {
-    std::getline(config_file, buffer);
-    if (config_file.eof())
-      break;
-    if (buffer.empty())
+ConfigParse::ConfigParse(const tokens_t& file_data) : tokens_(file_data) {}
+
+Config ConfigParse::parse() {
+  tokens_t tokens = split_on_white_space();
+  tokens = split_on_symbols(tokens);
+  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+    std::cout << *it << std::endl;
+  }
+  Config cfg;
+  try {
+    cfg = semantic_parse(tokens);
+  } catch (const InvalidDirective& e) {
+    std::cerr << "Exception caught because of:" << e.what() << std::endl;
+  }
+  return cfg;
+}
+
+// Reading it now(01.08.2023) it sucks so bad how I implemented this.
+// I should separate reading from manipulating the array (X.X)
+// grrrrrr
+tokens_t ConfigParse::split_on_white_space(const tokens_t& tokens) {
+  struct StrPos {
+    size_t start;
+    size_t end;
+  } str = {.start = 0, .end = 0};
+  constexpr const char* white_space = "\t ";
+  tokens_t new_tokens;
+
+  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+    std::string buffer = it->substr(0, it->find_first_of("#"));
+    if (buffer.empty()) {
       continue;
-    buffer = buffer.substr(0, buffer.find("#"));
-    if (buffer.empty())
-      continue;
-    start_idx = 0;
-    end_idx = buffer.find_first_not_of("\t ", start_idx);
-    while (end_idx != buffer.npos) {
-      start_idx = buffer.find_first_not_of("\t ", end_idx);
-      end_idx = buffer.find_first_of("\t ", start_idx);
-      token = buffer.substr(start_idx, end_idx - start_idx);
-      tokens.push_back(token);
+    }
+    str.start = 0;
+    str.end = buffer.find_first_not_of(white_space, str.start);
+    while (str.end != buffer.npos) {
+      str.start = buffer.find_first_not_of(white_space, str.end);
+      str.end = buffer.find_first_of(white_space, str.start);
+      new_tokens.emplace_back(buffer.substr(str.start, str.end - str.start));
     }
   }
   return tokens;
 }
 
-std::vector<std::string> parse_utils::split_on_symbols(const std::vector<std::string>& tokens) {
-  std::vector<std::string> lexemes;
-  const std::string delimiters = "{}=;";
+tokens_t ConfigParse::split_on_symbols(const tokens_t& tokens) {
+  tokens_t lexemes;
+  constexpr const char* delimiters = "{}=;";
 
   for (auto it = tokens.begin(); it != tokens.end(); ++it) {
     std::size_t symbol_idx = it->find_first_of(delimiters);
@@ -59,7 +77,6 @@ std::vector<std::string> parse_utils::split_on_symbols(const std::vector<std::st
       lexemes.push_back(*it);
       continue;
     }
-
     std::size_t start_idx = 0;
     while (symbol_idx != it->npos) {
       if (start_idx < symbol_idx) {
@@ -74,18 +91,4 @@ std::vector<std::string> parse_utils::split_on_symbols(const std::vector<std::st
     }
   }
   return lexemes;
-}
-
-bool ConfigParse::parse(Config& config) {
-  (void)config;
-  std::vector<std::string> tokens = parse_utils::split_on_white_space(config_file_);
-  if (tokens.size() == parse_utils::EMPTY) {
-    std::cout << "Configuration file is empty!" << std::endl;
-    exit(1);
-  }
-  tokens = parse_utils::split_on_symbols(tokens);
-  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
-    std::cout << *it << std::endl;
-  }
-  return true;
 }
