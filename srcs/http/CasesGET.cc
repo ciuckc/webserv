@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include "Cases.h"
-#include "Cgi.h"
+#include "cgi/Cgi.h"
 #include "ErrorResponse.h"
 
 using namespace get;
@@ -88,21 +88,30 @@ bool  CaseCGI::test(Request& req) const
   if (path.length() < 4) {
     return (false);
   }
-  return (!path.compare(path.length() - 3, 3, ".py")); // doesn't work with cgi params
+  return (!path.compare(path.length() - 3, 3, ".py")); // doesn't work with query string
 }
 
 Response  CaseCGI::act(Request& req) const
 {
+  Response res;
   Cgi cgi(req);
   std::string result = cgi.execute();
-  Response res;
-  char* dup = new char[result.length()];
-  result.copy(dup, result.length());
-  res.setBody(dup, result.length());
-  res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-  res.addHeader("Content-Length", std::to_string(result.length()));
-  res.addHeader("Content-Type", "text/plain");
-  res.setMessage(200);
+  // document response
+  if (result.find("Content-Type") != std::string::npos) {
+    Cgi::makeDocumentResponse(result, res);
+  }
+  // local-redir response
+  else if (result.find("local-Location") != std::string::npos) {
+    Cgi::makeLocalRedirResponse(result, res);
+  }
+  // client-redir response (possibly with document)
+  else if (result.find("client-Location") != std::string::npos) {
+    Cgi::makeClientRedirResponse(result, res);
+  }
+  // invalid response (not compliant with CGI spec)
+  else {
+    throw (ErrorResponse(500));
+  }
   return (res);
 }
 
@@ -148,7 +157,6 @@ Response  CaseDir::act(Request& req) const
     return (ErrorResponse(403));
   }
   else {                         // file exists, serve it
-    std::cout << "enters" << std::endl;
     const char* type = req.getHeader("Content-Type");
     size_t body_size = makeBody(res, type, path);
     res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");

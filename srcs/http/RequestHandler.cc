@@ -4,6 +4,7 @@
 #include <string>
 #include <unistd.h>
 #include "RequestHandler.h"
+#include "ErrorResponse.h"
 #include "Cases.h"
 
 RequestHandler::RequestHandler() {}
@@ -30,7 +31,7 @@ void  RequestHandler::execRequest()
       this->doPOST_();
       break;
     default:
-      std::runtime_error("400 invalid request");
+      throw (ErrorResponse(400));
       break;
   }
 }

@@ -1,13 +1,18 @@
 #ifndef CGI_H
 #define CGI_H
 #include <string>
-#include "Request.h"
+#include "http/Request.h"
+#include "http/Response.h"
 
 class Cgi {
   public:
     Cgi(Request&);
     ~Cgi();
+
     std::string execute();
+    static void makeDocumentResponse(const std::string&, Response&);
+    static void makeLocalRedirResponse(const std::string&, Response&);
+    static void makeClientRedirResponse(const std::string&, Response&);
 
   private:
     const std::string body_;

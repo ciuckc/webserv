@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <iostream>
 #include "Cgi.h"
-#include "ErrorResponse.h"
+#include "http/ErrorResponse.h"
 
 static void st_del_arr(char** arr)
 {
@@ -14,6 +14,8 @@ static void st_del_arr(char** arr)
   delete[] arr;
 }
 
+// make environment variables as specified in CGI RFC
+// some of them are missing due to not being required by subject
 static char** st_make_env(Request& req)
 {
   char** env;
@@ -68,6 +70,10 @@ Cgi::~Cgi()
   st_del_arr(this->envp_);
 }
 
+// read from parent process on stdin
+// execute script
+// write output of script back to parent
+// make sure to test for leaking fd's!!!
 void Cgi::exec_child()
 {
   if (this->body_.length() > 0) {
@@ -79,27 +85,31 @@ void Cgi::exec_child()
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
   if (execve(this->path_.c_str(), NULL, this->envp_) == -1) {
-    throw (ErrorResponse(500));
+    throw (ErrorResponse(500)); // this should be propagated to parent
   }
-} // close last fd king?
+}
 
+// write request body to child's stdin
+// wait for child then read child's stdout
+// these read/write ops should go through epoll?!
 std::string Cgi::exec_parent(int pid)
 {
   if (this->body_.length() > 0) {
     close(this->pipe_in_[0]);
   }
   close(this->pipe_out_[1]);
-  write(this->pipe_in_[1], this->body_.c_str(), this->body_.length());
-  char buf[32];
+  write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()); // this doesn't work for chunked transfer encoding!!!
+  char buf[32]; // what would be optimal here?
   std::string result;
-  while (read(this->pipe_out_[0], buf, 32) > 0) {
+  while (read(this->pipe_out_[0], buf, 31) > 0) {
+    buf[31] = '\0';
     result += std::string(buf);
   }
   waitpid(pid, NULL, 0);
   close(this->pipe_in_[1]);
   close(this->pipe_out_[0]);
   return (result);
-} // close last fd king?
+}
 
 std::string Cgi::execute()
 {
@@ -114,6 +124,7 @@ std::string Cgi::execute()
     throw (ErrorResponse(500));
   }
 
+  std::cout << "before fork" << std::endl;
   // fork and run the parent and child process in separate functions
   int pid = fork();
   if (pid < 0) {
@@ -122,6 +133,49 @@ std::string Cgi::execute()
   if (pid == 0) {
     exec_child();
   }
+  std::cout << "after fork" << std::endl;
   std::string result = exec_parent(pid);
+  std::cout << "after fork" << std::endl;
   return (result);
+}
+
+// function to process raw cgi document response into http response
+void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
+{
+  char* dup;
+  try {
+    dup = new char[raw.length()];
+  }
+  catch (std::exception&) {
+    throw (ErrorResponse(500));
+  }
+  raw.copy(dup, raw.length());
+  res.setBody(dup, raw.length());
+  size_t substr_start = raw.find("Content-Type") + std::string("Content-Type").length();
+  while (std::isspace(raw[substr_start])) {
+    substr_start++;
+  }
+  size_t substr_len = raw.find(";", substr_start) - substr_start; // spec does not specify ";" as delimiter?
+  std::string content_type = raw.substr(substr_start, substr_len);
+  res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
+  res.addHeader("Content-Length", std::to_string(raw.length()));
+  res.addHeader("Content-Type", "text/plain");
+  (void) content_type;
+  // res.addHeader("Content-Type", content_type);
+  std::cout << content_type << std::endl;
+  res.setMessage(200);
+}
+
+// function to process raw cgi local redirect response into http response
+void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res)
+{
+  (void) raw;
+  (void) res;
+}
+
+// function to process raw cgi client redirect response into http response
+void Cgi::makeClientRedirResponse(const std::string& raw, Response& res)
+{
+  (void) raw;
+  (void) res;
 }

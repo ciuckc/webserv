@@ -29,6 +29,8 @@ add_executable(webserv
         srcs/main.cc
         srcs/Server.h
         srcs/Server.cc
+		srcs/cgi/Cgi.cc
+		srcs/cgi/Cgi.h
         srcs/config/Config.h
         srcs/server/Route.h
         srcs/server/VServer.h
@@ -36,8 +38,6 @@ add_executable(webserv
 		srcs/http/Cases.h
 		srcs/http/Cases.cc
 		srcs/http/CasesGET.cc
-		srcs/http/Cgi.cc
-		srcs/http/Cgi.h
         srcs/http/Message.h
         srcs/http/Message.cc
         srcs/http/Request.h

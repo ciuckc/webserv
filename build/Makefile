@@ -153,6 +153,30 @@ srcs/Server.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cc.s
 .PHONY : srcs/Server.cc.s
 
+srcs/cgi/Cgi.o: srcs/cgi/Cgi.cc.o
+.PHONY : srcs/cgi/Cgi.o
+
+# target to build an object file
+srcs/cgi/Cgi.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.o
+.PHONY : srcs/cgi/Cgi.cc.o
+
+srcs/cgi/Cgi.i: srcs/cgi/Cgi.cc.i
+.PHONY : srcs/cgi/Cgi.i
+
+# target to preprocess a source file
+srcs/cgi/Cgi.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.i
+.PHONY : srcs/cgi/Cgi.cc.i
+
+srcs/cgi/Cgi.s: srcs/cgi/Cgi.cc.s
+.PHONY : srcs/cgi/Cgi.s
+
+# target to generate assembly for a file
+srcs/cgi/Cgi.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.s
+.PHONY : srcs/cgi/Cgi.cc.s
+
 srcs/http/Cases.o: srcs/http/Cases.cc.o
 .PHONY : srcs/http/Cases.o
 
@@ -200,30 +224,6 @@ srcs/http/CasesGET.s: srcs/http/CasesGET.cc.s
 srcs/http/CasesGET.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/CasesGET.cc.s
 .PHONY : srcs/http/CasesGET.cc.s
-
-srcs/http/Cgi.o: srcs/http/Cgi.cc.o
-.PHONY : srcs/http/Cgi.o
-
-# target to build an object file
-srcs/http/Cgi.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Cgi.cc.o
-.PHONY : srcs/http/Cgi.cc.o
-
-srcs/http/Cgi.i: srcs/http/Cgi.cc.i
-.PHONY : srcs/http/Cgi.i
-
-# target to preprocess a source file
-srcs/http/Cgi.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Cgi.cc.i
-.PHONY : srcs/http/Cgi.cc.i
-
-srcs/http/Cgi.s: srcs/http/Cgi.cc.s
-.PHONY : srcs/http/Cgi.s
-
-# target to generate assembly for a file
-srcs/http/Cgi.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Cgi.cc.s
-.PHONY : srcs/http/Cgi.cc.s
 
 srcs/http/ErrorResponse.o: srcs/http/ErrorResponse.cc.o
 .PHONY : srcs/http/ErrorResponse.o
@@ -549,15 +549,15 @@ help:
 	@echo "... srcs/Server.o"
 	@echo "... srcs/Server.i"
 	@echo "... srcs/Server.s"
+	@echo "... srcs/cgi/Cgi.o"
+	@echo "... srcs/cgi/Cgi.i"
+	@echo "... srcs/cgi/Cgi.s"
 	@echo "... srcs/http/Cases.o"
 	@echo "... srcs/http/Cases.i"
 	@echo "... srcs/http/Cases.s"
 	@echo "... srcs/http/CasesGET.o"
 	@echo "... srcs/http/CasesGET.i"
 	@echo "... srcs/http/CasesGET.s"
-	@echo "... srcs/http/Cgi.o"
-	@echo "... srcs/http/Cgi.i"
-	@echo "... srcs/http/Cgi.s"
 	@echo "... srcs/http/ErrorResponse.o"
 	@echo "... srcs/http/ErrorResponse.i"
 	@echo "... srcs/http/ErrorResponse.s"
