@@ -96,17 +96,21 @@ std::string Cgi::exec_parent(int pid)
 {
   if (this->body_.length() > 0) {
     close(this->pipe_in_[0]);
-  }
-  close(this->pipe_out_[1]);
-  write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()); // this doesn't work for chunked transfer encoding!!!
-  char buf[32]; // what would be optimal here?
-  std::string result;
-  while (read(this->pipe_out_[0], buf, 31) > 0) {
-    buf[31] = '\0';
-    result += std::string(buf);
+    write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()); // this doesn't work for chunked transfer encoding!!!
+    close(this->pipe_in_[1]);
   }
   waitpid(pid, NULL, 0);
-  close(this->pipe_in_[1]);
+  close(this->pipe_out_[1]);
+  const size_t buf_size = 64; // what would be optimal here?
+  char buf[buf_size];
+  for (size_t i = 0; i < buf_size; i++) { buf[i] = '\0'; }
+  std::string result;
+  int bytes;
+  do {
+    bytes = read(this->pipe_out_[0], buf, buf_size - 1);
+    result += std::string(buf);
+    buf[bytes] = '\0';
+  } while (bytes > 0);
   close(this->pipe_out_[0]);
   return (result);
 }
@@ -124,7 +128,6 @@ std::string Cgi::execute()
     throw (ErrorResponse(500));
   }
 
-  std::cout << "before fork" << std::endl;
   // fork and run the parent and child process in separate functions
   int pid = fork();
   if (pid < 0) {
@@ -132,10 +135,10 @@ std::string Cgi::execute()
   }
   if (pid == 0) {
     exec_child();
+    exit(EXIT_SUCCESS);
   }
-  std::cout << "after fork" << std::endl;
   std::string result = exec_parent(pid);
-  std::cout << "after fork" << std::endl;
+  std::cout << result << std::endl;
   return (result);
 }
 
