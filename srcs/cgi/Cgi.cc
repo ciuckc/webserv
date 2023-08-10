@@ -84,9 +84,9 @@ void Cgi::exec_child()
   dup2(this->pipe_out_[1], STDOUT_FILENO);
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
-  if (execve(this->path_.c_str(), NULL, this->envp_) == -1) {
-    throw (ErrorResponse(500)); // this should be propagated to parent
-  }
+  execve(this->path_.c_str(), NULL, this->envp_);
+  // if we get here execve failed
+  throw (ErrorResponse(500)); // this should be propagated to parent
 }
 
 // write request body to child's stdin
@@ -99,17 +99,20 @@ std::string Cgi::exec_parent(int pid)
     write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()); // this doesn't work for chunked transfer encoding!!!
     close(this->pipe_in_[1]);
   }
-  waitpid(pid, NULL, 0);
   close(this->pipe_out_[1]);
-  const size_t buf_size = 64; // what would be optimal here?
+  waitpid(pid, NULL, 0);
+  const size_t buf_size = 16; // what would be optimal here?
   char buf[buf_size];
   for (size_t i = 0; i < buf_size; i++) { buf[i] = '\0'; }
   std::string result;
   int bytes;
   do {
     bytes = read(this->pipe_out_[0], buf, buf_size - 1);
-    result += std::string(buf);
+    if (bytes < 0) {
+      throw (ErrorResponse(500));
+    }
     buf[bytes] = '\0';
+    result.append(buf);
   } while (bytes > 0);
   close(this->pipe_out_[0]);
   return (result);
@@ -135,10 +138,8 @@ std::string Cgi::execute()
   }
   if (pid == 0) {
     exec_child();
-    exit(EXIT_SUCCESS);
   }
   std::string result = exec_parent(pid);
-  std::cout << result << std::endl;
   return (result);
 }
 
@@ -154,7 +155,7 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
   }
   raw.copy(dup, raw.length());
   res.setBody(dup, raw.length());
-  size_t substr_start = raw.find("Content-Type") + std::string("Content-Type").length();
+  size_t substr_start = raw.find("Content-Type: ") + std::string("Content-Type: ").length();
   while (std::isspace(raw[substr_start])) {
     substr_start++;
   }
@@ -162,10 +163,7 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
   std::string content_type = raw.substr(substr_start, substr_len);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   res.addHeader("Content-Length", std::to_string(raw.length()));
-  res.addHeader("Content-Type", "text/plain");
-  (void) content_type;
-  // res.addHeader("Content-Type", content_type);
-  std::cout << content_type << std::endl;
+  res.addHeader("Content-Type", content_type);
   res.setMessage(200);
 }
 

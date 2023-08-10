@@ -19,9 +19,9 @@ set(CMAKE_CXX_COMPILER c++)
 
 # Compilation specifications
 # ------------------------------------------------------------------------------
-# add_compile_options(-Wall -Wextra -Werror)
-add_compile_options(-Wall -Wextra -Werror -g -fsanitize=address)
-add_link_options(-g -fsanitize=address)
+add_compile_options(-Wall -Wextra -Werror)
+#add_compile_options(-Wall -Wextra -Werror -g -fsanitize=address)
+#add_link_options(-g -fsanitize=address)
 
 # Includes
 # ------------------------------------------------------------------------------

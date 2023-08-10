@@ -1,3 +1,8 @@
 #!/usr/bin/python
-print("Content-Type text/plain;")
-print("hello cgi!")
+print("Content-Type: text/plain;")
+print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+print("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
+print("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+print("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+print("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
