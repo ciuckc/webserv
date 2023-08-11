@@ -48,8 +48,9 @@ static char** st_make_env(Request& req)
       env[i] = NULL;
     }
     for (size_t i = 0; i < arr.size(); i++) {
-      env[i] = new char[arr[i].length()];
+      env[i] = new char[arr[i].length() + 1];
       arr[i].copy(env[i], arr[i].length());
+      env[i][arr[i].length()] = '\0';
     }
   }
   catch (std::exception&) {
@@ -96,12 +97,14 @@ std::string Cgi::exec_parent(int pid)
 {
   if (this->body_.length() > 0) {
     close(this->pipe_in_[0]);
-    write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()); // this doesn't work for chunked transfer encoding!!!
+    if (write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()) == -1) { // this won't work for cte
+      throw (ErrorResponse(500));
+    }
     close(this->pipe_in_[1]);
   }
   close(this->pipe_out_[1]);
   waitpid(pid, NULL, 0);
-  const size_t buf_size = 16; // what would be optimal here?
+  const size_t buf_size = 64; // what would be optimal here?
   char buf[buf_size];
   for (size_t i = 0; i < buf_size; i++) { buf[i] = '\0'; }
   std::string result;
@@ -146,23 +149,25 @@ std::string Cgi::execute()
 // function to process raw cgi document response into http response
 void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 {
+  size_t body_begin = raw.find("\n");
+  if (body_begin == std::string::npos) { // not compliant with rfc
+    throw (ErrorResponse(500));
+  }
+  body_begin += 1;
   char* dup;
   try {
-    dup = new char[raw.length()];
+    dup = new char[raw.length() - body_begin];
   }
   catch (std::exception&) {
     throw (ErrorResponse(500));
   }
-  raw.copy(dup, raw.length());
-  res.setBody(dup, raw.length());
+  raw.copy(dup, raw.length(), body_begin);
+  res.setBody(dup, raw.length() - body_begin);
   size_t substr_start = raw.find("Content-Type: ") + std::string("Content-Type: ").length();
-  while (std::isspace(raw[substr_start])) {
-    substr_start++;
-  }
   size_t substr_len = raw.find(";", substr_start) - substr_start; // spec does not specify ";" as delimiter?
   std::string content_type = raw.substr(substr_start, substr_len);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-  res.addHeader("Content-Length", std::to_string(raw.length()));
+  res.addHeader("Content-Length", std::to_string(raw.length() - body_begin));
   res.addHeader("Content-Type", content_type);
   res.setMessage(200);
 }

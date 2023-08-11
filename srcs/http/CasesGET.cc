@@ -101,11 +101,12 @@ Response  CaseCGI::act(Request& req) const
     Cgi::makeDocumentResponse(result, res);
   }
   // local-redir response
-  else if (result.find("local-Location") != std::string::npos) {
+  else if (result.find("Location") != std::string::npos && result.find("http/1.1") != std::string::npos) {
+    // this check isn't good it should only look for needle before first newline
     Cgi::makeLocalRedirResponse(result, res);
   }
   // client-redir response (possibly with document)
-  else if (result.find("client-Location") != std::string::npos) {
+  else if (result.find("Location") != std::string::npos) { // this check should also search no further than NL
     Cgi::makeClientRedirResponse(result, res);
   }
   // invalid response (not compliant with CGI spec)
