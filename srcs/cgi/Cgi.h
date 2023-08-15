@@ -11,7 +11,7 @@ class Cgi {
 
     std::string execute();
     static void makeDocumentResponse(const std::string&, Response&);
-    static void makeLocalRedirResponse(const std::string&, Response&);
+    static void makeLocalRedirResponse(const std::string&, Response&, Request&);
     static void makeClientRedirResponse(const std::string&, Response&);
 
   private:

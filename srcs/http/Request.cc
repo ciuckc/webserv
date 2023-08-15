@@ -50,6 +50,10 @@ const std::string& Request::getUri() const {
   return uri_;
 }
 
+void Request::setUri(const std::string& uri) {
+  this->uri_ = uri;
+}
+
 const std::string Request::getPath() const {
   return (uri_.substr(uri_.find('/'), uri_.find('?')));
 }

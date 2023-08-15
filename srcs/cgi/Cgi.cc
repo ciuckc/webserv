@@ -3,6 +3,7 @@
 #include <iostream>
 #include "Cgi.h"
 #include "http/ErrorResponse.h"
+#include "http/RequestHandler.h"
 
 static void st_del_arr(char** arr)
 {
@@ -173,15 +174,25 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 }
 
 // function to process raw cgi local redirect response into http response
-void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res)
+void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request& req)
 {
-  (void) raw;
-  (void) res;
+  req.setUri(raw);
+  RequestHandler rh(req);
+  rh.execRequest();
+  res = rh.getResponse();
 }
 
 // function to process raw cgi client redirect response into http response
 void Cgi::makeClientRedirResponse(const std::string& raw, Response& res)
 {
-  (void) raw;
-  (void) res;
+  if (raw.find("Content-Type") == std::string::npos) {  // does not contain body
+    res.addHeader("Location", raw.substr(std::string("Location: ").length()));
+    res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
+    res.setMessage(302);
+    return;
+  }
+  // contains body
+  std::string location = st_find_header_value(raw, "Location: ");
+  std::string content_type = st_find_header_value(raw, "Content-Type: ");
+
 }

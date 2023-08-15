@@ -96,17 +96,18 @@ Response  CaseCGI::act(Request& req) const
   Response res;
   Cgi cgi(req);
   std::string result = cgi.execute();
+  std::string line;
+  std::getline(std::istringstream(result), line); // only check first line so we don't read from body
   // document response
-  if (result.find("Content-Type") != std::string::npos) {
+  if (line.find("Content-Type") != std::string::npos) {
     Cgi::makeDocumentResponse(result, res);
   }
   // local-redir response
-  else if (result.find("Location") != std::string::npos && result.find("http/1.1") != std::string::npos) {
-    // this check isn't good it should only look for needle before first newline
-    Cgi::makeLocalRedirResponse(result, res);
+  else if (line.find("Location") != std::string::npos && line.find("http/1.1") != std::string::npos) {
+    Cgi::makeLocalRedirResponse(result, res, req);
   }
   // client-redir response (possibly with document)
-  else if (result.find("Location") != std::string::npos) { // this check should also search no further than NL
+  else if (line.find("Location") != std::string::npos) {
     Cgi::makeClientRedirResponse(result, res);
   }
   // invalid response (not compliant with CGI spec)
