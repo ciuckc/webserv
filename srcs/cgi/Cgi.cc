@@ -150,11 +150,11 @@ std::string Cgi::execute()
 // function to process raw cgi document response into http response
 void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 {
-  size_t body_begin = raw.find("\n");
+  size_t body_begin = raw.find("\n\n");
   if (body_begin == std::string::npos) { // not compliant with rfc
     throw (ErrorResponse(500));
   }
-  body_begin += 1;
+  body_begin += 2;
   char* dup;
   try {
     dup = new char[raw.length() - body_begin];
@@ -174,6 +174,7 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 }
 
 // function to process raw cgi local redirect response into http response
+// this function has not been tested at all!!!
 void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request& req)
 {
   req.setUri(raw);
@@ -182,17 +183,38 @@ void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request&
   res = rh.getResponse();
 }
 
+static const std::string st_find_header_value(const std::string& msg, const std::string& key)
+{
+  size_t start = msg.find(key) + key.length();
+  size_t i = 0;
+  while (!std::isspace(msg[start + i])) {
+    i++;
+  }
+  return (msg.substr(start, i));
+}
+
 // function to process raw cgi client redirect response into http response
 void Cgi::makeClientRedirResponse(const std::string& raw, Response& res)
 {
-  if (raw.find("Content-Type") == std::string::npos) {  // does not contain body
-    res.addHeader("Location", raw.substr(std::string("Location: ").length()));
-    res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-    res.setMessage(302);
+  res.setMessage(302);
+  res.addHeader("Location", st_find_header_value(raw, "Location: "));
+  res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
+  // does not contain body
+  if (raw.find("Content-Type") == std::string::npos) {
     return;
   }
   // contains body
-  std::string location = st_find_header_value(raw, "Location: ");
-  std::string content_type = st_find_header_value(raw, "Content-Type: ");
-
+  res.addHeader("Content-Type", st_find_header_value(raw, "Content-Type: "));
+  const std::string body = raw.substr(raw.find("\n\n") + 2);
+  res.addHeader("Content-Length", std::to_string(body.length()));
+  char* dup;
+  try {
+    dup = new char[body.length() + 1];
+  }
+  catch (std::exception&) {
+    throw (ErrorResponse(500));
+  }
+  body.copy(dup, body.length());
+  dup[body.length()] = '\0';
+  res.setBody(dup, body.length());
 }

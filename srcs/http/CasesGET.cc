@@ -35,7 +35,7 @@ size_t makeBody(Response& res, const char* type, const std::string& path)
   }
   std::ifstream file(path, openmode);
   if (!file.is_open()) {
-    ErrorResponse(500);
+    throw (ErrorResponse(500));
   }
   std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
   file.close();
@@ -45,7 +45,7 @@ size_t makeBody(Response& res, const char* type, const std::string& path)
     body = new char[body_size];
   }
   catch (std::exception&) {
-    ErrorResponse(500);
+    throw (ErrorResponse(500));
   }
   str.copy(body, body_size);
   res.setBody(body, body_size);
@@ -76,7 +76,7 @@ bool  CaseNoFile::test(Request& req) const
 Response  CaseNoFile::act(Request& req) const
 {
   (void) req;
-  return (ErrorResponse(404));
+  throw (ErrorResponse(404));
 }
 
 bool  CaseCGI::test(Request& req) const
@@ -96,18 +96,17 @@ Response  CaseCGI::act(Request& req) const
   Response res;
   Cgi cgi(req);
   std::string result = cgi.execute();
-  std::string line;
-  std::getline(std::istringstream(result), line); // only check first line so we don't read from body
+  std::string headers = result.substr(0, result.find("\n\n"));
   // document response
-  if (line.find("Content-Type") != std::string::npos) {
+  if (headers.find("Content-Type") != std::string::npos) {
     Cgi::makeDocumentResponse(result, res);
   }
   // local-redir response
-  else if (line.find("Location") != std::string::npos && line.find("http/1.1") != std::string::npos) {
+  else if (headers.find("Location") != std::string::npos && headers.find("http/1.1") != std::string::npos) {
     Cgi::makeLocalRedirResponse(result, res, req);
   }
   // client-redir response (possibly with document)
-  else if (line.find("Location") != std::string::npos) {
+  else if (headers.find("Location") != std::string::npos) {
     Cgi::makeClientRedirResponse(result, res);
   }
   // invalid response (not compliant with CGI spec)
@@ -156,7 +155,7 @@ Response  CaseDir::act(Request& req) const
   st_prepend_cwd(path);
   path.append("index.html");     // or other file specified in config
   if (stat(path.c_str(), &s)) {  // no file, list directory if enabled in config
-    return (ErrorResponse(403));
+    throw (ErrorResponse(403));
   }
   else {                         // file exists, serve it
     const char* type = req.getHeader("Content-Type");
@@ -196,7 +195,7 @@ CasesGET::CasesGET()
   }
   catch (std::exception&)
   {
-    ErrorResponse(500);
+     throw (ErrorResponse(500));
   }
 }
 
