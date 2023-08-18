@@ -1,6 +1,5 @@
 #!/usr/bin/python
-print("Content-Type: text/plain;")
-print("")
+print("Content-Type: text/plain;\r")
 print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
 print("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")

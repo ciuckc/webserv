@@ -5,6 +5,16 @@
 #include "http/ErrorResponse.h"
 #include "http/RequestHandler.h"
 
+static const std::string st_find_header_value(const std::string& msg, const std::string& key)
+{
+  size_t start = msg.find(key) + key.length();
+  size_t i = 0;
+  while (!std::isspace(msg[start + i])) {
+    i++;
+  }
+  return (msg.substr(start, i));
+}
+
 static void st_del_arr(char** arr)
 {
   size_t i = 0;
@@ -21,7 +31,7 @@ static char** st_make_env(Request& req)
 {
   char** env;
   std::array<std::string, 16> arr = {
-    std::string("AUTH_TYPE=\"\""),
+    std::string("AUTH_TYPE="),
     std::string("CONTENT_LENGTH=") + 
       std::string(req.getHeader("Content-Length") ? req.getHeader("Content-Length") : "0"),
     std::string("CONTENT_TYPE=") + 
@@ -30,10 +40,10 @@ static char** st_make_env(Request& req)
     std::string("PATH_INFO=") + std::string(req.getPath()),
     std::string("PATH_TRANSLATED="), // root path_info based on confi
     std::string("QUERY_STRING=") + ((req.getUri().find('?') == std::string::npos) ? 
-      std::string("0") : std::string(req.getUri().substr(req.getUri().find('?')))),
+      std::string("") : std::string(req.getUri().substr(req.getUri().find('?') + 1))),
     std::string("REMOTE_ADDR=127.0.0.1"), // for now just hardcode localhost, ask lucas to pass the real thing
     std::string("REMOTE_HOST=") + 
-      std::string(req.getHeader("Host") ? req.getHeader("Host") : ""),
+      std::string(req.getHeader("Host") ? st_find_header_value(req.getHeader("Host"), "Host: ") : ""),
     std::string("REMOTE_USER="), // not sure that we need this as we're not doing authentication?
     std::string("REQUEST_METHOD=") + 
       std::string(req.getMethod() == Request::GET ? "GET" : "POST"),
@@ -150,7 +160,8 @@ std::string Cgi::execute()
 // function to process raw cgi document response into http response
 void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 {
-  size_t body_begin = raw.find("\n\n");
+  size_t body_begin = raw.find("\r\n");
+  // size_t body_begin = raw.find("\n\n");
   if (body_begin == std::string::npos) { // not compliant with rfc
     throw (ErrorResponse(500));
   }
@@ -171,26 +182,17 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
   res.addHeader("Content-Length", std::to_string(raw.length() - body_begin));
   res.addHeader("Content-Type", content_type);
   res.setMessage(200);
+  std::cout << raw << std::endl;
 }
 
 // function to process raw cgi local redirect response into http response
 // this function has not been tested at all!!!
 void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request& req)
 {
-  req.setUri(raw);
+  req.setUri(st_find_header_value(raw, "Location: "));
   RequestHandler rh(req);
   rh.execRequest();
   res = rh.getResponse();
-}
-
-static const std::string st_find_header_value(const std::string& msg, const std::string& key)
-{
-  size_t start = msg.find(key) + key.length();
-  size_t i = 0;
-  while (!std::isspace(msg[start + i])) {
-    i++;
-  }
-  return (msg.substr(start, i));
 }
 
 // function to process raw cgi client redirect response into http response

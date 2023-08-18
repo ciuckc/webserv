@@ -82,13 +82,13 @@ Response  CaseNoFile::act(Request& req) const
 bool  CaseCGI::test(Request& req) const
 {
   // need config for this
-  // for now just check if it ends in .py
+  // for now just check if it ends in .cgi
   std::string path = req.getPath();
   st_prepend_cwd(path);
-  if (path.length() < 4) {
+  if (path.length() < 5) {
     return (false);
   }
-  return (!path.compare(path.length() - 3, 3, ".py")); // doesn't work with query string
+  return (!path.compare(path.length() - 4, 4, ".cgi")); // doesn't work with query string
 }
 
 Response  CaseCGI::act(Request& req) const
@@ -101,13 +101,13 @@ Response  CaseCGI::act(Request& req) const
   if (headers.find("Content-Type") != std::string::npos) {
     Cgi::makeDocumentResponse(result, res);
   }
-  // local-redir response
-  else if (headers.find("Location") != std::string::npos && headers.find("http/1.1") != std::string::npos) {
-    Cgi::makeLocalRedirResponse(result, res, req);
-  }
   // client-redir response (possibly with document)
-  else if (headers.find("Location") != std::string::npos) {
+  else if (headers.find("Location") != std::string::npos && headers.find("http://") != std::string::npos) {
     Cgi::makeClientRedirResponse(result, res);
+  }
+  // local-redir response AKA server redirect
+  else if (headers.find("Location") != std::string::npos) {
+    Cgi::makeLocalRedirResponse(result, res, req);
   }
   // invalid response (not compliant with CGI spec)
   else {
