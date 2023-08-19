@@ -42,12 +42,13 @@ size_t makeBody(Response& res, const char* type, const std::string& path)
   size_t body_size = str.length();
   char* body;
   try {
-    body = new char[body_size];
+    body = new char[body_size + 1];
   }
   catch (std::exception&) {
     throw (ErrorResponse(500));
   }
   str.copy(body, body_size);
+  body[body_size] = '\0';
   res.setBody(body, body_size);
   return (body_size);
 }
@@ -65,30 +66,22 @@ Response  CaseRedirect::act(Request& req) const
   return (Response());
 }
 
-bool  CaseNoFile::test(Request& req) const
-{
-  struct stat s;
-  std::string path = req.getPath();
-  st_prepend_cwd(path);
-  return (stat(path.c_str(), &s));
-}
-
-Response  CaseNoFile::act(Request& req) const
-{
-  (void) req;
-  throw (ErrorResponse(404));
-}
-
 bool  CaseCGI::test(Request& req) const
 {
   // need config for this
   // for now just check if it ends in .cgi
+  const std::string cgi_ext = ".cgi";
   std::string path = req.getPath();
   st_prepend_cwd(path);
-  if (path.length() < 5) {
+  size_t path_end = path.find(cgi_ext);
+  if (path_end == std::string::npos) {
     return (false);
   }
-  return (!path.compare(path.length() - 4, 4, ".cgi")); // doesn't work with query string
+  path_end += cgi_ext.length();
+  path = path.substr(0, path_end);
+  struct stat s;
+  stat(path.c_str(), &s);
+  return (s.st_mode & S_IFREG);
 }
 
 Response  CaseCGI::act(Request& req) const
@@ -114,6 +107,20 @@ Response  CaseCGI::act(Request& req) const
     throw (ErrorResponse(500));
   }
   return (res);
+}
+
+bool  CaseNoFile::test(Request& req) const
+{
+  struct stat s;
+  std::string path = req.getPath();
+  st_prepend_cwd(path);
+  return (stat(path.c_str(), &s));
+}
+
+Response  CaseNoFile::act(Request& req) const
+{
+  (void) req;
+  throw (ErrorResponse(404));
 }
 
 bool  CaseFile::test(Request& req) const
@@ -187,8 +194,8 @@ CasesGET::CasesGET()
   try
   {
     this->cases_.push_back(new CaseRedirect());
-    this->cases_.push_back(new CaseNoFile());
     this->cases_.push_back(new CaseCGI());
+    this->cases_.push_back(new CaseNoFile());
     this->cases_.push_back(new CaseFile());
     this->cases_.push_back(new CaseDir());
     this->cases_.push_back(new CaseFail());

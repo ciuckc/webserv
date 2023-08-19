@@ -33,11 +33,11 @@ static char** st_make_env(Request& req)
   std::array<std::string, 16> arr = {
     std::string("AUTH_TYPE="),
     std::string("CONTENT_LENGTH=") + 
-      std::string(req.getHeader("Content-Length") ? req.getHeader("Content-Length") : "0"),
+      std::string(req.getHeader("Content-Length") ? req.getHeader("Content-Length") : ""),
     std::string("CONTENT_TYPE=") + 
       std::string(req.getHeader("Content-Type") ? req.getHeader("Content-Type") : ""),
     std::string("GATEWAY_INTERFACE=CGI/1.1"),
-    std::string("PATH_INFO=") + std::string(req.getPath()),
+    std::string("PATH_INFO=") + std::string(req.getPath().substr(0, req.getPath().find(".cgi") + 4)),
     std::string("PATH_TRANSLATED="), // root path_info based on confi
     std::string("QUERY_STRING=") + ((req.getUri().find('?') == std::string::npos) ? 
       std::string("") : std::string(req.getUri().substr(req.getUri().find('?') + 1))),
@@ -47,7 +47,7 @@ static char** st_make_env(Request& req)
     std::string("REMOTE_USER="), // not sure that we need this as we're not doing authentication?
     std::string("REQUEST_METHOD=") + 
       std::string(req.getMethod() == Request::GET ? "GET" : "POST"),
-    std::string("SCRIPT_NAME=") + std::string(req.getPath()),
+    std::string("SCRIPT_NAME=") + std::string(req.getPath().substr(0, req.getPath().find(".cgi") + 4)),
     std::string("SERVER_NAME=SuperWebserv10K/0.9.1 (Unix)"),
     std::string("SERVER_PORT=6969"),
     std::string("SERVER_PROTOCOL=HTTP/1.1"),
@@ -73,7 +73,7 @@ static char** st_make_env(Request& req)
 
 Cgi::Cgi(Request& req) :
     body_(req.getBody()),
-    path_("." + req.getPath()), // fix getPath() !!! (or confirm that it's working)
+    path_("." + req.getPath().substr(0, req.getPath().find(".cgi") + 4)), // fix getPath() !!! (or confirm that it's working)
     envp_(st_make_env(req))
 {}
 
@@ -134,6 +134,7 @@ std::string Cgi::exec_parent(int pid)
 
 std::string Cgi::execute()
 {
+  std::cout << this->path_ << std::endl;
   // open pipes, input pipe is only necessary if there is a body to write
   // both stdin are redirected the the other process stdout
   if (this->body_.length() > 0) {
@@ -182,7 +183,6 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
   res.addHeader("Content-Length", std::to_string(raw.length() - body_begin));
   res.addHeader("Content-Type", content_type);
   res.setMessage(200);
-  std::cout << raw << std::endl;
 }
 
 // function to process raw cgi local redirect response into http response
