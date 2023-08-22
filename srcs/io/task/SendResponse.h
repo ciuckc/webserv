@@ -1,5 +1,7 @@
 #pragma once
+
 #include "IOTask.h"
+#include "http/Response.h"
 
 class SendResponse : public OTask {
  private:

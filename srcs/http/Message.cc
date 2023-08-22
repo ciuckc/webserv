@@ -6,9 +6,7 @@
 Message::Message() : body_(), body_size_() {}
 
 Message::~Message() {
-  if (body_size_ > 0) {
-    delete[] body_;
-  }
+  delete[] body_;
 }
 
 Message::Message(const Message& other) : body_(), body_size_() {

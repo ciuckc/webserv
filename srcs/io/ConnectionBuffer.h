@@ -44,6 +44,9 @@ class ConnectionBuffer {
   // after this, needWrite returns true, and writeOut should probably be called
   void overflow(const char* data, size_t len);
 
+  inline size_t toBuffer(size_t idx) const {
+    return idx & (size_ - 1);
+  };
  public:
   explicit ConnectionBuffer(BufferPool<>& pool);
   virtual ~ConnectionBuffer();

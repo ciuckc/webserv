@@ -7,11 +7,12 @@ bool SendResponse::operator()(Connection& connection) {
   while (!connection.getBuffer().needWrite()) {
     switch (state_) {
       case MSG:
-        std::cout << "OUT: " << response_.getMessage();
+        Log::info('[', connection.getSocket().get_fd(), "]\tOUT:\t", response_.getMessage());
         connection.getBuffer() << response_.getMessage();
         state_ = HEADERS;
         break;
       case HEADERS:
+        Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", *header_);
         connection.getBuffer() << *header_++;
         if (header_ == response_.getHeaders().end())
           state_ = SEPARATOR;
@@ -30,7 +31,6 @@ bool SendResponse::operator()(Connection& connection) {
   return false;
 }
 
-void SendResponse::onDone(Connection& connection) {
-  // todo: Add task to read next request!
-  connection.close();
+void SendResponse::onDone(Connection&) {
+  Log::trace("Completed response\n");
 }

@@ -4,27 +4,18 @@
 
 #include "Status.h"
 
-const std::string& ErrorResponse::errpage_template =
-    "<!DOCTYPE html>"
-    "<html><head><title>%d %s</title></head>"
-    "<body><h1>%s</h1><p>(Google what it means yourself)</p></body></html>";
-
 ErrorResponse::ErrorResponse(int error) noexcept {
   setMessage(error);
   addHeader("server", "webserv");
   addHeader("content-type", "text/html");
 
   std::string reason = http::getStatus(error);
-  size_t len = errpage_template.length() + (reason.length() * 2) + 3 - 6;
-  {
-    std::stringstream str;
-    str << len;
-    addHeader("content-length", str.str());
-  }
+  size_t len = strlen(errpage_template) + (reason.length() * 2) + 3 - 6;
+  addHeader("content-length", std::to_string(len));
   // todo: lazy initialize body when possible (while writing to socket)
 
   char* body = new char[len + 1];
-  std::snprintf(body, len + 1, errpage_template.c_str(), error, reason.c_str(), reason.c_str());
+  std::snprintf(body, len + 1, errpage_template, error, reason.c_str(), reason.c_str());
   setBody(body, len);
 }
 

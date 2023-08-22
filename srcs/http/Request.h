@@ -2,7 +2,6 @@
 #include <istream>
 #include <string>
 
-#include "Headers.h"
 #include "Message.h"
 
 class Request : public Message {
@@ -12,10 +11,15 @@ class Request : public Message {
     GET = 1,
     POST = 2,
   };
+  enum HttpVersion {
+    VER_INVALID,
+    VER_1_1
+  };
 
  private:
   Method method_ = INVALID;
   std::string uri_;
+  HttpVersion version_ = VER_INVALID;
 
  public:
   Request() = default;
@@ -29,6 +33,7 @@ class Request : public Message {
   void setUri(const std::string&);
   const std::string getPath() const;
   const char* getHeader(const std::string& key);
+  HttpVersion getVersion() const;
   // todo: getVersion()? Are we ?
 
 };

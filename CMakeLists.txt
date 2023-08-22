@@ -15,7 +15,17 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_COMPILER c++)
+set(CMAKE_CXX_COMPILER g++)
+
+# Optimization/debug flags
+# -------------------------------------------------------#----------------------
+#   Always:  generate assembly for native architecture   #
+#   Debug:   keep debug info and don't optimize          #
+#   Release: full send optimization                      #
+# -------------------------------------------------------#
+set(CMAKE_CXX_FLAGS         -march=native)
+set(CMAKE_CXX_FLAGS_DEBUG   -g)
+set(CMAKE_CXX_FLAGS_RELEASE -O3)
 
 # Compilation specifications
 # ------------------------------------------------------------------------------
@@ -46,8 +56,6 @@ add_executable(webserv
         srcs/http/Request.cc
         srcs/http/Response.h
         srcs/http/Response.cc
-        srcs/http/Headers.h
-        srcs/http/Headers.cc
         srcs/http/ErrorResponse.h
         srcs/http/ErrorResponse.cc
 	srcs/http/RequestHandler.cc
@@ -67,7 +75,8 @@ add_executable(webserv
         srcs/io/task/ReadRequest.cc
         srcs/io/task/SendResponse.h
         srcs/io/task/SendResponse.cc
-        srcs/util/WebServ.h)
+        srcs/util/WebServ.h
+        srcs/util/Log.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
         ${CMAKE_SOURCE_DIR})

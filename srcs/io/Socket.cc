@@ -6,9 +6,10 @@
 #include <unistd.h>
 
 #include <cerrno>
-#include <iostream>
+#include <arpa/inet.h>
 
 #include "IOException.h"
+#include "util/Log.h"
 
 Socket::Socket() {
   fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -17,20 +18,38 @@ Socket::Socket() {
   if (fcntl(fd_, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
+#ifdef __linux__
   // Wait until uncorked to send partial packets, require flush!
   int cork = true;
-  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
+  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+#endif
 }
 
 Socket::~Socket() {
-  close(fd_);
+  if (fd_ != -1) {
+    close();
+  }
 }
 
 Socket::Socket(int fd) : fd_(fd) {}
 
+Socket::Socket(Socket&& other) noexcept {
+  fd_ = other.fd_;
+  other.fd_ = -1;
+}
+
+Socket& Socket::operator=(Socket&& other) noexcept {
+  fd_ = other.fd_;
+  other.fd_ = -1;
+  return *this;
+}
+
 void Socket::bind(const char* host, const char* port) const {
   addrinfo* bind_info;
 
+  int yes = 1;
+  setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
+  setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   {
     addrinfo hints = {};
     hints.ai_family = AF_INET;
@@ -74,12 +93,8 @@ int Socket::accept() const {
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
-  char* ip_pointer = reinterpret_cast<char*>(&addr.sin_addr.s_addr);
-  std::cout << "[6969] Accept ";
-  for (int i = 0; i < 4; i++)
-    std::cout << static_cast<int>(*ip_pointer++) << ((i == 3) ? ':' : '.');
-  std::cout << addr.sin_port << '\n';
-
+  Log::info('[', fd_, "]\tAccept\t", inet_ntoa(addr.sin_addr), ':', ntohs(addr.sin_port),
+            "\tfd: ", fd, '\n');
   return fd;
 }
 
@@ -88,23 +103,26 @@ int Socket::get_fd() const {
 }
 
 void Socket::flush() {
+  // Unsetting the TCP_NOPUSH option does not actually flush a socket on MacOS
+  // so we can't use this option (unless we want to wait 5 seconds for our response)
+#ifdef __linux__
   int cork = false;
-  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
+  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
   cork = !cork;
-  setsockopt(fd_, IPPROTO_TCP, CORK_OPT, &cork, sizeof(cork));
+  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
+#endif
 }
 
 ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {
   return ::write(fd_, buf + offs, len);
 }
-
 ssize_t Socket::write(const std::string& str, size_t offs) const {
   return ::write(fd_, str.c_str() + offs, str.length() - offs);
 }
+
 ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
   return ::read(fd_, buf + offs, len - offs);
 }
-
-void Socket::shutdown() const {
-  ::shutdown(fd_, SHUT_WR);
+void Socket::shutdown(int channel) {
+  ::shutdown(fd_, channel);
 }

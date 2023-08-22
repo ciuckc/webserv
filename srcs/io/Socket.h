@@ -9,24 +9,23 @@
 #include <string>
 
 #include "IOException.h"
-
-#ifdef __linux__
-#define CORK_OPT TCP_CORK
-#else
-#define CORK_OPT TCP_NOPUSH
-#endif
+#include "util/Log.h"
 
 class Socket {
  private:
-  Socket(const Socket& other);           // = delete
-  Socket& operator=(const Socket& rhs);  // = delete
-
   int fd_;
 
  public:
   Socket();
   ~Socket();
+
   explicit Socket(int fd);
+  Socket(Socket&& other) noexcept;
+  Socket& operator=(Socket&& other) noexcept;
+
+  Socket(const Socket& other) = delete;
+  Socket& operator=(const Socket& rhs) = delete;
+
 
   void bind(const char* host, const char* port) const;
   void listen(int backlog) const;
@@ -39,5 +38,11 @@ class Socket {
   ssize_t write(const std::string& str, size_t offs = 0) const;
   ssize_t read(char* buf, ssize_t len, size_t offs = 0) const;
 
-  void shutdown() const;
+  void shutdown(int channel);
+
+  inline void close() {
+    Log::debug('[', fd_, "]\tSocket destroyed\n");
+    ::close(fd_);
+    fd_ = -1;
+  }
 };
