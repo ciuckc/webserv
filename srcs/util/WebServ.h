@@ -31,12 +31,12 @@ static constexpr uint32_t timeout = 5;
 static constexpr uint32_t max_requests = 10;
 
 static inline std::string get_date_header() {
-  // strlen("date: Mon, 01 Jan 0000 00:00:00 GMT\r\n") + 1;
-  static constexpr size_t date_header_len = 37;
+  // strlen("date: Tue, 22 Aug 2023 19:39:33 GMT\r\n\0")
+  static constexpr size_t date_header_len = 38;
   char out[date_header_len] = {};
   time_t time = std::time(nullptr);
   std::strftime(out, date_header_len, "date: %a, %d %b %Y %T GMT\r\n", gmtime(&time));
-  return { out, date_header_len };
+  return { out, date_header_len - 1 };
 }
 }  // namespace WS
 
@@ -45,15 +45,15 @@ namespace HTTP {
   inline size_t find_header_end(const std::string& str)
   {
     size_t nn = str.find("\n\n");
-    size_t rn = str.find("\r\n");
+    size_t rn = str.find("\r\n\r\n");
     return (std::min(nn, rn));
   }
 
   inline void prepend_cwd(std::string& str)
   {
     char* cwd;
-    cwd = getcwd(NULL, 0);
-    if (cwd == NULL) {
+    cwd = getcwd(nullptr, 0);
+    if (cwd == nullptr) {
       throw (ErrorResponse(500)); // maybe returning null would be a bit less agressive?
     }
     str.insert(0, cwd);
