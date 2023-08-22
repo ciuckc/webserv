@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include "ConfigServer.h"
+
 class Config {
  public:
   Config() = default;
@@ -11,5 +13,8 @@ class Config {
   Config& operator=(const Config& rhs) = default;
   ~Config() = default;
 
+  void addServer(const ConfigServer& server);
+
  private:
+  std::vector<ConfigServer> servers_;
 };

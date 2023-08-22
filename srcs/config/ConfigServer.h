@@ -1,6 +1,13 @@
 #pragma once
 
+#include <cstdint>
+#include <sstream>
 #include <string>
+
+struct SocketAddress {
+  std::string address;
+  std::string port;
+};
 
 class ConfigServer {
  public:
@@ -11,7 +18,9 @@ class ConfigServer {
   ConfigServer& operator=(const ConfigServer&) = default;
   ~ConfigServer() = default;
 
+  void addHostname(const std::string hostname);
+
  private:
-  unsigned int port;
-  std::string hostname;
+  std::string hostname_;
+  SocketAddress endpoint_;
 };

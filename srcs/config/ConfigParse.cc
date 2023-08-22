@@ -1,55 +1,143 @@
 #include "ConfigParse.h"
 
+#include <cstdint>
+#include <cstdlib>
 #include <exception>
+#include <functional>
 #include <iostream>
+#include <limits>
 #include <sstream>
+#include <stdexcept>
 #include <string>
+#include <unordered_map>
 
+#include "Config.h"
 #include "ConfigFile.h"
 
 namespace {
 enum { EMPTY };
-
-using tokens_t = std::vector<std::string>;
-
-Config semantic_parse(tokens_t tokens) {
-  for (auto it = tokens.begin(); it != tokens.end(); ++it) {}
-  return Config();
-}
-
 }  // namespace
 
 const char* ConfigParse::InvalidDirective::what() const throw() {
   return this->reason_.c_str();
 }
 
-ConfigParse::ConfigParse(const tokens_t& file_data) : tokens_(file_data) {}
+ConfigParse::ConfigParse(const Tokens& file_data) : tokens_(file_data), map_() {
+  this->map_ = {{"listen", &ConfigParse::listenParse}, {"server_name", &ConfigParse::serverNameParse}};
+}
 
 Config ConfigParse::parse() {
-  tokens_t tokens = split_on_white_space();
-  tokens = split_on_symbols(tokens);
-  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
-    std::cout << *it << std::endl;
+  this->tokens_ = splitOnWhiteSpace(this->tokens_);
+  this->tokens_ = splitOnSymbols(this->tokens_);
+  for (auto token : this->tokens_) {
+    std::cout << token << std::endl;
   }
+  if (this->tokens_.empty())
+    throw std::invalid_argument("Configuration file is empty");
   Config cfg;
   try {
-    cfg = semantic_parse(tokens);
+    cfg = semanticParse(this->tokens_);
   } catch (const InvalidDirective& e) {
     std::cerr << "Exception caught because of:" << e.what() << std::endl;
+    std::abort();
   }
   return cfg;
 }
 
-// Reading it now(01.08.2023) it sucks so bad how I implemented this.
-// I should separate reading from manipulating the array (X.X)
-// grrrrrr
-tokens_t ConfigParse::split_on_white_space(const tokens_t& tokens) {
+Config ConfigParse::semanticParse(const Tokens& tokens) {
+  Config cfg;
+
+  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+    if (!serverParse(it, tokens.end(), cfg)) {
+      throw ConfigParse::InvalidDirective("Invalid directive");
+    }
+  }
+  return cfg;
+}
+
+bool ConfigParse::isDirective(const TokensConstIter& it) {
+  std::unordered_map<std::string, bool> directives = {{"listen", true},     {"hostname", true},
+                                                      {"root", true},       {"location", true},
+                                                      {"error_page", true}, {"client_max_body_size", true},
+                                                      {"index", true},      {"alias", true},
+                                                      {"autoindex", true},  {"allowed_methods", true}};
+  return directives[*it];
+}
+
+bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg) {
+  if (*curr != "server")
+    return false;
+  ++curr;
+  if (curr == end)
+    return false;
+  if (*curr != "{")
+    return false;
+  ++curr;
+  if (curr == end)
+    return false;
+  ConfigServer cfg_server;
+  if (!directivesParse(curr, end, cfg_server))
+    return false;
+  ++curr;
+  if (curr == end)
+    return false;
+  if (*curr != "}")
+    return false;
+  cfg.addServer(cfg_server);
+  return true;
+}
+
+bool ConfigParse::directivesParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  for (; curr != end && isDirective(curr); ++curr) {
+    if (!dispatchDirectiveParse(curr, end, cfg_server))
+      return false;
+  }
+  return true;
+}
+
+bool ConfigParse::dispatchDirectiveParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  auto function_pointer_it = map_.find(*curr);
+  if (function_pointer_it == map_.end())
+    return false;
+  auto function_pointer = function_pointer_it->second;
+  return (this->*function_pointer)(curr, end, cfg_server);
+}
+
+bool ConfigParse::listenParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  (void)cfg_server;
+  ++curr;
+  if (curr == end)
+    return false;
+  curr++;
+  {}
+  if (curr == end)
+    return false;
+  if (*curr != ";")
+    return false;
+  return true;
+}
+
+bool ConfigParse::serverNameParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  ++curr;
+  if (curr == end)
+    return false;
+  std::string name = *curr;
+  ++curr;
+  if (curr == end)
+    return false;
+  if (*curr != ";")
+    return false;
+  cfg_server.addHostname(name);
+  return true;
+}
+
+ConfigParse::Tokens ConfigParse::splitOnWhiteSpace(const Tokens& tokens) {
   struct StrPos {
     size_t start;
     size_t end;
   } str = {.start = 0, .end = 0};
   constexpr const char* white_space = "\t ";
-  tokens_t new_tokens;
+  Tokens new_tokens;
 
   for (auto it = tokens.begin(); it != tokens.end(); ++it) {
     std::string buffer = it->substr(0, it->find_first_of("#"));
@@ -64,12 +152,12 @@ tokens_t ConfigParse::split_on_white_space(const tokens_t& tokens) {
       new_tokens.emplace_back(buffer.substr(str.start, str.end - str.start));
     }
   }
-  return tokens;
+  return new_tokens;
 }
 
-tokens_t ConfigParse::split_on_symbols(const tokens_t& tokens) {
-  tokens_t lexemes;
-  constexpr const char* delimiters = "{}=;";
+ConfigParse::Tokens ConfigParse::splitOnSymbols(const Tokens& tokens) {
+  Tokens lexemes;
+  constexpr const char* delimiters = "{};";
 
   for (auto it = tokens.begin(); it != tokens.end(); ++it) {
     std::size_t symbol_idx = it->find_first_of(delimiters);

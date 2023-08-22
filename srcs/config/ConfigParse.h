@@ -1,14 +1,25 @@
 #pragma once
 #include <exception>
 #include <fstream>
+#include <map>
 #include <string>
 
 #include "Config.h"
 #include "ConfigFile.h"
 
+/**
+ * @brief Parser and generator of the Config class
+ *
+ * This will remove the WS then split it on the special symbols.
+ * Then it will attempt to parse it according to the BNF rules.
+ */
 class ConfigParse {
  public:
-  using tokens_t = std::vector<std::string>;
+  using Tokens = std::vector<std::string>;
+  using TokensConstIter = Tokens::const_iterator;
+  using TokensIter = Tokens::iterator;
+  using FunctionPointer = bool (ConfigParse::*)(TokensConstIter&, const TokensConstIter&, ConfigServer&);
+  using DispatchFuncMap = std::map<std::string, FunctionPointer>;
 
  public:
   class InvalidDirective : public std::exception {
@@ -21,7 +32,7 @@ class ConfigParse {
   };
 
  public:
-  explicit ConfigParse(const tokens_t& file_data);
+  explicit ConfigParse(const Tokens& file_data);
   ConfigParse(const ConfigParse&) = default;
   ConfigParse& operator=(const ConfigParse&) = default;
   ~ConfigParse() = default;
@@ -29,10 +40,17 @@ class ConfigParse {
   Config parse();
 
  private:
-  tokens_t read_file();
-  tokens_t split_on_white_space();
-  tokens_t split_on_white_space(const tokens_t& tokens);
-  tokens_t split_on_symbols(const tokens_t& tokens);
+  Tokens splitOnWhiteSpace(const Tokens& tokens);
+  Tokens splitOnSymbols(const Tokens& tokens);
+  Config semanticParse(const Tokens& tokens);
+  bool isDirective(const TokensConstIter& curr);
+  // aCtUaL pArSiNg
+  bool serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg);
+  bool directivesParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool dispatchDirectiveParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool listenParse(TokensConstIter& curr, const TokensConstIter&, ConfigServer& cfg_server);
+  bool serverNameParse(TokensConstIter& curr, const TokensConstIter&, ConfigServer& cfg_server);
 
-  tokens_t tokens_;
+  Tokens tokens_;
+  DispatchFuncMap map_;
 };
