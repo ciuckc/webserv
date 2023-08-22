@@ -102,7 +102,8 @@ void Cgi::exec_child()
   char* argv[] = {NULL};
   execve(this->path_.c_str(), argv, this->envp_);
   // if we get here execve failed
-  throw (ErrorResponse(500)); // this should be propagated to parent
+  Log::error("executing CGI `", this->path_, "' failed: ", strerror(errno), '\n');
+  exit(1);
 }
 
 // write request body to child's stdin
@@ -201,7 +202,8 @@ void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request&
 // function to process raw cgi client redirect response into http response
 void Cgi::makeClientRedirResponse(const std::string& raw, Response& res)
 {
-  res.setMessage(302);
+  // This is done to add the 302 body!
+  res = ErrorResponse(302);
   res.addHeader("Location", st_find_header_value(raw, "Location: "));
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   // does not contain body
