@@ -36,9 +36,9 @@ void  RequestHandler::execRequest()
   }
 }
 
-const Response& RequestHandler::getResponse() const
+Response&& RequestHandler::getResponse()
 {
-  return (this->response_);
+  return std::move(this->response_);
 }
 
 void  RequestHandler::doGET_()

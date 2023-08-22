@@ -162,7 +162,7 @@ Response  CaseDir::act(Request& req) const
   st_prepend_cwd(path);
   path.append("index.html");     // or other file specified in config
   if (stat(path.c_str(), &s)) {  // no file, list directory if enabled in config
-    throw (ErrorResponse(403));
+    return ErrorResponse(403);
   }
   else {                         // file exists, serve it
     const char* type = req.getHeader("Content-Type");

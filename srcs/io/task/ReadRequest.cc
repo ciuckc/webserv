@@ -29,11 +29,11 @@ bool ReadRequest::operator()(Connection& connection) {
 
 void ReadRequest::onDone(Connection& connection) {
   if (error_ != 0)
-    connection.addTask(new SendResponse(ErrorResponse(error_)));
+    connection.enqueueResponse(ErrorResponse(error_));
   else {
     RequestHandler rq(request_);
     rq.execRequest();
-    connection.addTask(new SendResponse(rq.getResponse()));
+    connection.enqueueResponse(rq.getResponse());
   }
   // else do something with what we learnt from the request
   // find correct route? read the body in a special way? That sounds mildly sexual

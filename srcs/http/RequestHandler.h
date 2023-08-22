@@ -14,7 +14,7 @@ class RequestHandler {
     // maybe some return values or something to know it's ok to proceed?
     // void            readRequest(int fd);
     void            execRequest();
-    const Response& getResponse() const;
+    Response&& getResponse();
 
   private:
     static const size_t buffer_size_ = 512;

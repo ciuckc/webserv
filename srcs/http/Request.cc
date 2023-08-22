@@ -71,7 +71,9 @@ const char* Request::getHeader(const std::string& key) {
       return (elem.c_str());
     }
   }
-  return (NULL);
+  return nullptr;
+}
+
 Request::HttpVersion Request::getVersion() const {
   return version_;
 }
