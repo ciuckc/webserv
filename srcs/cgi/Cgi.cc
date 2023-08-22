@@ -1,6 +1,8 @@
 #include <array>
 #include <unistd.h>
 #include <iostream>
+#include <sys/wait.h>
+#include <sstream>
 #include "Cgi.h"
 #include "util/WebServ.h"
 #include "http/ErrorResponse.h"
@@ -19,7 +21,9 @@ static const std::string st_find_header_value(const std::string& msg, const std:
 static void st_del_arr(char** arr)
 {
   size_t i = 0;
-  while (arr[i] != NULL) {
+  if (!arr)
+    return;
+  while (arr[i]) {
     delete[] arr[i];
     i++;
   }
@@ -30,7 +34,7 @@ static void st_del_arr(char** arr)
 // some of them are missing due to not being required by subject
 static char** st_make_env(Request& req)
 {
-  char** env;
+  char** env = nullptr;
   std::array<std::string, 16> arr = {
     std::string("AUTH_TYPE="),
     std::string("CONTENT_LENGTH=") + 
@@ -56,9 +60,7 @@ static char** st_make_env(Request& req)
   };
   try {
     env = new char*[arr.size() + 1];
-    for (size_t i = 0; i <= arr.size(); i++) {
-      env[i] = NULL;
-    }
+    env[arr.size()] = nullptr;
     for (size_t i = 0; i < arr.size(); i++) {
       env[i] = new char[arr[i].length() + 1];
       arr[i].copy(env[i], arr[i].length());
@@ -97,7 +99,8 @@ void Cgi::exec_child()
   dup2(this->pipe_out_[1], STDOUT_FILENO);
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
-  execve(this->path_.c_str(), NULL, this->envp_);
+  char* argv[] = {NULL};
+  execve(this->path_.c_str(), argv, this->envp_);
   // if we get here execve failed
   throw (ErrorResponse(500)); // this should be propagated to parent
 }
@@ -115,22 +118,21 @@ std::string Cgi::exec_parent(int pid)
     close(this->pipe_in_[1]);
   }
   close(this->pipe_out_[1]);
-  waitpid(pid, NULL, 0);
-  const size_t buf_size = 64; // what would be optimal here?
+  waitpid(pid, nullptr, 0);
+
+  std::stringstream body;
+  const ssize_t buf_size = 4096; // what would be optimal here?
   char buf[buf_size];
-  for (size_t i = 0; i < buf_size; i++) { buf[i] = '\0'; }
-  std::string result;
-  int bytes;
+  ssize_t read_bytes;
   do {
-    bytes = read(this->pipe_out_[0], buf, buf_size - 1);
-    if (bytes < 0) {
+    read_bytes = read(this->pipe_out_[0], buf, buf_size);
+    if (read_bytes < 0)
       throw (ErrorResponse(500));
-    }
-    buf[bytes] = '\0';
-    result.append(buf);
-  } while (bytes > 0);
+    body.write(buf, read_bytes);
+  } while (read_bytes == buf_size);
+
   close(this->pipe_out_[0]);
-  return (result);
+  return (body.str());
 }
 
 std::string Cgi::execute()
