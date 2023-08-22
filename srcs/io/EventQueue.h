@@ -121,6 +121,11 @@ class EventQueue {
                     << "\tData: " << ev.data << '\n';
     }
     static inline void wait(EventQueue& q) {
+      if (!q.changelist_.empty()) {
+        Log::trace("Event Changelist:\n");
+        for (auto& e : q.changelist_)
+          Log::trace("fd: ", e.ident, ", direction: ", e.filter == in ? "in, " : "out, ", "flags: ", e.flags, '\n');
+      }
       q.event_count_ = kevent(q.queue_fd_, q.changelist_.data(), (int)q.changelist_.size(),
                               q.events_, MAX_EVENTS, nullptr);
       q.changelist_.clear();
