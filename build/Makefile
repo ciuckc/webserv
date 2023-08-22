@@ -249,30 +249,6 @@ srcs/http/ErrorResponse.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorResponse.cc.s
 .PHONY : srcs/http/ErrorResponse.cc.s
 
-srcs/http/Headers.o: srcs/http/Headers.cc.o
-.PHONY : srcs/http/Headers.o
-
-# target to build an object file
-srcs/http/Headers.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Headers.cc.o
-.PHONY : srcs/http/Headers.cc.o
-
-srcs/http/Headers.i: srcs/http/Headers.cc.i
-.PHONY : srcs/http/Headers.i
-
-# target to preprocess a source file
-srcs/http/Headers.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Headers.cc.i
-.PHONY : srcs/http/Headers.cc.i
-
-srcs/http/Headers.s: srcs/http/Headers.cc.s
-.PHONY : srcs/http/Headers.s
-
-# target to generate assembly for a file
-srcs/http/Headers.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/Headers.cc.s
-.PHONY : srcs/http/Headers.cc.s
-
 srcs/http/Message.o: srcs/http/Message.cc.o
 .PHONY : srcs/http/Message.o
 
@@ -561,9 +537,6 @@ help:
 	@echo "... srcs/http/ErrorResponse.o"
 	@echo "... srcs/http/ErrorResponse.i"
 	@echo "... srcs/http/ErrorResponse.s"
-	@echo "... srcs/http/Headers.o"
-	@echo "... srcs/http/Headers.i"
-	@echo "... srcs/http/Headers.s"
 	@echo "... srcs/http/Message.o"
 	@echo "... srcs/http/Message.i"
 	@echo "... srcs/http/Message.s"

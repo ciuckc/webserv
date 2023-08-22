@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <iostream>
 #include "Cgi.h"
+#include "util/WebServ.h"
 #include "http/ErrorResponse.h"
 #include "http/RequestHandler.h"
 
@@ -161,7 +162,7 @@ std::string Cgi::execute()
 // function to process raw cgi document response into http response
 void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 {
-  size_t body_begin = raw.find("\r\n");
+  size_t body_begin = HTTP::find_header_end(raw);
   // size_t body_begin = raw.find("\n\n");
   if (body_begin == std::string::npos) { // not compliant with rfc
     throw (ErrorResponse(500));
@@ -207,7 +208,7 @@ void Cgi::makeClientRedirResponse(const std::string& raw, Response& res)
   }
   // contains body
   res.addHeader("Content-Type", st_find_header_value(raw, "Content-Type: "));
-  const std::string body = raw.substr(raw.find("\n\n") + 2);
+  const std::string body = raw.substr(HTTP::find_header_end(raw) + 2);
   res.addHeader("Content-Length", std::to_string(body.length()));
   char* dup;
   try {

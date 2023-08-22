@@ -2,6 +2,8 @@
 
 // often used stuff
 #include <ctime>
+// for prepend_cwd
+#include "http/ErrorResponse.h"
 
 namespace WS {
 enum Dir {
@@ -37,3 +39,24 @@ static inline std::string get_date_header() {
   return { out, date_header_len };
 }
 }  // namespace WS
+
+namespace HTTP {
+  // iT's A cOoPeRaTiVe PrOtOcOl!!1!
+  inline size_t find_header_end(const std::string& str)
+  {
+    size_t nn = str.find("\n\n");
+    size_t rn = str.find("\r\n");
+    return (std::min(nn, rn));
+  }
+
+  inline void prepend_cwd(std::string& str)
+  {
+    char* cwd;
+    cwd = getcwd(NULL, 0);
+    if (cwd == NULL) {
+      throw (ErrorResponse(500)); // maybe returning null would be a bit less agressive?
+    }
+    str.insert(0, cwd);
+    free(cwd);
+  }
+}

@@ -6,20 +6,11 @@
 #include <fstream>
 #include "Cases.h"
 #include "cgi/Cgi.h"
+#include "util/WebServ.h"
 #include "ErrorResponse.h"
 
 using namespace get;
-
-static void st_prepend_cwd(std::string& str)
-{
-  char* cwd;
-  cwd = getcwd(NULL, 0);
-  if (cwd == NULL) {
-    ErrorResponse(500);
-  }
-  str.insert(0, cwd);
-  free(cwd);
-}
+using namespace HTTP;
 
 // maybe make this a member of response class?
 // function to read file into body of response passed as param
@@ -72,7 +63,7 @@ bool  CaseCGI::test(Request& req) const
   // for now just check if it ends in .cgi
   const std::string cgi_ext = ".cgi";
   std::string path = req.getPath();
-  st_prepend_cwd(path);
+  prepend_cwd(path);
   size_t path_end = path.find(cgi_ext);
   if (path_end == std::string::npos) {
     return (false);
@@ -89,7 +80,7 @@ Response  CaseCGI::act(Request& req) const
   Response res;
   Cgi cgi(req);
   std::string result = cgi.execute();
-  std::string headers = result.substr(0, result.find("\n\n"));
+  std::string headers = result.substr(0, find_header_end(result));
   // document response
   if (headers.find("Content-Type") != std::string::npos) {
     Cgi::makeDocumentResponse(result, res);
@@ -113,7 +104,7 @@ bool  CaseNoFile::test(Request& req) const
 {
   struct stat s;
   std::string path = req.getPath();
-  st_prepend_cwd(path);
+  prepend_cwd(path);
   return (stat(path.c_str(), &s));
 }
 
@@ -127,7 +118,7 @@ bool  CaseFile::test(Request& req) const
 {
   struct stat s;
   std::string path = req.getPath();
-  st_prepend_cwd(path);
+  prepend_cwd(path);
   stat(path.c_str(), &s);
   return (s.st_mode & S_IFREG);
 }
@@ -136,7 +127,7 @@ Response  CaseFile::act(Request& req) const
 {
   Response res;
   std::string path = req.getPath();
-  st_prepend_cwd(path);
+  prepend_cwd(path);
   const char* type = req.getHeader("Content-Type");
   size_t body_size = makeBody(res, type, path);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
@@ -149,7 +140,7 @@ bool  CaseDir::test(Request& req) const
 {
   struct stat s;
   std::string path = req.getPath();
-  st_prepend_cwd(path);
+  prepend_cwd(path);
   stat(path.c_str(), &s);
   return (s.st_mode & S_IFDIR);
 }
@@ -159,7 +150,7 @@ Response  CaseDir::act(Request& req) const
   Response res;
   struct stat s;
   std::string path = req.getPath();
-  st_prepend_cwd(path);
+  prepend_cwd(path);
   path.append("index.html");     // or other file specified in config
   if (stat(path.c_str(), &s)) {  // no file, list directory if enabled in config
     return ErrorResponse(403);
