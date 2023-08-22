@@ -93,9 +93,9 @@ Response  CaseCGI::act(Request& req) const
   }
   // invalid response (not compliant with CGI spec)
   else {
-    throw (ErrorResponse(500));
+    return ErrorResponse(500);
   }
-  return (res);
+  return res;
 }
 
 bool  CaseNoFile::test(Request& req) const
