@@ -1,7 +1,6 @@
 #include "ErrorResponse.h"
 
 #include <cstdio>
-#include <sstream>
 
 #include "Status.h"
 

@@ -26,15 +26,29 @@ Socket::Socket() {
 }
 
 Socket::~Socket() {
-  Log::debug('[', fd_, "]\tSocket destroyed\n");
-  close(fd_);
+  if (fd_ != -1) {
+    close();
+  }
 }
 
 Socket::Socket(int fd) : fd_(fd) {}
 
+Socket::Socket(Socket&& other) noexcept {
+  fd_ = other.fd_;
+  other.fd_ = -1;
+}
+
+Socket& Socket::operator=(Socket&& other) noexcept {
+  fd_ = other.fd_;
+  other.fd_ = -1;
+  return *this;
+}
+
 void Socket::bind(const char* host, const char* port) const {
   addrinfo* bind_info;
 
+  int yes = 1;
+  setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
   {
     addrinfo hints = {};
     hints.ai_family = AF_INET;
@@ -101,14 +115,13 @@ void Socket::flush() {
 ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {
   return ::write(fd_, buf + offs, len);
 }
-
 ssize_t Socket::write(const std::string& str, size_t offs) const {
   return ::write(fd_, str.c_str() + offs, str.length() - offs);
 }
+
 ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
   return ::read(fd_, buf + offs, len - offs);
 }
-
 void Socket::shutdown(int channel) {
   ::shutdown(fd_, channel);
 }

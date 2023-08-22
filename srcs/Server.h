@@ -1,6 +1,7 @@
 #pragma once
-#include <map>
 #include <set>
+#include <chrono>
+#include <unordered_map>
 
 #include "config/Config.h"
 #include "io/BufferPool.h"
@@ -13,8 +14,9 @@ class Server {
  private:
   EventQueue evqueue_;
   // This should probably be moved to every vserver
-  Socket listen_socket_;
-  std::map<int, Connection> connections_;
+  std::vector<Socket> listen_sockets_;
+  std::unordered_map<int, Connection> connections_;
+  int listen_start_;
 
   BufferPool<> buffer_manager_;
   // These are all the server { } blocks in config file, should be sorted on
@@ -22,7 +24,11 @@ class Server {
   // request perfectly so maybe another map for that?
   // std::multiset<VServer, std::less<VServer> > vservers_;
 
-  void open_connection(const EventQueue::event_t& event);
+  using timep_t =  std::chrono::time_point<std::chrono::system_clock>;
+  timep_t last_purge_;
+
+  void accept_connection(const EventQueue::event_t& event);
+  void handle_connection(EventQueue::event_t& event);
 
  public:
   Server();
@@ -30,4 +36,5 @@ class Server {
   explicit Server(const Config& config);
 
   void loop();
+  void purge_connections();
 };

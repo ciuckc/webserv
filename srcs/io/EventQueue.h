@@ -12,6 +12,8 @@
 
 #define MAX_EVENTS 32
 
+class Server;
+
 class EventQueue {
  private:
   struct Platform {
@@ -59,7 +61,7 @@ class EventQueue {
       return stream << '[' << getFileDes(ev) << "]\tEvent\tFlags: " << ev.events << '\n';
     }
     static inline void wait(EventQueue& q) {
-      q.event_count_ = epoll_wait(q.queue_fd_, q.events_, MAX_EVENTS, -1);
+      q.event_count_ = epoll_wait(q.queue_fd_, q.events_, MAX_EVENTS, 5000);
     }
 #else
     typedef struct kevent event_t;
@@ -80,11 +82,12 @@ class EventQueue {
       return kqueue();
     }
     static inline void add(EventQueue& q, int fd, filt_t direction) {
-      if (direction == both) {
+      if (direction != both) {
+        q.changelist_.push_back(create_event(fd, direction, flag_add | flag_enable));
+      } else {
         add(q, fd, in);
         add(q, fd, out);
       }
-      q.changelist_.push_back(create_event(fd, direction, flag_add | flag_enable));
     }
     static inline void mod(EventQueue& q, int fd, filt_t new_direction) {
       if (new_direction == in)
@@ -168,7 +171,7 @@ class EventQueue {
    */
   void del(int fd, filt_t dir);
 
-  event_t& getNext();
+  event_t& getNext(Server& server);
 
   static inline int getFileDes(const event_t& ev) {
     return Platform::getFileDes(ev);

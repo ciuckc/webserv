@@ -27,14 +27,11 @@ bool ReadRequest::operator()(Connection& connection) {
 }
 
 void ReadRequest::onDone(Connection& connection) {
-  if (error_ != 0)
-    connection.addTask(new SendResponse(ErrorResponse(error_)));
-  else
-    connection.addTask(new SendResponse(ErrorResponse(418)));
+  connection.enqueueResponse(ErrorResponse(error_ == 0 ? 200 : error_));
   // else do something with what we learnt from the request
   // find correct route? read the body in a special way? That sounds mildly sexual
   if (connection.keepAlive())
-    connection.addTask(new ReadRequest(request_));
+    connection.awaitRequest();
 }
 
 // return true if we should stop
@@ -63,9 +60,9 @@ bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
       error_ = 405; // Method not allowed
     } else if (request_.getUri().empty()) {
       error_ = 400; // Bad Request
-    } else if (request_.getVersion() != Request::VER_1_1) {
+    }/* else if (request_.getVersion() != Request::VER_1_1) {
       error_ = 505; // Http version not supported
-    } // We could have 414 URI too long here as well
+    } // We could have 414 URI too long here as well*/
     return true;
   }
   state_ = HEADERS;
