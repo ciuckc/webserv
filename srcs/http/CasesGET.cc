@@ -16,13 +16,11 @@ using namespace HTTP;
 // function to read file into body of response passed as param
 size_t makeBody(Response& res, const char* type, const std::string& path)
 {
-  uint8_t openmode = 0;
-  if (type == NULL) {
-    openmode &= std::ios::in; 
-  }
-  else {
+  std::ios_base::openmode openmode = std::ios::in;
+  if (type) {
     std::string type_str(type);
-    openmode &= type_str.find("text") == std::string::npos ? std::ios::in : std::ios::binary;
+    if (type_str.find("text") != std::string::npos)
+      openmode |= std::ios::binary;
   }
   std::ifstream file(path, openmode);
   if (!file.is_open()) {
