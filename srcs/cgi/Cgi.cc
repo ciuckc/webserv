@@ -99,7 +99,7 @@ void Cgi::exec_child()
   dup2(this->pipe_out_[1], STDOUT_FILENO);
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
-  char* argv[] = {NULL};
+  char* argv[] = {nullptr};
   execve(this->path_.c_str(), argv, this->envp_);
   // if we get here execve failed
   Log::error("executing CGI `", this->path_, "' failed: ", strerror(errno), '\n');
