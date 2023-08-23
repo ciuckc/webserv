@@ -1,9 +1,9 @@
 #include "ConfigParse.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
-#include <functional>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -13,9 +13,50 @@
 
 #include "Config.h"
 #include "ConfigFile.h"
+#include "ConfigServer.h"
 
 namespace {
 enum { EMPTY };
+
+bool addressParse(const std::string& address) {
+  constexpr std::string::size_type kMaxAddressLength = 15;
+  if (address.size() > kMaxAddressLength)
+    return false;
+  size_t dot_count = 0;
+  for (auto it = address.begin(); it != address.end(); ++it) {
+    if (*it == '.') {
+      dot_count++;
+    }
+  }
+  if (dot_count != 3)
+    return false;
+  if (address.find_first_not_of(".0123456789") != std::string::npos) {  // if there are any other chars then we bail
+    return false;
+  }
+  return true;
+}
+
+bool portParse(const std::string& port) {
+  (void)port;
+  return false;
+}
+
+bool endpointParse(const std::string str, SocketAddress&) {
+  auto idx = str.find(":");
+  if (idx == str.npos)
+    return false;
+  std::string address;
+  std::string port;
+  try {
+    address = str.substr(0, idx);
+    port = str.substr(idx + 1);
+  } catch (const std::out_of_range& e) {
+    return false;
+  }
+  if (addressParse(address) || portParse(port))
+    return false;
+  return true;
+}
 }  // namespace
 
 const char* ConfigParse::InvalidDirective::what() const throw() {
@@ -108,8 +149,10 @@ bool ConfigParse::listenParse(TokensConstIter& curr, const TokensConstIter& end,
   ++curr;
   if (curr == end)
     return false;
+  SocketAddress endpoint;
+  if (endpointParse(*curr, endpoint))
+    return false;
   curr++;
-  {}
   if (curr == end)
     return false;
   if (*curr != ";")
