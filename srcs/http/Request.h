@@ -2,38 +2,35 @@
 #include <istream>
 #include <string>
 
-#include "Headers.h"
+#include "Message.h"
 
-class Request {
+class Request : public Message {
  public:
   enum Method {
     INVALID = 0,
     GET = 1,
     POST = 2,
   };
+  enum HttpVersion {
+    VER_INVALID,
+    VER_1_1
+  };
 
  private:
-  Method method_;
+  Method method_ = INVALID;
   std::string uri_;
-  std::string ver_;
-
-  Headers headers_;
-
-  char* body_;
-  size_t body_size_;
-
-  void parseStatus(std::istream& in);
+  HttpVersion version_ = VER_INVALID;
 
  public:
-  Request();
-  ~Request();
+  Request() = default;
+  ~Request() override = default;
   Request(const Request& other);
   Request& operator=(const Request& rhs);
 
-  void parse(std::istream& in);
+  bool setMessage(const std::string& msg);
+  Method getMethod() const;
+  const std::string& getUri() const;
+  HttpVersion getVersion() const;
+  // todo: getVersion()? Are we ?
 
-  void write(std::ostream& out) const;
 };
-
-std::ostream& operator<<(std::ostream& out, const Request& req);
-std::istream& operator>>(std::istream& in, Request& req);
