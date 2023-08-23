@@ -7,6 +7,8 @@
 
 class ConnectionBuffer {
  private:
+  // read a bit more from a file, less syscalls. 64kb may be a nice amount
+  static constexpr size_t max_file_bufs_ = 0xFFFF / BufferPool<>::size();
   // To reuse buffers instead of allocating new ones every time
   BufferPool<>& pool_;
   // The size of every buffer
@@ -67,6 +69,10 @@ class ConnectionBuffer {
   WS::IOStatus writeOut(Socket& socket);
   // Do we have a full buffer or old data waiting to be written?
   inline bool needWrite() const { return need_write_; }
+  // Read from a file descriptor into the output buffer (sendfile)
+  // reads up to max_file_bufs buffers
+  // returns true when eof is reached
+  bool readFrom(int fd);
 
   inline ConnectionBuffer& operator<<(const std::string& str) {
     put(str.c_str(), str.size());

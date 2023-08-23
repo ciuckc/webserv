@@ -41,15 +41,15 @@ add_executable(webserv
         srcs/main.cc
         srcs/Server.h
         srcs/Server.cc
-		srcs/cgi/Cgi.cc
-		srcs/cgi/Cgi.h
+        srcs/cgi/Cgi.cc
+        srcs/cgi/Cgi.h
         srcs/config/Config.h
         srcs/server/Route.h
         srcs/server/VServer.h
-		srcs/http/ACase.h
-		srcs/http/Cases.h
-		srcs/http/Cases.cc
-		srcs/http/CasesGET.cc
+        srcs/http/ACase.h
+        srcs/http/Cases.h
+        srcs/http/Cases.cc
+        srcs/http/CasesGET.cc
         srcs/http/Message.h
         srcs/http/Message.cc
         srcs/http/Request.h
@@ -58,8 +58,8 @@ add_executable(webserv
         srcs/http/Response.cc
         srcs/http/ErrorResponse.h
         srcs/http/ErrorResponse.cc
-	srcs/http/RequestHandler.cc
-	srcs/http/RequestHandler.h
+        srcs/http/RequestHandler.cc
+        srcs/http/RequestHandler.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
         srcs/io/EventQueue.h
@@ -75,6 +75,8 @@ add_executable(webserv
         srcs/io/task/ReadRequest.cc
         srcs/io/task/SendResponse.h
         srcs/io/task/SendResponse.cc
+        srcs/io/task/SendFile.h
+        srcs/io/task/SendFile.cc
         srcs/util/WebServ.h
         srcs/util/Log.h)
 

@@ -4,7 +4,7 @@
 
 ConnectionBuffer::ConnectionBuffer(BufferPool<>& pool)
     : pool_(pool),
-      size_(pool.size()),
+      size_(BufferPool<>::size()),
       i_offset_(),
       i_end_(),
       read_fail_(true),
@@ -137,4 +137,35 @@ void ConnectionBuffer::overflow(const char* data, size_t len) {
   o_bufs_.emplace_back(pool_.getBuffer());
   pool_.log_info();
   put(data, len);
+}
+
+bool ConnectionBuffer::readFrom(int fd) {
+  size_t buf_count = o_bufs_.size();
+  if (buf_count == 0) {
+    o_bufs_.emplace_back(pool_.getBuffer());
+    o_offset_ = o_start_ = 0;
+    buf_count = 1;
+  }
+
+  size_t read_len = size_ - toBuffer(o_offset_);
+  char* buf_ptr = &o_bufs_.back().getData().at(size_ - read_len);
+  while (true) {
+    ssize_t read_bytes = read(fd, buf_ptr, read_len);
+    if (read_bytes < 0)
+      throw IOException("Borked file bro");
+    o_offset_ += read_bytes;
+    if ((size_t)read_bytes < read_len) {
+      need_write_ = true;
+      // end of file
+      return true;
+    }
+    if (++buf_count > max_file_bufs_) {
+      need_write_ = true;
+      // send some first
+      return false;
+    }
+    o_bufs_.emplace_back(pool_.getBuffer());
+    buf_ptr = o_bufs_.back().getData().begin();
+    read_len = size_;
+  }
 }

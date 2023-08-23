@@ -15,7 +15,7 @@ template<size_t size_ = 8192> class BufferPool {
   struct Buf;
 
   Buf getBuffer();
-  size_t size() const;
+  static constexpr size_t size() { return size_; };
 
   void log_info() const;
 
@@ -57,9 +57,6 @@ typename BufferPool<size_>::Buf BufferPool<size_>::getBuffer() {
   }
   return Buf(buffers_);
 }
-
-template<size_t size_>
-inline size_t BufferPool<size_>::size() const { return size_; }
 
 template<size_t size_>
 void BufferPool<size_>::log_info() const {
