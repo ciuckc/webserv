@@ -8,14 +8,14 @@
 #include "http/ErrorResponse.h"
 #include "http/RequestHandler.h"
 
-static const std::string st_find_header_value(const std::string& msg, const std::string& key)
+static std::string st_find_header_value(const std::string& msg, const std::string& key)
 {
   size_t start = msg.find(key) + key.length();
   size_t i = 0;
   while (!std::isspace(msg[start + i])) {
     i++;
   }
-  return (msg.substr(start, i));
+  return msg.substr(start, i);
 }
 
 static void st_del_arr(char** arr)
@@ -34,25 +34,28 @@ static void st_del_arr(char** arr)
 // some of them are missing due to not being required by subject
 static char** st_make_env(Request& req)
 {
+  static struct header_null_helper {
+    std::string operator()(const Request& req, const std::string& key) {
+      const char* header = req.getHeader(key);
+      return { header ? header : "" };
+    };
+  } head;
   char** env = nullptr;
+  const std::string script = req.getPath().substr(0, req.getPath().find(".cgi") + 4);
   std::array<std::string, 16> arr = {
     std::string("AUTH_TYPE="),
-    std::string("CONTENT_LENGTH=") + 
-      std::string(req.getHeader("Content-Length") ? req.getHeader("Content-Length") : ""),
-    std::string("CONTENT_TYPE=") + 
-      std::string(req.getHeader("Content-Type") ? req.getHeader("Content-Type") : ""),
+    std::string("CONTENT_LENGTH=") + head(req, "Content-Length"),
+    std::string("CONTENT_TYPE=") + head(req, "Content-Type"),
     std::string("GATEWAY_INTERFACE=CGI/1.1"),
-    std::string("PATH_INFO=") + std::string(req.getPath().substr(0, req.getPath().find(".cgi") + 4)),
+    std::string("PATH_INFO=") + script,
     std::string("PATH_TRANSLATED="), // root path_info based on confi
-    std::string("QUERY_STRING=") + ((req.getUri().find('?') == std::string::npos) ? 
-      std::string("") : std::string(req.getUri().substr(req.getUri().find('?') + 1))),
+    std::string("QUERY_STRING=") + req.getUri().substr(req.getUri().find('?') + 1),
     std::string("REMOTE_ADDR=127.0.0.1"), // for now just hardcode localhost, ask lucas to pass the real thing
     std::string("REMOTE_HOST=") + 
       std::string(req.getHeader("Host") ? st_find_header_value(req.getHeader("Host"), "Host: ") : ""),
     std::string("REMOTE_USER="), // not sure that we need this as we're not doing authentication?
-    std::string("REQUEST_METHOD=") + 
-      std::string(req.getMethod() == Request::GET ? "GET" : "POST"),
-    std::string("SCRIPT_NAME=") + std::string(req.getPath().substr(0, req.getPath().find(".cgi") + 4)),
+    std::string("REQUEST_METHOD=") + (req.getMethod() == Request::GET ? "GET" : "POST"),
+    std::string("SCRIPT_NAME=") + script,
     std::string("SERVER_NAME=SuperWebserv10K/0.9.1 (Unix)"),
     std::string("SERVER_PORT=6969"),
     std::string("SERVER_PROTOCOL=HTTP/1.1"),
@@ -77,7 +80,8 @@ static char** st_make_env(Request& req)
 Cgi::Cgi(Request& req) :
     body_(req.getBody()),
     path_("." + req.getPath().substr(0, req.getPath().find(".cgi") + 4)), // fix getPath() !!! (or confirm that it's working)
-    envp_(st_make_env(req))
+    envp_(st_make_env(req)),
+    pipe_in_(), pipe_out_()
 {}
 
 Cgi::~Cgi()
@@ -138,7 +142,6 @@ std::string Cgi::exec_parent(int pid)
 
 std::string Cgi::execute()
 {
-  std::cout << this->path_ << std::endl;
   // open pipes, input pipe is only necessary if there is a body to write
   // both stdin are redirected the the other process stdout
   if (this->body_.length() > 0) {
@@ -181,7 +184,7 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
   raw.copy(dup, raw.length(), body_begin);
   res.setBody(dup, raw.length() - body_begin);
   size_t substr_start = raw.find("Content-Type: ") + std::string("Content-Type: ").length();
-  size_t substr_len = raw.find(";", substr_start) - substr_start; // spec does not specify ";" as delimiter?
+  size_t substr_len = raw.find(';', substr_start) - substr_start; // spec does not specify ";" as delimiter?
   std::string content_type = raw.substr(substr_start, substr_len);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   res.addHeader("Content-Length", std::to_string(raw.length() - body_begin));

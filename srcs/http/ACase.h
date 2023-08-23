@@ -5,8 +5,8 @@
 
 class ACase {
   public:
-    ACase() {}
-    virtual ~ACase() {}
+    ACase() = default;
+    virtual ~ACase() = default;
     virtual bool     test(Request& req) const = 0;
     virtual Response act(Request& req) const = 0;
 };

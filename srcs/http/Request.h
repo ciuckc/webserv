@@ -32,7 +32,7 @@ class Request : public Message {
   const std::string& getUri() const;
   void setUri(const std::string&);
   const std::string getPath() const;
-  const char* getHeader(const std::string& key);
+  const char* getHeader(const std::string& key) const;
   HttpVersion getVersion() const;
   // todo: getVersion()? Are we ?
 

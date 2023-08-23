@@ -1,19 +1,15 @@
 #include <exception>
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <unistd.h>
 #include "RequestHandler.h"
 #include "ErrorResponse.h"
 #include "Cases.h"
 
-RequestHandler::RequestHandler() {}
+RequestHandler::RequestHandler() = default;
 
 RequestHandler::RequestHandler(const Request& req) : request_(req) {}
 
 RequestHandler::RequestHandler(const RequestHandler&) {}
 
-RequestHandler::~RequestHandler() {}
+RequestHandler::~RequestHandler() = default;
 
 RequestHandler& RequestHandler::operator=(const RequestHandler&)
 {
@@ -48,12 +44,11 @@ void  RequestHandler::doGET_()
   // check if upload allowed if applicable
   // accepted method for route
 
-  CasesGET cases; // it's bad to construct this for each request
-  for (size_t i = 0; i < cases.size(); i++)
-  {
-    if (cases[i]->test(this->request_))
-    {
-      this->response_ = cases[i]->act(this->request_);
+  const Cases& cases = Case::instance.get_instance;
+  for (auto it = cases.cbegin(); it < cases.cend(); it++) {
+    const std::unique_ptr<ACase>& ptr = *it;
+    if (ptr->test(request_)) {
+      response_ = ptr->act(request_);
       break;
     }
   }

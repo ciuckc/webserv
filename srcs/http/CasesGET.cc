@@ -1,6 +1,4 @@
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <exception>
 #include <iostream>
 #include <fstream>
@@ -11,6 +9,8 @@
 
 using namespace get;
 using namespace HTTP;
+
+using stat_s = struct stat;
 
 // maybe make this a member of response class?
 // function to read file into body of response passed as param
@@ -30,29 +30,21 @@ size_t makeBody(Response& res, const char* type, const std::string& path)
   file.close();
   size_t body_size = str.length();
   char* body;
-  try {
-    body = new char[body_size + 1];
-  }
-  catch (std::exception&) {
-    throw (ErrorResponse(500));
-  }
+  body = new char[body_size + 1];
   str.copy(body, body_size);
   body[body_size] = '\0';
   res.setBody(body, body_size);
   return (body_size);
 }
 
-bool  CaseRedirect::test(Request& req) const
+bool  CaseRedirect::test(Request&) const
 {
-  // need config to check this
-  (void) req;
   return (false);
 }
 
-Response  CaseRedirect::act(Request& req) const
+Response  CaseRedirect::act(Request&) const
 {
-  (void) req;
-  return (Response());
+  return {};
 }
 
 bool  CaseCGI::test(Request& req) const
@@ -68,7 +60,7 @@ bool  CaseCGI::test(Request& req) const
   }
   path_end += cgi_ext.length();
   path = path.substr(0, path_end);
-  struct stat s;
+  stat_s s;
   stat(path.c_str(), &s);
   return (s.st_mode & S_IFREG);
 }
@@ -100,21 +92,20 @@ Response  CaseCGI::act(Request& req) const
 
 bool  CaseNoFile::test(Request& req) const
 {
-  struct stat s;
+  stat_s s;
   std::string path = req.getPath();
   prepend_cwd(path);
   return (stat(path.c_str(), &s));
 }
 
-Response  CaseNoFile::act(Request& req) const
+Response  CaseNoFile::act(Request&) const
 {
-  (void) req;
   throw (ErrorResponse(404));
 }
 
 bool  CaseFile::test(Request& req) const
 {
-  struct stat s;
+  stat_s s;
   std::string path = req.getPath();
   prepend_cwd(path);
   stat(path.c_str(), &s);
@@ -136,7 +127,7 @@ Response  CaseFile::act(Request& req) const
 
 bool  CaseDir::test(Request& req) const
 {
-  struct stat s;
+  stat_s s;
   std::string path = req.getPath();
   prepend_cwd(path);
   stat(path.c_str(), &s);
@@ -146,7 +137,7 @@ bool  CaseDir::test(Request& req) const
 Response  CaseDir::act(Request& req) const
 {
   Response res;
-  struct stat s;
+  stat_s s;
   std::string path = req.getPath();
   prepend_cwd(path);
   path.append("index.html");     // or other file specified in config
@@ -164,42 +155,22 @@ Response  CaseDir::act(Request& req) const
 }
 
 // if we hit this case it must be a failure
-bool  CaseFail::test(Request& req) const
+bool  CaseFail::test(Request&) const
 {
-  (void) req;
   return (true);
 }
 
-Response  CaseFail::act(Request& req) const
+Response  CaseFail::act(Request&) const
 {
-  (void) req;
-  std::runtime_error("400 invalid request");
-  return (Response());
+  return ErrorResponse(400);
 }
 
-// make it static or some singleton shit
 CasesGET::CasesGET()
 {
-  try
-  {
-    this->cases_.push_back(new CaseRedirect());
-    this->cases_.push_back(new CaseCGI());
-    this->cases_.push_back(new CaseNoFile());
-    this->cases_.push_back(new CaseFile());
-    this->cases_.push_back(new CaseDir());
-    this->cases_.push_back(new CaseFail());
-  }
-  catch (std::exception&)
-  {
-     throw (ErrorResponse(500));
-  }
-}
-
-CasesGET::~CasesGET()
-{
-  while (!this->cases_.empty())
-  {
-    delete (this->cases_.back());
-    this->cases_.pop_back();
-  }
+  this->cases_.push_back(std::make_unique<CaseRedirect>());
+  this->cases_.push_back(std::make_unique<CaseCGI>());
+  this->cases_.push_back(std::make_unique<CaseNoFile>());
+  this->cases_.push_back(std::make_unique<CaseFile>(CaseFile()));
+  this->cases_.push_back(std::make_unique<CaseDir>());
+  this->cases_.push_back(std::make_unique<CaseFail>());
 }
