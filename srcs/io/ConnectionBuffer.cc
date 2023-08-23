@@ -85,8 +85,8 @@ std::string ConnectionBuffer::get_str(size_t len) {
 void ConnectionBuffer::pop_inbuf() {
   i_bufs_.pop_front();
   if (i_offset_ < size_) {
-    Log::warn("uhh, popping last input buffer?\n");
     i_offset_ = i_end_ = 0;
+    read_fail_ = true;
   } else {
     i_offset_ -= size_;
     i_end_ -= size_;
@@ -168,4 +168,18 @@ bool ConnectionBuffer::readFrom(int fd) {
     buf_ptr = o_bufs_.back().getData().begin();
     read_len = size_;
   }
+}
+
+void ConnectionBuffer::writeTo(int fd, size_t& remaining) {
+  while (remaining && i_offset_ < i_end_) {
+    auto& buf = i_bufs_.front().getData();
+    size_t to_write = std::min(std::min(size_, i_end_) - i_offset_, remaining);
+    ssize_t written = write(fd, &buf.at(i_offset_), to_write);
+    if (written == -1)
+      throw IOException("That's messed up");
+    i_offset_ += written; remaining -= written;
+    if (i_offset_ == size_ || i_offset_ == i_end_)
+      pop_inbuf();
+  }
+  read_fail_ = true;
 }

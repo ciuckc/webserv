@@ -73,6 +73,8 @@ class ConnectionBuffer {
   // reads up to max_file_bufs buffers
   // returns true when eof is reached
   bool readFrom(int fd);
+  // Read from the input buffer into a fd (recvfile)
+  void writeTo(int fd, size_t& remaining);
 
   inline ConnectionBuffer& operator<<(const std::string& str) {
     put(str.c_str(), str.size());

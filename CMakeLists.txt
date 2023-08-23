@@ -75,8 +75,8 @@ add_executable(webserv
         srcs/io/task/ReadRequest.cc
         srcs/io/task/SendResponse.h
         srcs/io/task/SendResponse.cc
+        srcs/io/task/RecvFile.h
         srcs/io/task/SendFile.h
-        srcs/io/task/SendFile.cc
         srcs/util/WebServ.h
         srcs/util/Log.h)
 
