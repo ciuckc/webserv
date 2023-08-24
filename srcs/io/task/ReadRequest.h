@@ -8,6 +8,7 @@ class ReadRequest : public ITask {
     MSG,
     HEADERS,
     BODY,
+    DONE,
   };
 
   Request& request_;
@@ -19,6 +20,7 @@ class ReadRequest : public ITask {
   bool use_line(Connection& connection, std::string& line);
   bool handle_msg(Connection&, std::string& line);
   bool handle_header(Connection& connection, std::string& line);
+  bool handle_body(Connection& connection, std::string& line);
   std::pair<std::string, std::string> split_header(std::string& line);
 
  public:

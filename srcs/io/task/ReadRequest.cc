@@ -54,6 +54,8 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
     case HEADERS:
       return handle_header(connection, line);
     case BODY:
+      return handle_body(connection, line);
+    case DONE:
       return true;
   }
   __builtin_unreachable();
@@ -76,8 +78,6 @@ bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
   return false;
 }
 
-
-
 bool ReadRequest::handle_header(Connection& connection, std::string& line) {
   Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", line);
   if (line.size() > WS::header_maxlen) {
@@ -99,6 +99,13 @@ bool ReadRequest::handle_header(Connection& connection, std::string& line) {
                 });
   request_.addHeader(line);
   return error_ != 0;
+}
+
+bool ReadRequest::handle_body(Connection& connection, std::string& line) {
+  (void) connection;
+  (void) line;
+  state_ = DONE;
+  return true;
 }
 
 std::pair<std::string, std::string> ReadRequest::split_header(std::string& line) {
