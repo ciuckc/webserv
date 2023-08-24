@@ -39,10 +39,7 @@ Response&& RequestHandler::getResponse()
 
 void  RequestHandler::doGET_()
 {
-  // call config method to 
-  // mod path if necessary
-  // check if upload allowed if applicable
-  // accepted method for route
+  // filter all location-based requirements here
 
   const Cases& cases = Case::instance.get_instance;
   for (auto it = cases.cbegin(); it < cases.cend(); it++) {
@@ -56,10 +53,14 @@ void  RequestHandler::doGET_()
 
 void  RequestHandler::doPOST_()
 {
-  // cases:
-  // redirect
-  // no file
-  // file
-  // dir
-  // fail
+  // filter all location-based requirements here
+ 
+  const Cases& cases = Case::instance.post_instance;
+  for (auto it = cases.cbegin(); it < cases.cend(); it++) {
+    const std::unique_ptr<ACase>& ptr = *it;
+    if (ptr->test(request_)) {
+      response_ = ptr->act(request_);
+      break;
+    }
+  }
 }

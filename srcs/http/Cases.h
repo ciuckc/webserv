@@ -6,31 +6,42 @@
 #include "Request.h"
 
 namespace get {
-class CaseRedirect : public ACase {
-   bool test(Request& req) const override;
-   Response act(Request& req) const override;
+  class CaseRedirect : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
+  class CaseNoFile : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
+  class CaseCGI : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
+  class CaseFile : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
+  class CaseDir : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
+  class CaseFail : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
 };
-class CaseNoFile : public ACase {
-   bool test(Request& req) const override;
-   Response act(Request& req) const override;
-};
-class CaseCGI : public ACase {
-   bool test(Request& req) const override;
-   Response act(Request& req) const override;
-};
-class CaseFile : public ACase {
-   bool test(Request& req) const override;
-   Response act(Request& req) const override;
-};
-class CaseDir : public ACase {
-   bool test(Request& req) const override;
-   Response act(Request& req) const override;
-};
-class CaseFail : public ACase {
-   bool test(Request& req) const override;
-   Response act(Request& req) const override;
-};
-};
+
+namespace post {
+  using get::CaseRedirect;
+  using get::CaseCGI;
+  using get::CaseNoFile;
+  using get::CaseFail;
+  class CaseStaticContent : public ACase {
+    bool test(Request& req) const override;
+    Response act(Request& req) const override;
+  };
+}
 
 class Cases {
  public:
@@ -63,7 +74,7 @@ class CasesGET : public Cases {
 
 class CasesPOST : public Cases {
  public:
-  CasesPOST() = default;
+  CasesPOST();
   ~CasesPOST() override = default;
   CasesPOST(const CasesPOST&) = delete;
   CasesPOST& operator=(const CasesPOST&) = delete;
@@ -73,7 +84,7 @@ namespace Case {
 static struct {
   const CasesGET get_instance;
   const CasesPOST post_instance;
-} instance;
+} instance{};
 }
 
 #endif

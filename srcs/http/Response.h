@@ -14,4 +14,5 @@ class Response : public Message {
 
   void setMessage(int status);
   void setKeepAlive(uint32_t timeout, uint32_t max_requests);
+  void makeBody(const char* type, const std::string& path);
 };

@@ -12,31 +12,6 @@ using namespace HTTP;
 
 using stat_s = struct stat;
 
-// maybe make this a member of response class?
-// function to read file into body of response passed as param
-size_t makeBody(Response& res, const char* type, const std::string& path)
-{
-  std::ios_base::openmode openmode = std::ios::in;
-  if (type) {
-    std::string type_str(type);
-    if (type_str.find("text") != std::string::npos)
-      openmode |= std::ios::binary;
-  }
-  std::ifstream file(path, openmode);
-  if (!file.is_open()) {
-    throw (ErrorResponse(500));
-  }
-  std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-  file.close();
-  size_t body_size = str.length();
-  char* body;
-  body = new char[body_size + 1];
-  str.copy(body, body_size);
-  body[body_size] = '\0';
-  res.setBody(body, body_size);
-  return (body_size);
-}
-
 bool  CaseRedirect::test(Request&) const
 {
   return (false);
@@ -100,7 +75,7 @@ bool  CaseNoFile::test(Request& req) const
 
 Response  CaseNoFile::act(Request&) const
 {
-  throw (ErrorResponse(404));
+  return (ErrorResponse(404));
 }
 
 bool  CaseFile::test(Request& req) const
@@ -118,9 +93,9 @@ Response  CaseFile::act(Request& req) const
   std::string path = req.getPath();
   prepend_cwd(path);
   const char* type = req.getHeader("Content-Type");
-  size_t body_size = makeBody(res, type, path);
+  res.makeBody(type, path);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-  res.addHeader("Content-Length", std::to_string(body_size));
+  res.addHeader("Content-Length", std::to_string(res.getBodySize()));
   res.setMessage(200);
   return (res);
 }
@@ -146,9 +121,9 @@ Response  CaseDir::act(Request& req) const
   }
   else {                         // file exists, serve it
     const char* type = req.getHeader("Content-Type");
-    size_t body_size = makeBody(res, type, path);
+    res.makeBody(type, path);
     res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-    res.addHeader("Content-Length", std::to_string(body_size));
+    res.addHeader("Content-Length", std::to_string(res.getBodySize()));
     res.setMessage(200);
   }
   return (res);
@@ -170,7 +145,7 @@ CasesGET::CasesGET()
   this->cases_.push_back(std::make_unique<CaseRedirect>());
   this->cases_.push_back(std::make_unique<CaseCGI>());
   this->cases_.push_back(std::make_unique<CaseNoFile>());
-  this->cases_.push_back(std::make_unique<CaseFile>(CaseFile()));
+  this->cases_.push_back(std::make_unique<CaseFile>());
   this->cases_.push_back(std::make_unique<CaseDir>());
   this->cases_.push_back(std::make_unique<CaseFail>());
 }
