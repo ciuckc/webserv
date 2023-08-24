@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <sstream>
 #include <string>
@@ -19,9 +20,14 @@ class ConfigServer {
   ConfigServer& operator=(const ConfigServer&) = default;
   ~ConfigServer() = default;
 
-  void addHostname(const std::string hostname);
+  void setListen(const SocketAddress& endpoint);
+  void setServerName(const std::string& server_name);
+  void setRoot(const std::string& root);
+  void setClientBodyMaxSize(const std::size_t& size);
 
  private:
   std::string hostname_;
+  std::string root_;
   SocketAddress endpoint_;
+  std::size_t client_max_body_size_;
 };
