@@ -56,8 +56,10 @@ add_executable(webserv
         srcs/config/ConfigParse.cc
         srcs/config/ConfigServer.h
         srcs/config/ConfigServer.cc
+        srcs/config/ConfigRoute.h
         srcs/server/Route.h
         srcs/server/VServer.h
+        srcs/http/Method.h
         srcs/http/Message.h
         srcs/http/Message.cc
         srcs/http/Request.h

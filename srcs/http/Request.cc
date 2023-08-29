@@ -31,9 +31,9 @@ bool Request::setMessage(const std::string& msg) {
   if (!next_word(word, msg, pos))
     return false;
   if (word == "GET")
-    method_ = GET;
+    method_ = HTTP::GET;
   else if (word == "POST")
-    method_ = POST;
+    method_ = HTTP::POST;
   else
     return false;
 
@@ -49,7 +49,7 @@ bool Request::setMessage(const std::string& msg) {
   return true;
 }
 
-Request::Method Request::getMethod() const {
+HTTP::Method Request::getMethod() const {
   return method_;
 }
 
