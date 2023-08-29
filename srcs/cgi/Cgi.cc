@@ -81,7 +81,7 @@ Cgi::Cgi(Request& req) :
     body_(req.getBody()),
     path_("." + req.getPath().substr(0, req.getPath().find(".cgi") + 4)), // fix getPath() !!! (or confirm that it's working)
     envp_(st_make_env(req)),
-    pipe_in_(), pipe_out_()
+    req_(req)
 {}
 
 Cgi::~Cgi()
@@ -89,11 +89,35 @@ Cgi::~Cgi()
   st_del_arr(this->envp_);
 }
 
+Response  Cgi::act()
+{
+  Response res;
+  std::string result = execute_();
+  std::string headers = result.substr(0, HTTP::find_header_end(result));
+  // document response
+  if (headers.find("Content-Type") != std::string::npos) {
+    makeDocumentResponse_(result, res);
+  }
+  // client-redir response (possibly with document)
+  else if (headers.find("Location") != std::string::npos && headers.find("http://") != std::string::npos) {
+    makeClientRedirResponse_(result, res);
+  }
+  // local-redir response AKA server redirect
+  else if (headers.find("Location") != std::string::npos) {
+    makeLocalRedirResponse_(result, res, req_);
+  }
+  // invalid response (not compliant with CGI spec)
+  else {
+    return ErrorResponse(500);
+  }
+  return res;
+}
+
 // read from parent process on stdin
 // execute script
 // write output of script back to parent
 // make sure to test for leaking fd's!!!
-void Cgi::exec_child()
+void Cgi::exec_child_()
 {
   if (this->body_.length() > 0) {
     dup2(this->pipe_in_[0], STDIN_FILENO);
@@ -113,7 +137,7 @@ void Cgi::exec_child()
 // write request body to child's stdin
 // wait for child then read child's stdout
 // these read/write ops should go through epoll?!
-std::string Cgi::exec_parent(int pid)
+std::string Cgi::exec_parent_(int pid)
 {
   if (this->body_.length() > 0) {
     close(this->pipe_in_[0]);
@@ -140,7 +164,7 @@ std::string Cgi::exec_parent(int pid)
   return (body.str());
 }
 
-std::string Cgi::execute()
+std::string Cgi::execute_()
 {
   // open pipes, input pipe is only necessary if there is a body to write
   // both stdin are redirected the the other process stdout
@@ -159,14 +183,14 @@ std::string Cgi::execute()
     throw (ErrorResponse(500));
   }
   if (pid == 0) {
-    exec_child();
+    exec_child_();
   }
-  std::string result = exec_parent(pid);
+  std::string result = exec_parent_(pid);
   return (result);
 }
 
 // function to process raw cgi document response into http response
-void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
+void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
 {
   size_t body_begin = HTTP::find_header_end(raw);
   // size_t body_begin = raw.find("\n\n");
@@ -194,7 +218,7 @@ void Cgi::makeDocumentResponse(const std::string& raw, Response& res)
 
 // function to process raw cgi local redirect response into http response
 // this function has not been tested at all!!!
-void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request& req)
+void Cgi::makeLocalRedirResponse_(const std::string& raw, Response& res, Request& req)
 {
   req.setUri(st_find_header_value(raw, "Location: "));
   RequestHandler rh(req);
@@ -203,7 +227,7 @@ void Cgi::makeLocalRedirResponse(const std::string& raw, Response& res, Request&
 }
 
 // function to process raw cgi client redirect response into http response
-void Cgi::makeClientRedirResponse(const std::string& raw, Response& res)
+void Cgi::makeClientRedirResponse_(const std::string& raw, Response& res)
 {
   // This is done to add the 302 body!
   res = ErrorResponse(302);

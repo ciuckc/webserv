@@ -5,15 +5,11 @@
 
 class RequestHandler {
   public:
-    RequestHandler();
-    RequestHandler(const Request&);
-    RequestHandler(const RequestHandler& that);
-    ~RequestHandler();
+    RequestHandler(const Request& req) : request_(req) {}
+    RequestHandler() = default;
+    ~RequestHandler() = default;
 
-    RequestHandler& operator=(const RequestHandler& that);
-    // maybe some return values or something to know it's ok to proceed?
-    // void            readRequest(int fd);
-    void            execRequest();
+    void       execRequest();
     Response&& getResponse();
 
   private:
@@ -21,8 +17,15 @@ class RequestHandler {
     Request   request_;
     Response  response_;
 
-    void doGET_();
-    void doPOST_();
+    // some kind of method that finds all servers listening to used socket 
+    // and returns the one with the server_name specified in the HOST header
+    bool legalMethod_() const;
+    bool isRedirect_() const;
+    void handleDir_();
+    void handleFile_(std::string& path);
+
+    RequestHandler(const RequestHandler& that) = delete;
+    RequestHandler& operator=(const RequestHandler& that) = delete;
 };
 
 #endif

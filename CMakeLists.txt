@@ -30,8 +30,8 @@ set(CMAKE_CXX_FLAGS_RELEASE -O3)
 # Compilation specifications
 # ------------------------------------------------------------------------------
 add_compile_options(-Wall -Wextra -Werror)
-add_compile_options(-g)
-add_link_options(-g)
+add_compile_options(-g -fsanitize=address)
+add_link_options(-g -fsanitize=address)
 
 # Includes
 # ------------------------------------------------------------------------------
@@ -46,11 +46,6 @@ add_executable(webserv
         srcs/config/Config.h
         srcs/server/Route.h
         srcs/server/VServer.h
-        srcs/http/ACase.h
-        srcs/http/Cases.h
-        srcs/http/Cases.cc
-        srcs/http/CasesGET.cc
-        srcs/http/CasesPOST.cc
         srcs/http/Message.h
         srcs/http/Message.cc
         srcs/http/Request.h

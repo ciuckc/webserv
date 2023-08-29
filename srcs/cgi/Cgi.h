@@ -8,21 +8,22 @@ class Cgi {
   public:
     Cgi(Request&);
     ~Cgi();
-
-    std::string execute();
-    static void makeDocumentResponse(const std::string&, Response&);
-    static void makeLocalRedirResponse(const std::string&, Response&, Request&);
-    static void makeClientRedirResponse(const std::string&, Response&);
+    Response act();
 
   private:
+    std::string execute_();
+    std::string exec_parent_(int pid);
+    void exec_child_();
+    static void makeDocumentResponse_(const std::string&, Response&);
+    static void makeLocalRedirResponse_(const std::string&, Response&, Request&);
+    static void makeClientRedirResponse_(const std::string&, Response&);
+
     const std::string body_;
     const std::string path_;
     char**            envp_;
     int               pipe_in_[2];
     int               pipe_out_[2];
-
-    void exec_child();
-    std::string exec_parent(int pid);
+    Request           req_; // feels a bit wasteful to have this just for local redir
 };
 
 #endif
