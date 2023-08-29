@@ -4,7 +4,7 @@
 #include "util/WebServ.h"
 #include "ErrorResponse.h"
 
-using namespace HTTP;
+using namespace util;
 using namespace post;
 
 using stat_s = struct stat;

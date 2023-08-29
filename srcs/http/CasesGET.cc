@@ -8,7 +8,7 @@
 #include "ErrorResponse.h"
 
 using namespace get;
-using namespace HTTP;
+using namespace util;
 
 using stat_s = struct stat;
 

@@ -40,7 +40,7 @@ static inline std::string get_date_header() {
 }
 }  // namespace WS
 
-namespace HTTP {
+namespace util {
   // iT's A cOoPeRaTiVe PrOtOcOl!!1!
   inline size_t find_header_end(const std::string& str)
   {

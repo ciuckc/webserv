@@ -18,49 +18,46 @@ RequestHandler& RequestHandler::operator=(const RequestHandler&)
 
 void  RequestHandler::execRequest()
 {
-  switch (this->request_.getMethod())
+  switch (request_.getMethod())
   {
     case (Request::GET):
-      this->doGET_();
+      doGET_();
       break;
     case (Request::POST):
-      this->doPOST_();
+      doPOST_();
       break;
     default:
-      throw (ErrorResponse(400));
-      break;
+      response_ = ErrorResponse(400);
+      return;
   }
 }
 
 Response&& RequestHandler::getResponse()
 {
-  return std::move(this->response_);
+  return std::move(response_);
+}
+
+void  RequestHandler::doMethod_(const Cases& cases)
+{
+  for (auto it = cases.cbegin(); it < cases.cend(); it++) {
+    const std::unique_ptr<ACase>& ptr = *it;
+    if (ptr->test(request_)) {
+      response_ = ptr->act(request_);
+      break;
+    }
+  }
 }
 
 void  RequestHandler::doGET_()
 {
   // filter all location-based requirements here
-
   const Cases& cases = Case::instance.get_instance;
-  for (auto it = cases.cbegin(); it < cases.cend(); it++) {
-    const std::unique_ptr<ACase>& ptr = *it;
-    if (ptr->test(request_)) {
-      response_ = ptr->act(request_);
-      break;
-    }
-  }
+  doMethod_(cases);
 }
 
 void  RequestHandler::doPOST_()
 {
   // filter all location-based requirements here
- 
   const Cases& cases = Case::instance.post_instance;
-  for (auto it = cases.cbegin(); it < cases.cend(); it++) {
-    const std::unique_ptr<ACase>& ptr = *it;
-    if (ptr->test(request_)) {
-      response_ = ptr->act(request_);
-      break;
-    }
-  }
+  doMethod_(cases);
 }

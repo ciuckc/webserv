@@ -44,47 +44,45 @@ namespace post {
 }
 
 class Cases {
- public:
-  Cases();
-  virtual ~Cases();
-
-  typedef std::vector<std::unique_ptr<ACase> >::const_iterator citerator;
-  citerator cbegin() const;
-  citerator cend() const;
-  size_t    size() const;
-  ACase&    operator[](size_t n) const;
-
- protected:
-  std::vector<std::unique_ptr<ACase> > cases_;
-
- private:
-  Cases(const Cases&); // = delete
-  Cases& operator=(const Cases&); // delete
-
-
+  public:
+    Cases();
+    virtual ~Cases();
+ 
+    typedef std::vector<std::unique_ptr<ACase> >::const_iterator citerator;
+    citerator cbegin() const;
+    citerator cend() const;
+    size_t    size() const;
+    ACase&    operator[](size_t n) const;
+ 
+  protected:
+    std::vector<std::unique_ptr<ACase> > cases_;
+ 
+  private:
+    Cases(const Cases&); // = delete
+    Cases& operator=(const Cases&); // delete
 };
 
 class CasesGET : public Cases {
- public:
-  CasesGET();
-  ~CasesGET() override = default;
-  CasesGET(const CasesGET&) = delete;
-  CasesGET& operator=(const CasesGET&) = delete;
+  public:
+    CasesGET();
+    ~CasesGET() override = default;
+    CasesGET(const CasesGET&) = delete;
+    CasesGET& operator=(const CasesGET&) = delete;
 };
 
 class CasesPOST : public Cases {
- public:
-  CasesPOST();
-  ~CasesPOST() override = default;
-  CasesPOST(const CasesPOST&) = delete;
-  CasesPOST& operator=(const CasesPOST&) = delete;
+  public:
+    CasesPOST();
+    ~CasesPOST() override = default;
+    CasesPOST(const CasesPOST&) = delete;
+    CasesPOST& operator=(const CasesPOST&) = delete;
 };
 
 namespace Case {
-static struct {
-  const CasesGET get_instance;
-  const CasesPOST post_instance;
-} instance{};
+  static struct {
+    const CasesGET get_instance;
+    const CasesPOST post_instance;
+  } instance{};
 }
 
 #endif

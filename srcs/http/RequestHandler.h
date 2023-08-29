@@ -2,6 +2,7 @@
 #define REQUESTHANDLER_H
 #include "Request.h"
 #include "Response.h"
+#include "Cases.h"
 
 class RequestHandler {
   public:
@@ -21,6 +22,7 @@ class RequestHandler {
     Request   request_;
     Response  response_;
 
+    void doMethod_(const Cases& cases);
     void doGET_();
     void doPOST_();
 };
