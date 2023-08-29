@@ -10,6 +10,7 @@ project(
 
 # CMake variables
 # ------------------------------------------------------------------------------
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
@@ -29,13 +30,19 @@ set(CMAKE_CXX_FLAGS_RELEASE -O3)
 
 # Compilation specifications
 # ------------------------------------------------------------------------------
-add_compile_options(-Wall -Wextra -Werror)
-add_compile_options(-g)
+add_compile_options(-Wall -Wextra -Werror -g -fsanitize=address)
+add_link_options(-fsanitize=address)
 add_link_options(-g)
+# add_compile_options(-Wconversion -Wnull-dereference -Wnon-virtual-dtor
+# -Wcast-align)
 
 # Includes
 # ------------------------------------------------------------------------------
 include_directories(srcs)
+include_directories(srcs/config)
+include_directories(srcs/http)
+include_directories(srcs/io)
+include_directories(srcs/server)
 
 add_executable(webserv
         srcs/main.cc
@@ -44,6 +51,14 @@ add_executable(webserv
         srcs/cgi/Cgi.cc
         srcs/cgi/Cgi.h
         srcs/config/Config.h
+        srcs/config/Config.cc
+        srcs/config/ConfigFile.h
+        srcs/config/ConfigFile.cc
+        srcs/config/ConfigParse.h
+        srcs/config/ConfigParse.cc
+        srcs/config/ConfigServer.h
+        srcs/config/ConfigServer.cc
+        srcs/config/ConfigRoute.h
         srcs/server/Route.h
         srcs/server/VServer.h
         srcs/http/ACase.h
@@ -51,6 +66,7 @@ add_executable(webserv
         srcs/http/Cases.cc
         srcs/http/CasesGET.cc
         srcs/http/CasesPOST.cc
+        srcs/http/Method.h
         srcs/http/Message.h
         srcs/http/Message.cc
         srcs/http/Request.h
@@ -82,4 +98,4 @@ add_executable(webserv
         srcs/util/Log.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
-        ${CMAKE_SOURCE_DIR})
+                                         ${CMAKE_SOURCE_DIR})
