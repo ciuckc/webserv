@@ -19,7 +19,7 @@ ConnectionBuffer::~ConnectionBuffer() {
 
 // =========== IN ===========
 WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
-  ssize_t to_read = (ssize_t)toBuffer(size_ - i_end_);
+  auto to_read = (ssize_t)toBuffer(size_ - i_end_);
   if (to_read == 0) {  // We've already fully filled the buffers
     i_bufs_.emplace_back(pool_.getBuffer());
     to_read += (ssize_t)size_;
@@ -48,18 +48,17 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
   size_t offs = old_offs;
 
   for (auto buf_iter = i_bufs_.begin(); buf_iter != i_bufs_.end(); ++buf_iter) {
-    bool first_iteration = buf_iter == i_bufs_.begin();
-    bool last_iteration = buf_iter == std::prev(i_bufs_.end());
+    bool first = buf_iter == i_bufs_.begin();
+    bool last  = buf_iter == std::prev(i_bufs_.end());
 
-    auto& arr = buf_iter->getData();
-    char* buf_begin = arr.begin() + (first_iteration ? i_offset_ : 0);
-    char* buf_end = last_iteration ? arr.begin() + toBuffer(i_end_) : arr.end();
-    char* found_nl = std::find(buf_begin, buf_end, '\n');
+    auto buf_view = buf_iter->getView(
+        first ? i_offset_ : 0,
+        last ? toBuffer(i_end_) : std::string::npos);
+    size_t newline = buf_view.find('\n');
 
-    const bool done = found_nl != buf_end;
-    offs += std::distance(buf_begin, found_nl) + done;
-    if (done) {
-      str = get_str(offs - old_offs);
+    offs += std::min(newline, buf_view.size());
+    if (newline != std::string::npos) {
+      str = get_str(offs - old_offs + 1);
       return *this;
     }
   }
@@ -67,13 +66,28 @@ ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
   return *this;
 }
 
+size_t ConnectionBuffer::discard(size_t n) {
+  size_t in_avail = i_end_ - i_offset_ + 1;
+
+  if (in_avail >= n) {
+    i_offset_ += n;
+    while (i_offset_ >= size_)
+      pop_inbuf();
+    return 0;
+  }
+  i_offset_ = i_end_ = 0;
+  i_bufs_.clear();
+  read_fail_ = true;
+  return n - in_avail;
+}
+
 std::string ConnectionBuffer::get_str(size_t len) {
   std::string str(len, '\0');
   size_t pos = 0;
   while (len > 0) {
-    auto& buf = i_bufs_.front().getData();
-    size_t to_get = std::min(len, size_ - i_offset_);
-    str.replace(pos, to_get, &buf[i_offset_], to_get);
+    auto view = i_bufs_.front().getView(i_offset_, len);
+    auto to_get = std::min(len, view.size());
+    str.replace(pos, len, view);
     pos += to_get; len -= to_get;
     i_offset_ += to_get;
     if (i_offset_ >= size_)

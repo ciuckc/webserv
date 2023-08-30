@@ -11,7 +11,7 @@ class ReadRequest : public ITask {
     DONE,
   };
 
-  Request& request_;
+  Request request_;
   State state_ = MSG;
   int error_ = 0;
   size_t req_len_ = 0;
@@ -25,7 +25,7 @@ class ReadRequest : public ITask {
   std::pair<std::string, std::string_view> split_header(std::string& line);
 
  public:
-  explicit ReadRequest(Request& req);
+  explicit ReadRequest() = default;
   bool operator()(Connection& connection) final;
   void onDone(Connection& connection) final;
 

@@ -4,7 +4,6 @@
 #include <algorithm>
 
 // =========== ReadRequest ===========
-ReadRequest::ReadRequest(Request& req) : request_(req) {}
 bool ReadRequest::operator()(Connection& connection) {
   ConnectionBuffer& buf = connection.getBuffer();
   if (state_ != BODY) {
@@ -32,7 +31,7 @@ void ReadRequest::onDone(Connection& connection) {
   if (error_ != 0)
     connection.enqueueResponse(ErrorResponse(error_));
   else {
-    RequestHandler rq(request_);
+    RequestHandler rq(connection, *cfg_, request_);
     rq.execRequest();
     connection.enqueueResponse(rq.getResponse());
   }

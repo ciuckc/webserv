@@ -45,8 +45,8 @@ class Connection {
   ConnectionBuffer& getBuffer();
   const host_map_t& getHostMap() const;
 
-  void addTask(ITask* task);
-  void addTask(OTask* task);
+  void addTask(std::unique_ptr<ITask>&& task);
+  void addTask(std::unique_ptr<OTask>&& task);
 
   inline void setKeepAlive(bool keepAlive) { keep_alive_ = keepAlive; }
   inline bool keepAlive() const { return keep_alive_; };

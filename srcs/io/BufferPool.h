@@ -45,6 +45,9 @@ template<size_t size_ = 8192> class BufferPool {
     }
     inline buf_t& getData() { return data_; };
     inline buf_t& operator()() { return data_; };
+    inline std::string_view getView(size_t ofs, size_t len = std::string::npos) {
+      return {data_.data() + ofs, std::min(len, size_ - ofs)};
+    }
   };
 };
 

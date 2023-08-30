@@ -32,7 +32,7 @@ static void st_del_arr(char** arr)
 
 // make environment variables as specified in CGI RFC
 // some of them are missing due to not being required by subject
-static char** st_make_env(Request& req)
+static char** st_make_env(const Request& req)
 {
   static struct header_null_helper {
     std::string operator()(const Request& req, const std::string& key) {
@@ -77,7 +77,7 @@ static char** st_make_env(Request& req)
   return (env);
 }
 
-Cgi::Cgi(Request& req) :
+Cgi::Cgi(const Request& req) :
     body_(req.getBody()),
     path_("." + req.getPath().substr(0, req.getPath().find(".cgi") + 4)), // fix getPath() !!! (or confirm that it's working)
     envp_(st_make_env(req)),
@@ -221,9 +221,10 @@ void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
 void Cgi::makeLocalRedirResponse_(const std::string& raw, Response& res, Request& req)
 {
   req.setUri(st_find_header_value(raw, "Location: "));
-  RequestHandler rh(req);
-  rh.execRequest();
-  res = rh.getResponse();
+  // TODO: FIX PLS
+  // RequestHandler rh(req);
+  // rh.execRequest();
+  // res = rh.getResponse();
 }
 
 // function to process raw cgi client redirect response into http response

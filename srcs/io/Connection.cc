@@ -95,13 +95,14 @@ WS::IOStatus Connection::handleOut() {
   return status;
 }
 
-void Connection::addTask(ITask* task) {
-  iqueue_.push_back(std::unique_ptr<ITask>(task));
+void Connection::addTask(ITask::ptr_type&& task) {
+  iqueue_.push_back(std::forward<ITask::ptr_type>(task));
 }
 
-void Connection::addTask(OTask* task) {
-  oqueue_.push_back(std::unique_ptr<OTask>(task));
+void Connection::addTask(OTask::ptr_type&& task) {
+  oqueue_.push_back(std::forward<OTask::ptr_type>(task));
 }
+
 Socket& Connection::getSocket() {
   return socket_;
 }
@@ -122,7 +123,7 @@ void Connection::shutdown() {
 void Connection::awaitRequest() {
   //todo: rename ReadRequest RequestReader and make class var instead of the request itself?
   //  will we still need the RequestReader while writing output?
-  addTask(new ReadRequest(request_));
+  addTask(std::make_unique<ReadRequest>());
 }
 
 void Connection::enqueueResponse(Response&& response) {
@@ -137,7 +138,7 @@ void Connection::enqueueResponse(Response&& response) {
   if (!keep_alive_)
     response.addHeader("connection: close\r\n");
   response.setKeepAlive(WS::timeout, WS::max_requests);
-  addTask(new SendResponse(response));
+  addTask(std::make_unique<SendResponse>(std::forward<Response>(response)));
 }
 
 void Connection::timeout() {

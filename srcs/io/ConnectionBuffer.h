@@ -33,7 +33,7 @@ class ConnectionBuffer {
   bool need_write_;
 
   // =========== IN ===========
-  // Get a string of certain length from the buffer
+  // Create a string of certain length from the buffer
   // does not check bounds!
   std::string get_str(size_t len);
   // Gets called when an input buffer is used up completely
@@ -62,6 +62,8 @@ class ConnectionBuffer {
   // Get the next line (including \n) from the buffer, sets read_fail if no newline
   // has been found
   ConnectionBuffer& getline(std::string& str);
+  // Discard n bytes of data
+  size_t discard(size_t n);
 
   // =========== OUT ==========
   // Write from buffer into socket. Should only be called when the socket is
@@ -78,6 +80,10 @@ class ConnectionBuffer {
 
   inline ConnectionBuffer& operator<<(const std::string& str) {
     put(str.c_str(), str.size());
+    return *this;
+  }
+  inline ConnectionBuffer& operator<<(const std::string_view& str) {
+    put(str.data(), str.size());
     return *this;
   }
   inline ConnectionBuffer& operator<<(const char* str) {

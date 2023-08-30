@@ -6,7 +6,7 @@
 
 class Cgi {
   public:
-    Cgi(Request&);
+    Cgi(const Request&);
     ~Cgi();
     Response act();
 

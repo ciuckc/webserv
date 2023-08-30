@@ -18,7 +18,7 @@ class SendResponse : public OTask {
   header_iter_t header_;
 
  public:
-  explicit SendResponse(const Response& response);
+  explicit SendResponse(Response&& response);
   bool operator()(Connection& connection) override;
   void onDone(Connection& connection) final;
 };

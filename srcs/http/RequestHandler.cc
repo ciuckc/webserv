@@ -9,6 +9,18 @@
 
 void  RequestHandler::execRequest()
 {
+  // for route in cfg_.routes
+  //   if route matches (location, method, all that)
+  //     add ITask to get body if necessary
+  //     add OTask to send response
+  //     add OTask to send body
+  //     return
+
+  // No route matches, route matching could set error code
+  // (if a route is matched but incorrect method for example)
+  // add DiscardBody OTask to eat body
+  // add SendFile task for error page
+
   // find correct configserver or return 400
   if (!legalMethod_()) {
     response_ = ErrorResponse(405);
