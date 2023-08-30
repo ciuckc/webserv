@@ -38,6 +38,24 @@ static inline std::string get_date_header() {
   std::strftime(out, date_header_len, "date: %a, %d %b %Y %T GMT\r\n", gmtime(&time));
   return { out, date_header_len - 1 };
 }
+
+static const struct CaseCmpL {
+  template<class T1, class T2> bool operator()(const T1& a, const T2& b) const noexcept {
+    const size_t size_a = a.size(), size_b = b.size();
+    if (size_a != size_b)
+      return size_a < size_b;
+    return strncasecmp(a.data(), b.data(), size_a) < 0;
+  }
+} case_cmp_less;
+static const struct CaseCmpG {
+  template<class T1, class T2> bool operator()(const T1& a, const T2& b) const noexcept {
+    const size_t size_a = a.size(), size_b = b.size();
+    if (size_a != size_b)
+      return size_a > size_b;
+    return strncasecmp(a.data(), b.data(), size_a) > 0;
+  }
+} case_cmp_greater;
+
 }  // namespace WS
 
 namespace util {

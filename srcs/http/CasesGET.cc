@@ -95,7 +95,7 @@ Response  CaseFile::act(Request& req) const
   const char* type = req.getHeader("Content-Type");
   res.makeBody(type, path);
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-  res.addHeader("Content-Length", std::to_string(res.getBodySize()));
+  res.addHeader("Content-Length", std::to_string(res.getContentLength()));
   res.setMessage(200);
   return (res);
 }
@@ -123,7 +123,7 @@ Response  CaseDir::act(Request& req) const
     const char* type = req.getHeader("Content-Type");
     res.makeBody(type, path);
     res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
-    res.addHeader("Content-Length", std::to_string(res.getBodySize()));
+    res.addHeader("Content-Length", std::to_string(res.getContentLength()));
     res.setMessage(200);
   }
   return (res);

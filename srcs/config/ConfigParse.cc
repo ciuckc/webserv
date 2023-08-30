@@ -1,19 +1,14 @@
 #include "ConfigParse.h"
 
 #include <algorithm>
-#include <cstdint>
-#include <cstdlib>
 #include <exception>
-#include <iostream>
 #include <limits>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "Config.h"
-#include "ConfigFile.h"
 #include "ConfigServer.h"
 #include "util/Log.h"
 
@@ -21,7 +16,7 @@ namespace {
 enum { EMPTY };
 
 bool portParse(const std::string& portstr, uint16_t& port) {
-  if (portstr.size() > 5 || portstr.size() < 1) {
+  if (portstr.size() > 5 || portstr.empty()) {
     Log::error("Port number size is invalid.\n");
     return false;
   }

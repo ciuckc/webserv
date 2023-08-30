@@ -19,7 +19,8 @@ Server::Server(Config& config) {
     host_map_t& host_map = socket_map_[fd];
     auto& hostnames = srvcfg.getHostnames();
     if (hostnames.empty()) {
-      host_map.insert({{}, srvcfg});
+      if (!host_map.try_emplace("", srvcfg).second)
+        Log::warn("Trying to add duplicate host:port config :", port, " to map!\n");
       continue;
     }
     for (auto& name : hostnames) {

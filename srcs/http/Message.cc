@@ -3,13 +3,13 @@
 #include <cstring>
 #include <ostream>
 
-Message::Message() : body_(), body_size_() {}
+Message::Message() : body_(), content_length_() {}
 
 Message::~Message() {
   delete[] body_;
 }
 
-Message::Message(const Message& other) : body_(), body_size_() {
+Message::Message(const Message& other) : body_(), content_length_() {
   *this = other;
 }
 
@@ -18,11 +18,11 @@ Message& Message::operator=(const Message& rhs) {
     return *this;
   message_ = rhs.message_;
   headers_ = rhs.headers_;
-  body_size_ = rhs.body_size_;
+  content_length_ = rhs.content_length_;
   delete[] body_;
-  body_ = (rhs.body_ == nullptr) ? nullptr : new char[body_size_];
+  body_ = (rhs.body_ == nullptr) ? nullptr : new char[content_length_];
   if (body_)
-    std::memcpy(body_, rhs.body_, body_size_);
+    std::memcpy(body_, rhs.body_, content_length_);
   return *this;
 }
 
@@ -43,17 +43,21 @@ void Message::addHeader(const std::string& key, const std::string& val) {
 }
 
 std::string Message::getBody() const {
-  return {body_, body_size_};
+  return {body_, content_length_};
 }
 
-size_t Message::getBodySize() const {
-  return body_size_;
+size_t Message::getContentLength() const {
+  return content_length_;
+}
+
+void Message::setContentLength(size_t content_length) {
+  content_length_ = content_length;
 }
 
 void Message::setBody(char* body, size_t body_size) {
   delete[] body_;
   body_ = body;
-  body_size_ = body_size;
+  content_length_ = body_size;
 }
 
 std::ostream& Message::write(std::ostream& out) const {
@@ -62,7 +66,7 @@ std::ostream& Message::write(std::ostream& out) const {
     out << header;
   out << "\r\n";
   if (body_)
-    out.write(body_, std::streamsize(body_size_));
+    out.write(body_, std::streamsize(content_length_));
   return out;
 }
 

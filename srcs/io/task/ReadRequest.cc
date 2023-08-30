@@ -19,7 +19,7 @@ bool ReadRequest::operator()(Connection& connection) {
   }
   if (buf.readFailed() || state_ != BODY)
     return false;
-  if (request_.getBodySize() == 0)
+  if (request_.getContentLength() == 0)
     if (request_.getMethod() == HTTP::POST)
       error_ = 411; // Length required
   // Todo: read body (or BodyReader task...)
@@ -109,34 +109,37 @@ bool ReadRequest::handle_body(Connection& connection, std::string& line) {
   return true;
 }
 
-std::pair<std::string, std::string> ReadRequest::split_header(std::string& line) {
+std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& line) {
   const size_t sep = line.find_first_of(':');
   const size_t val_end = line.find_last_not_of(" \t\r\n");
+  // this will always work (std::string::npos + 1 == 0)
+  const size_t val_start = line.find_first_not_of(" \t", sep + 1);
 
-  if (sep == std::string::npos) {
-    size_t val_start = line.find_first_not_of(" \t");
-    if (val_start != 0 && val_start <= val_end) // Continuation needs ws in front
-      return std::make_pair(prev_key_, line.substr(val_start, val_end - val_start + 1));
-  } else {
+  if (val_start > val_end) {
+    error_ = 400;
+    return {};
+  }
+  if (sep != std::string::npos) {
     size_t key_start = line.find_first_not_of(" \t");
     size_t key_end = line.find_last_not_of(" \t", sep - 1);
-    size_t val_start = line.find_first_not_of(" \t", sep + 1);
-    if (key_start <= key_end && val_start <= val_end) {
-      std::transform(&line[key_start], &line[key_end + 1], &line[key_start], ::tolower);
-      return std::make_pair(line.substr(key_start, key_end - key_start + 1),
-                            line.substr(val_start, val_end - val_start + 1));
+    if (key_start > key_end) {
+      error_ = 400;
+      return {};
     }
+    header_key_ = line.substr(key_start, key_end - key_start + 1);
+  } else if (val_start == 0) {
+    error_ = 400;
+    return {};
   }
-  error_ = 400;
-  return {};
+  return {header_key_, {&line[val_start], val_end - val_start + 1}};
 }
 
 #define HEADER_HOOK(name, lambda) \
-{ name, [](ReadRequest& request, const std::string& value, Connection& connection)->int lambda }
-const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
+{ name, [](ReadRequest& request, const std::string_view& value, Connection& connection)->int lambda }
+const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
     HEADER_HOOK("connection", {
       (void) request;
-      if (strncasecmp(value.c_str(), "close", strlen("close")) == 0)
+      if (strncasecmp(value.data(), "close", strlen("close")) == 0)
         connection.setKeepAlive(false);
       return 0;
     }),
@@ -144,8 +147,7 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
       if (request.cfg_ != nullptr)
         return 400; // duplicate host header
 
-      std::string hostname = value.substr(0, value.find(':'));
-      std::transform(hostname.begin(), hostname.end(), hostname.begin(), tolower);
+      std::string hostname { value.substr(0, value.find(':')) };
       auto& host_map = connection.getHostMap();
       auto found_cfg = host_map.find(hostname);
       if (found_cfg == host_map.end()) {
@@ -156,5 +158,17 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
       request.cfg_ = &found_cfg->second;
       return 0;
     }),
-};
+    HEADER_HOOK("content-length", {
+      (void)connection;
+      char *pos;
+      size_t content_length = std::strtoul(value.data(), &pos, 10);
+      if (value.find_first_not_of(" \t\r\n", pos - value.data()) != std::string::npos)
+        return 400;
+      request.request_.setContentLength(content_length);
+      // todo: make sure this body length is not too big onDone
+      return 0;
+    })}, WS::case_cmp_less};
+
+    // if-modified-since
+    // transfer-encoding
 
