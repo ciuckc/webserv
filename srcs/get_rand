@@ -1,2 +1,0 @@
-GET /../../../dev/random HTTP/1.1
-Host: localhost:6969

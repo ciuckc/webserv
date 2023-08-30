@@ -5,8 +5,11 @@
 #include "io/task/SendResponse.h"
 #include "http/ErrorResponse.h"
 
-Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr)
-    : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue) {
+Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr, const host_map_t& host_map)
+    : host_map_(host_map),
+      socket_(fd),
+      buffer_(buf_mgr),
+      event_queue_(event_queue) {
   awaitRequest();
   event_queue_.add(fd);
   last_event_ = std::time(nullptr);
@@ -105,6 +108,10 @@ Socket& Connection::getSocket() {
 
 ConnectionBuffer& Connection::getBuffer() {
   return buffer_;
+}
+
+const Connection::host_map_t& Connection::getHostMap() const {
+  return host_map_;
 }
 
 void Connection::shutdown() {

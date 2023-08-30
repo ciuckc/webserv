@@ -20,10 +20,10 @@ void  RequestHandler::execRequest()
 {
   switch (request_.getMethod())
   {
-    case (Request::GET):
+    case (HTTP::GET):
       doGET_();
       break;
-    case (Request::POST):
+    case (HTTP::POST):
       doPOST_();
       break;
     default:

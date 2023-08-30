@@ -59,8 +59,6 @@ add_executable(webserv
         srcs/config/ConfigServer.h
         srcs/config/ConfigServer.cc
         srcs/config/ConfigRoute.h
-        srcs/server/Route.h
-        srcs/server/VServer.h
         srcs/http/ACase.h
         srcs/http/Cases.h
         srcs/http/Cases.cc

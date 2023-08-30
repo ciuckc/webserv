@@ -7,12 +7,6 @@
 #include <string>
 #include "ConfigRoute.h"
 
-struct SocketAddress {
-  SocketAddress() : address("0.0.0.0"), port("8080") {}
-  std::string address;
-  std::string port;
-};
-
 class ConfigServer {
  public:
   ConfigServer();
@@ -24,22 +18,22 @@ class ConfigServer {
 
   using routes_t = std::multimap<std::string, ConfigRoute, std::greater<>>;
 
-  void setListen(const SocketAddress& endpoint);
-  void setServerName(const std::string& server_name);
+  void setPort(uint16_t port);
+  void addServerName(const std::string& server_name);
   void setClientBodyMaxSize(const std::size_t& size);
   void addRoute(const std::string& loc, ConfigRoute&& route) {
     routes_.emplace(loc, std::forward<ConfigRoute>(route));
   }
 
-  [[nodiscard]] const std::string& getHostname() const;
-  [[nodiscard]] const SocketAddress& getEndpoint() const;
+  [[nodiscard]] const std::vector<std::string>& getHostnames() const;
+  [[nodiscard]] uint16_t getPort() const;
   [[nodiscard]] std::size_t getClientMaxBodySize() const;
   [[nodiscard]] const routes_t& getRoutes() const;
 
  private:
-  std::string hostname_;
-  std::string root_;
-  SocketAddress endpoint_;
+  std::vector<std::string> hostnames_;
+  // std::string root_; todo: move to ConfigRoute
+  uint16_t port_;
   std::size_t client_max_body_size_;
   routes_t routes_;
 };

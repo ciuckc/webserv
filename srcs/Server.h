@@ -8,32 +8,34 @@
 #include "io/Connection.h"
 #include "io/EventQueue.h"
 #include "io/Socket.h"
-#include "server/VServer.h"
 
 class Server {
  private:
+  using host_map_t = std::map<std::string, ConfigServer&>;
+
   EventQueue evqueue_;
-  // This should probably be moved to every vserver
+  // All the sockets we are listening on
+  // These sockets may be shared between multiple ConfigServers
   std::vector<Socket> listen_sockets_;
+  // This map maps listen socket fd to server config directives (mapped to hostname)
+  std::map<int, host_map_t> socket_map_;
+  // This map maps connection fd to Connection object
   std::unordered_map<int, Connection> connections_;
-  int listen_start_;
+  // The lowest file descriptor that's a listening port
+  int listen_start_ = -1;
 
   BufferPool<> buffer_manager_;
-  // These are all the server { } blocks in config file, should be sorted on
-  // address/port? think we also need to check if the server_name matches the
-  // request perfectly so maybe another map for that?
-  // std::multiset<VServer, std::less<VServer> > vservers_;
 
   using timep_t =  std::chrono::time_point<std::chrono::system_clock>;
   timep_t last_purge_;
 
+  int create_listen_sock(uint16_t port);
   void accept_connection(const EventQueue::event_t& event);
   void handle_connection(EventQueue::event_t& event);
 
  public:
-  Server();
+  explicit Server(Config& config);
   ~Server();
-  explicit Server(const Config& config);
 
   void loop();
   void purge_connections();

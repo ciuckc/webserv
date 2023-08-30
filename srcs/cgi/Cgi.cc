@@ -54,7 +54,7 @@ static char** st_make_env(Request& req)
     std::string("REMOTE_HOST=") + 
       std::string(req.getHeader("Host") ? st_find_header_value(req.getHeader("Host"), "Host: ") : ""),
     std::string("REMOTE_USER="), // not sure that we need this as we're not doing authentication?
-    std::string("REQUEST_METHOD=") + (req.getMethod() == Request::GET ? "GET" : "POST"),
+    std::string("REQUEST_METHOD=") + (req.getMethod() == HTTP::GET ? "GET" : "POST"),
     std::string("SCRIPT_NAME=") + script,
     std::string("SERVER_NAME=SuperWebserv10K/0.9.1 (Unix)"),
     std::string("SERVER_PORT=6969"),

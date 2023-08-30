@@ -1,6 +1,5 @@
 #include "ReadRequest.h"
 #include "http/RequestHandler.h"
-#include "SendResponse.h"
 #include "http/ErrorResponse.h"
 #include <algorithm>
 
@@ -21,13 +20,15 @@ bool ReadRequest::operator()(Connection& connection) {
   if (buf.readFailed() || state_ != BODY)
     return false;
   if (request_.getBodySize() == 0)
-    if (request_.getMethod() == Request::POST)
+    if (request_.getMethod() == HTTP::POST)
       error_ = 411; // Length required
   // Todo: read body (or BodyReader task...)
   return true;
 }
 
 void ReadRequest::onDone(Connection& connection) {
+  if (cfg_ == nullptr && error_ == 0)
+    error_ = 400; // No host header..
   if (error_ != 0)
     connection.enqueueResponse(ErrorResponse(error_));
   else {
@@ -65,7 +66,7 @@ bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
   Log::info('[', connection.getSocket().get_fd(), "]\tIN:\t", line);
 
   if (!request_.setMessage(line)) {
-    if (request_.getMethod() == Request::INVALID) {
+    if (request_.getMethod() == HTTP::INVALID) {
       error_ = 405; // Method not allowed
     } else if (request_.getUri().empty()) {
       error_ = 400; // Bad Request
@@ -137,6 +138,22 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
       (void) request;
       if (strncasecmp(value.c_str(), "close", strlen("close")) == 0)
         connection.setKeepAlive(false);
+      return 0;
+    }),
+    HEADER_HOOK("host", {
+      if (request.cfg_ != nullptr)
+        return 400; // duplicate host header
+
+      std::string hostname = value.substr(0, value.find(':'));
+      std::transform(hostname.begin(), hostname.end(), hostname.begin(), tolower);
+      auto& host_map = connection.getHostMap();
+      auto found_cfg = host_map.find(hostname);
+      if (found_cfg == host_map.end()) {
+        found_cfg = host_map.find("");
+        if (found_cfg == host_map.end())
+          return 400;
+      }
+      request.cfg_ = &found_cfg->second;
       return 0;
     }),
 };
