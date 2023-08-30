@@ -40,7 +40,12 @@ void Response::makeBody(const char* type, const std::string& path)
   file.close();
   size_t body_size = str.length();
   char* body;
-  body = new char[body_size + 1];
+  try {
+    body = new char[body_size + 1];
+  }
+  catch (std::exception&) {
+    throw (ErrorResponse(500));
+  }
   str.copy(body, body_size);
   body[body_size] = '\0';
   this->setBody(body, body_size);

@@ -21,8 +21,9 @@ class RequestHandler {
     // and returns the one with the server_name specified in the HOST header
     bool legalMethod_() const;
     bool isRedirect_() const;
-    void handleDir_();
+    void handleDir_(std::string& path);
     void handleFile_(std::string& path);
+    void autoIndex_(std::string& path);
 
     RequestHandler(const RequestHandler& that) = delete;
     RequestHandler& operator=(const RequestHandler& that) = delete;
