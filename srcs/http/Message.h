@@ -11,7 +11,7 @@ class Message {
   std::string message_;
   header_t headers_;
   char* body_;
-  size_t body_size_;
+  size_t content_length_;
 
  public:
   Message();
@@ -22,7 +22,8 @@ class Message {
   const std::string& getMessage() const;
   const header_t& getHeaders() const;
   std::string getBody() const;
-  size_t getBodySize() const;
+  size_t getContentLength() const;
+  void setContentLength(size_t content_length);
   void addHeader(const std::string& key, const std::string& val);
   void addHeader(const std::string& kv_pair);
   void setBody(char* body, size_t body_size);  // ? This will change

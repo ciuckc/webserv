@@ -2,6 +2,7 @@
 #define REQUESTHANDLER_H
 #include "Request.h"
 #include "Response.h"
+#include "Cases.h"
 
 class RequestHandler {
   public:

@@ -44,20 +44,21 @@ Socket& Socket::operator=(Socket&& other) noexcept {
   return *this;
 }
 
-void Socket::bind(const char* host, const char* port) const {
+void Socket::bind(uint16_t port) const {
   addrinfo* bind_info;
 
   int yes = 1;
   setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
   setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   {
+    std::string port_str = std::to_string(port);
     addrinfo hints = {};
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_flags = AI_PASSIVE;
 
-    int status = getaddrinfo(host, port, &hints, &bind_info);
+    int status = getaddrinfo(nullptr, port_str.c_str(), &hints, &bind_info);
     if (status != 0) {
       std::string str = "getaddrinfo: ";
       str += gai_strerror(status);

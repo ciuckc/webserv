@@ -27,7 +27,7 @@ class Socket {
   Socket& operator=(const Socket& rhs) = delete;
 
 
-  void bind(const char* host, const char* port) const;
+  void bind(uint16_t port) const;
   void listen(int backlog) const;
   int accept() const;
 

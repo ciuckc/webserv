@@ -8,6 +8,7 @@
 #include "ConnectionBuffer.h"
 #include "EventQueue.h"
 #include "Socket.h"
+#include "config/ConfigServer.h"
 #include "http/Request.h"
 #include "http/Response.h"
 
@@ -16,6 +17,9 @@ class OTask;
 
 class Connection {
  private:
+  using host_map_t = std::map<std::string, ConfigServer&>;
+  const host_map_t& host_map_;
+
   Socket socket_;
   ConnectionBuffer buffer_;
   EventQueue& event_queue_;
@@ -30,7 +34,7 @@ class Connection {
   uint32_t request_count_ = 0;
 
  public:
-  Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr);
+  Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr, const host_map_t& host_map);
   ~Connection();
 
   bool handle(EventQueue::event_t& event);
@@ -39,6 +43,7 @@ class Connection {
 
   Socket& getSocket();
   ConnectionBuffer& getBuffer();
+  const host_map_t& getHostMap() const;
 
   void addTask(ITask* task);
   void addTask(OTask* task);

@@ -54,7 +54,7 @@ static char** st_make_env(Request& req)
     std::string("REMOTE_HOST=") + 
       std::string(req.getHeader("Host") ? st_find_header_value(req.getHeader("Host"), "Host: ") : ""),
     std::string("REMOTE_USER="), // not sure that we need this as we're not doing authentication?
-    std::string("REQUEST_METHOD=") + (req.getMethod() == Request::GET ? "GET" : "POST"),
+    std::string("REQUEST_METHOD=") + (req.getMethod() == HTTP::GET ? "GET" : "POST"),
     std::string("SCRIPT_NAME=") + script,
     std::string("SERVER_NAME=SuperWebserv10K/0.9.1 (Unix)"),
     std::string("SERVER_PORT=6969"),
@@ -192,7 +192,7 @@ std::string Cgi::execute_()
 // function to process raw cgi document response into http response
 void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
 {
-  size_t body_begin = HTTP::find_header_end(raw);
+  size_t body_begin = util::find_header_end(raw);
   // size_t body_begin = raw.find("\n\n");
   if (body_begin == std::string::npos) { // not compliant with rfc
     throw (ErrorResponse(500));
@@ -239,7 +239,7 @@ void Cgi::makeClientRedirResponse_(const std::string& raw, Response& res)
   }
   // contains body
   res.addHeader("Content-Type", st_find_header_value(raw, "Content-Type: "));
-  const std::string body = raw.substr(HTTP::find_header_end(raw) + 2);
+  const std::string body = raw.substr(util::find_header_end(raw) + 2);
   res.addHeader("Content-Length", std::to_string(body.length()));
   char* dup;
   try {

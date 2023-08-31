@@ -18,7 +18,7 @@ class Log {
    TRACE
   };
 
-  static constexpr Level log_level = DEBUG;
+  static constexpr Level log_level = TRACE;
 
   template<Level lvl>
   using log_enable_t = typename std::enable_if<(lvl <= log_level), void>::type;
