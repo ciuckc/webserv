@@ -53,7 +53,7 @@ void Server::accept_connection(const EventQueue::event_t& event) {
   int conn_fd = socket.accept();
   connections_.emplace(std::piecewise_construct,
                        std::forward_as_tuple(conn_fd),
-                       std::forward_as_tuple(conn_fd, evqueue_, buffer_manager_, socket_map_[socket.get_fd()]));
+                       std::forward_as_tuple(conn_fd, evqueue_, socket_map_[socket.get_fd()]));
 }
 
 void Server::purge_connections() {

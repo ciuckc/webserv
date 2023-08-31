@@ -4,7 +4,6 @@
 #include <memory>
 #include <stack>
 
-#include "BufferPool.h"
 #include "ConnectionBuffer.h"
 #include "EventQueue.h"
 #include "Socket.h"
@@ -34,7 +33,7 @@ class Connection {
   uint32_t request_count_ = 0;
 
  public:
-  Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr, const host_map_t& host_map);
+  Connection(int fd, EventQueue& event_queue, const host_map_t& host_map);
   ~Connection();
 
   bool handle(EventQueue::event_t& event);

@@ -5,10 +5,10 @@
 #include "io/task/SendResponse.h"
 #include "http/ErrorResponse.h"
 
-Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr, const host_map_t& host_map)
+Connection::Connection(int fd, EventQueue& event_queue, const host_map_t& host_map)
     : host_map_(host_map),
       socket_(fd),
-      buffer_(buf_mgr),
+      buffer_(),
       event_queue_(event_queue) {
   event_queue_.add(fd);
   awaitRequest();
@@ -56,7 +56,7 @@ bool Connection::handle(EventQueue::event_t& event) {
 WS::IOStatus Connection::handleIn() {
   WS::IOStatus status = WS::IO_GOOD;
   while (!iqueue_.empty()) {
-    if (buffer_.readFailed()) {
+    if (buffer_.readFailed() || buffer_.inAvailable() == 0) {
       if (status == WS::IO_WAIT)
         return status; // We've already read all we can
       status = buffer_.readIn(socket_);
@@ -92,7 +92,6 @@ WS::IOStatus Connection::handleOut() {
   }
   if (status == WS::IO_GOOD)
     status = buffer_.writeOut(socket_);
-  awaitRequest();
   return status;
 }
 
@@ -125,8 +124,6 @@ void Connection::awaitRequest() {
   //todo: rename ReadRequest RequestReader and make class var instead of the request itself?
   //  will we still need the RequestReader while writing output?
   addTask(std::make_unique<ReadRequest>());
-  if (iqueue_.empty())
-    event_queue_.mod(socket_.get_fd(), oqueue_.empty() ? EventQueue::in : EventQueue::both);
 }
 
 void Connection::enqueueResponse(Response&& response) {
@@ -135,7 +132,7 @@ void Connection::enqueueResponse(Response&& response) {
     Log::debug('[', socket_.get_fd(), "] Max requests reached\n");
   }
   if (oqueue_.empty())
-    event_queue_.mod(socket_.get_fd(), iqueue_.empty() ? EventQueue::out : EventQueue::both);
+    event_queue_.mod(socket_.get_fd(), EventQueue::both);
   if (!keep_alive_)
     response.addHeader("connection: close\r\n");
   response.setKeepAlive(WS::timeout, WS::max_requests);

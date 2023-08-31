@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "config/Config.h"
-#include "io/BufferPool.h"
 #include "io/Connection.h"
 #include "io/EventQueue.h"
 #include "io/Socket.h"
@@ -23,8 +22,6 @@ class Server {
   std::unordered_map<int, Connection> connections_;
   // The lowest file descriptor that's a listening port
   int listen_start_ = -1;
-
-  BufferPool<> buffer_manager_;
 
   using timep_t =  std::chrono::time_point<std::chrono::system_clock>;
   timep_t last_purge_;

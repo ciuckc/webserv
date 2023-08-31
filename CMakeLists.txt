@@ -83,7 +83,6 @@ add_executable(webserv
         srcs/io/Connection.cc
         srcs/io/ConnectionBuffer.h
         srcs/io/ConnectionBuffer.cc
-        srcs/io/BufferPool.h
         srcs/io/IOException.h
         srcs/io/task/IOTask.h
         srcs/io/task/ReadRequest.h
