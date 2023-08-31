@@ -5,6 +5,9 @@
 class SendFile : public OTask {
  public:
   explicit SendFile(int fd) : fd_(fd) {};
+  ~SendFile() override {
+    close(fd_);
+  }
 
   bool operator()(Connection& connection) override {
     while (!connection.getBuffer().needWrite())
@@ -15,11 +18,8 @@ class SendFile : public OTask {
   };
 
   void onDone(Connection&) override {
-    Log::trace("Sendfile done");
+    Log::trace("Sendfile done\n");
   };
-
- protected:
-  ~SendFile() override { close(fd_); }
 
  private:
   int fd_;

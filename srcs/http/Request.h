@@ -16,6 +16,7 @@ class Request : public Message {
   HTTP::Method method_ = HTTP::INVALID;
   std::string uri_;
   HttpVersion version_ = VER_INVALID;
+  std::string content_type_;
 
  public:
   Request() = default;
@@ -26,7 +27,9 @@ class Request : public Message {
   bool setMessage(const std::string& msg);
   HTTP::Method getMethod() const;
   const std::string& getUri() const;
+  const std::string& getContentType() const;
   void setUri(const std::string&);
+  void setContentType(const std::string& str);
   const std::string getPath() const;
   const char* getHeader(const std::string& key) const;
   HttpVersion getVersion() const;

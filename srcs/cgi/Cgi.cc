@@ -221,6 +221,7 @@ void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
 void Cgi::makeLocalRedirResponse_(const std::string& raw, Response& res, Request& req)
 {
   req.setUri(st_find_header_value(raw, "Location: "));
+  (void) res;
   // TODO: FIX PLS
   // RequestHandler rh(req);
   // rh.execRequest();

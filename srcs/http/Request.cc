@@ -57,8 +57,16 @@ const std::string& Request::getUri() const {
   return uri_;
 }
 
+const std::string& Request::getContentType() const {
+  return content_type_;
+}
+
 void Request::setUri(const std::string& uri) {
   this->uri_ = uri;
+}
+
+void Request::setContentType(const std::string& str) {
+  content_type_ = str;
 }
 
 const std::string Request::getPath() const {
@@ -73,7 +81,6 @@ const char* Request::getHeader(const std::string& key) const {
   }
   return nullptr;
 }
-
 Request::HttpVersion Request::getVersion() const {
   return version_;
 }

@@ -71,6 +71,7 @@ class ConnectionBuffer {
   WS::IOStatus writeOut(Socket& socket);
   // Do we have a full buffer or old data waiting to be written?
   inline bool needWrite() const { return need_write_; }
+  inline size_t outAvailable() const { return size_ - o_offset_ + 1; }
   // Read from a file descriptor into the output buffer (sendfile)
   // reads up to max_file_bufs buffers
   // returns true when eof is reached

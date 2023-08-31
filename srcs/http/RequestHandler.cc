@@ -2,10 +2,12 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include "RequestHandler.h"
 #include "ErrorResponse.h"
 #include "cgi/Cgi.h"
 #include "util/WebServ.h"
+#include "io/task/SendFile.h"
 
 void  RequestHandler::execRequest()
 {
@@ -23,32 +25,27 @@ void  RequestHandler::execRequest()
 
   // find correct configserver or return 400
   if (!legalMethod_()) {
-    response_ = ErrorResponse(405);
-    return;
-  }
-  if (isRedirect_()) {
-    response_ = ErrorResponse(302); // not an actual error but hey
+    handleError_(405);
+  } else if (isRedirect_()) {
+    handleError_(302); // not an actual error but hey
     // get location from config and add header
-    return;
+  } else {
+    // in case above functions get called without rooting the path, do it here
+    // also, either update getPath to trim the pathinfo in case of cgi or just yeet it
+    // because subject doesn't care about it anyways
+    std::string path = request_.getPath();
+    util::prepend_cwd(path);
+    stat_t s;
+    if (stat(path.c_str(), &s)) {
+      handleError_(404);
+    } else if ((s.st_mode & S_IFMT) == S_IFDIR) {
+      handleDir_(path);
+    } else if ((s.st_mode & S_IFMT) == S_IFREG) {
+      handleFile_(s, path);
+    }
   }
-  // in case above functions get called without rooting the path, do it here
-  // also, either update getPath to trim the pathinfo in case of cgi or just yeet it 
-  // because subject doesn't care about it anyways
-  std::string path = request_.getPath();
-  HTTP::prepend_cwd(path);
-  struct stat s;
-  if (stat(path.c_str(), &s)) {
-    response_ = ErrorResponse(404);
-    return;
-  }
-  if (s.st_mode & S_IFDIR) {
-    handleDir_(path);
-    return;
-  }
-  if (s.st_mode & S_IFREG) {
-    handleFile_(path);
-    return;
-  }
+  if (connection_.keepAlive())
+    connection_.awaitRequest();
 }
 
 bool RequestHandler::legalMethod_() const
@@ -86,7 +83,7 @@ void RequestHandler::autoIndex_(std::string& path)
   std::string name;
   DIR* dir = opendir(path.c_str());
   if (dir == nullptr) {
-    response_ = ErrorResponse(500);
+    handleError_(500);
     return;
   }
   struct dirent* entry = readdir(dir);
@@ -118,7 +115,7 @@ void RequestHandler::autoIndex_(std::string& path)
   response_.setMessage(200);
 }
 
-void RequestHandler::handleFile_(std::string& path)
+void RequestHandler::handleFile_(stat_t& file_info, std::string& path)
 {
   const std::string cgi_ext = ".cgi"; // fetch this from config instead
   if (path.find(cgi_ext) != std::string::npos) {
@@ -126,16 +123,25 @@ void RequestHandler::handleFile_(std::string& path)
     response_ = cgi.act();
     return;
   }
-  const char* type = request_.getHeader("Content-Type");
-  response_.makeBody(type, path);
-  response_.addHeader("Content-Length", std::to_string(response_.getBodySize()));
-  if (type) {
-    response_.addHeader("Content-Type", std::string(type));
+  Response response;
+  int fd = open(path.c_str(), O_RDONLY);
+  if (fd == -1) { // todo: handle as error response
+    throw IOException("shit's fucked yo", errno);
   }
-  response_.setMessage(200);
+  response.setMessage(200);
+  response.setContentLength(file_info.st_size);
+  response.addHeader("Content-Length", std::to_string(file_info.st_size));
+  response.addHeader("Content-Type", request_.getContentType());
+  connection_.enqueueResponse(std::move(response));
+  connection_.addTask(std::make_unique<SendFile>(fd));
+}
+
+void RequestHandler::handleError_(int) {
+  // todo: generate error responses here instead of using that class?
+  // note SimpleBody class to send a char[] as body
 }
 
 Response&& RequestHandler::getResponse()
 {
-  return std::move(this->response_);
+  return std::move(response_);
 }

@@ -33,12 +33,8 @@ void ReadRequest::onDone(Connection& connection) {
   else {
     RequestHandler rq(connection, *cfg_, request_);
     rq.execRequest();
-    connection.enqueueResponse(rq.getResponse());
+    //connection.enqueueResponse(rq.getResponse());
   }
-  // else do something with what we learnt from the request
-  // find correct route? read the body in a special way? That sounds mildly sexual
-  if (connection.keepAlive())
-    connection.awaitRequest();
 }
 
 // return true if we should stop
@@ -62,7 +58,7 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
 }
 
 bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
-  Log::info('[', connection.getSocket().get_fd(), "]\tIN:\t", line);
+  Log::info('[', connection.getSocket().get_fd(), "]\tIN:\t", std::string_view(line.data(), line.find_last_not_of("\n\r") + 1), '\n');
 
   if (!request_.setMessage(line)) {
     if (request_.getMethod() == HTTP::INVALID) {
@@ -79,7 +75,6 @@ bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
 }
 
 bool ReadRequest::handle_header(Connection& connection, std::string& line) {
-  Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", line);
   if (line.size() > WS::header_maxlen) {
     error_ = 431;
     return true;
@@ -89,6 +84,7 @@ bool ReadRequest::handle_header(Connection& connection, std::string& line) {
   }
 
   auto kvpair = split_header(line);
+  Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", kvpair.first, ": ", kvpair.second, '\n');
   if (error_ != 0)
     return true;
   auto hooks = hhooks_.equal_range(kvpair.first);
@@ -165,6 +161,11 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
         return 400;
       request.request_.setContentLength(content_length);
       // todo: make sure this body length is not too big onDone
+      return 0;
+    }),
+    HEADER_HOOK("content-type", {
+      (void)connection;
+      request.request_.setContentType(std::string(value));
       return 0;
     })}, WS::case_cmp_less};
 

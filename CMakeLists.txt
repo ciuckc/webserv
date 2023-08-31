@@ -92,6 +92,7 @@ add_executable(webserv
         srcs/io/task/SendResponse.cc
         srcs/io/task/RecvFile.h
         srcs/io/task/SendFile.h
+        srcs/io/task/SimpleBody.h
         srcs/util/WebServ.h
         srcs/util/Log.h)
 

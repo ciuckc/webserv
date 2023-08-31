@@ -142,6 +142,8 @@ void ConnectionBuffer::put(const char* data, size_t len) {
   o_offset_ += copy_len;
   if (len > copy_len)
     overflow(data + copy_len, len - copy_len);
+  if (o_offset_ >= size_)
+    need_write_ = true;
 }
 
 void ConnectionBuffer::overflow(const char* data, size_t len) {

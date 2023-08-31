@@ -10,8 +10,8 @@ Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr, c
       socket_(fd),
       buffer_(buf_mgr),
       event_queue_(event_queue) {
-  awaitRequest();
   event_queue_.add(fd);
+  awaitRequest();
   last_event_ = std::time(nullptr);
 }
 
@@ -90,8 +90,9 @@ WS::IOStatus Connection::handleOut() {
       oqueue_.pop_front();
     }
   }
-  if (status == WS::IO_GOOD)  // We can't let this sit in the buffer
+  if (status == WS::IO_GOOD)
     status = buffer_.writeOut(socket_);
+  awaitRequest();
   return status;
 }
 
@@ -124,6 +125,8 @@ void Connection::awaitRequest() {
   //todo: rename ReadRequest RequestReader and make class var instead of the request itself?
   //  will we still need the RequestReader while writing output?
   addTask(std::make_unique<ReadRequest>());
+  if (iqueue_.empty())
+    event_queue_.mod(socket_.get_fd(), oqueue_.empty() ? EventQueue::in : EventQueue::both);
 }
 
 void Connection::enqueueResponse(Response&& response) {
@@ -131,10 +134,8 @@ void Connection::enqueueResponse(Response&& response) {
     keep_alive_ = false;
     Log::debug('[', socket_.get_fd(), "] Max requests reached\n");
   }
-  if (oqueue_.empty()) {
-    auto dir = keep_alive_ ? EventQueue::both : EventQueue::out;
-    event_queue_.mod(socket_.get_fd(), dir);
-  }
+  if (oqueue_.empty())
+    event_queue_.mod(socket_.get_fd(), iqueue_.empty() ? EventQueue::out : EventQueue::both);
   if (!keep_alive_)
     response.addHeader("connection: close\r\n");
   response.setKeepAlive(WS::timeout, WS::max_requests);
