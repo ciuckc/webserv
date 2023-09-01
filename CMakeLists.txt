@@ -74,6 +74,7 @@ add_executable(webserv
         srcs/http/RequestHandler.cc
         srcs/http/RequestHandler.h
         srcs/http/ErrorPage.h
+        srcs/http/MIME.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
         srcs/io/EventQueue.h
