@@ -1,6 +1,5 @@
 #include <sstream>
 #include <dirent.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include "RequestHandler.h"
 //#include "cgi/Cgi.h"
@@ -10,6 +9,7 @@
 #include "Status.h"
 #include "io/task/DiscardBody.h"
 #include "ErrorPage.h"
+#include "MIME.h"
 
 void  RequestHandler::execRequest()
 {
@@ -37,12 +37,12 @@ void  RequestHandler::execRequest()
     // because subject doesn't care about it anyways
     std::string path = request_.getPath();
     util::prepend_cwd(path);
-    stat_t s;
-    if (stat(path.c_str(), &s)) {
+    auto s = util::FileInfo();
+    if (!s.open(path.c_str())) {
       handleError_(404);
-    } else if ((s.st_mode & S_IFMT) == S_IFDIR) {
+    } else if (s.isDir()) {
       handleDir_(path);
-    } else if ((s.st_mode & S_IFMT) == S_IFREG) {
+    } else if (s.isFile()) {
       handleFile_(s, path);
     }
   }
@@ -112,7 +112,7 @@ void RequestHandler::autoIndex_(std::string& path)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }
 
-void RequestHandler::handleFile_(stat_t& file_info, const std::string& path, int status)
+void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, int status, std::string type)
 {
  // const std::string cgi_ext = ".cgi"; // fetch this from config instead
  // if (path.find(cgi_ext) != std::string::npos) {
@@ -120,15 +120,24 @@ void RequestHandler::handleFile_(stat_t& file_info, const std::string& path, int
  //   response_ = cgi.act();
  //   return;
  // }
+ bool addType = true;
+ if (type.empty()) {
+   std::string extension = util::getExtension(path);
+   if (extension.empty() || (type = MIME.getType(extension)).empty())
+     addType = false;
+ }
+
   int fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) { // todo: handle as error response
     throw IOException("shit's fucked yo", errno);
   }
-  connection_.enqueueResponse(Response::builder()
-                                       .message(status)
-                                       .content_length(file_info.st_size)
-                                       .header("Content-Type", request_.getContentType())
-                                       .build());
+
+  auto builder = Response::builder();
+  builder.message(status)
+         .content_length(file_info.size());
+  if (addType)
+    builder.header("Content-Type", type);
+  connection_.enqueueResponse(std::forward<Response>(builder.build()));
   connection_.addTask(std::make_unique<SendFile>(fd));
 }
 
@@ -136,9 +145,12 @@ void RequestHandler::handleError_(int error) {
   auto& error_pages = cfg_.getErrorPages();
   auto it = error_pages.find(error);
   if (it != error_pages.end()) {
-    stat_t s;
-    if (stat(it->second.c_str(), &s)) {
-      return handleFile_(s, it->second, error);
+    FileInfo s;
+    if (s.open(it->second.c_str()) && s.isFile()) {
+      handleFile_(s, it->second, error, "text/html");
+      if (request_.getContentLength() != 0)
+        connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
+      return;
     }
   }
 

@@ -15,7 +15,7 @@ class RequestHandler {
   void handleError_(int err); // public so we can send errors more easily
 
  private:
-  using stat_t = struct stat;
+  using FileInfo = util::FileInfo;
   Connection& connection_;
 
   const ConfigServer& cfg_;
@@ -26,7 +26,7 @@ class RequestHandler {
   bool legalMethod_() const;
   bool isRedirect_() const;
   void handleDir_(std::string& path);
-  void handleFile_(stat_t& file_info, const std::string& path, int status = 200);
+  void handleFile_(FileInfo& file_info, const std::string& path, int status = 200, std::string type = "");
   void autoIndex_(std::string& path);
 };
 

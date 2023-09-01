@@ -2,6 +2,7 @@
 
 // often used stuff
 #include <ctime>
+#include <sys/stat.h>
 
 namespace WS {
 enum Dir {
@@ -74,5 +75,30 @@ namespace util {
     }
     str.insert(0, cwd);
     free(cwd);
+  }
+
+  struct FileInfo {
+    FileInfo() = default;
+    struct stat s;
+
+    bool open(const char* path) {
+      return stat(path, &s) == 0;
+    }
+    bool isDir() const {
+      return (s.st_mode & S_IFMT) == S_IFDIR;
+    }
+    bool isFile() const {
+      return (s.st_mode & S_IFMT) == S_IFREG;
+    }
+    size_t size() const {
+      return s.st_size;
+    }
+  };
+  inline std::string getExtension(const std::string& path) {
+    size_t dot = path.find_last_of('.');
+    if (dot == std::string::npos) {
+      return {};
+    }
+    return path.substr(dot + 1);
   }
 }
