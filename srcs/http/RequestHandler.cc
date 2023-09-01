@@ -102,11 +102,11 @@ void RequestHandler::autoIndex_(std::string& path)
   size_t body_size = body.str().length();
   auto dup = std::make_unique<char[]>(body_size + 1);
   body.str().copy(dup.get(), body_size);
-  Response response;
-  response.addHeader("Content-Type", "text/html");
-  response.addHeader("Content-Length", std::to_string(body_size));
-  response.setMessage(200);
-  connection_.enqueueResponse(std::move(response));
+  connection_.enqueueResponse(std::forward<Response>(Response::builder()
+                                                         .message(200)
+                                                         .content_length(body_size)
+                                                         .header("Content-Type", "text/html")
+                                                         .build()));
   connection_.addTask(std::make_unique<SimpleBody>(std::move(dup), body_size));
   if (request_.getContentLength() != 0)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
@@ -120,16 +120,15 @@ void RequestHandler::handleFile_(stat_t& file_info, const std::string& path, int
  //   response_ = cgi.act();
  //   return;
  // }
-  Response response;
   int fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) { // todo: handle as error response
     throw IOException("shit's fucked yo", errno);
   }
-  response.setMessage(status);
-  response.setContentLength(file_info.st_size);
-  response.addHeader("Content-Length", std::to_string(file_info.st_size));
-  response.addHeader("Content-Type", request_.getContentType());
-  connection_.enqueueResponse(std::move(response));
+  connection_.enqueueResponse(Response::builder()
+                                       .message(status)
+                                       .content_length(file_info.st_size)
+                                       .header("Content-Type", request_.getContentType())
+                                       .build());
   connection_.addTask(std::make_unique<SendFile>(fd));
 }
 

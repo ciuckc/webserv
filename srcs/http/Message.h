@@ -11,22 +11,20 @@ class Message {
   std::string message_;
   header_t headers_;
   char* body_;
-  size_t content_length_;
+  size_t content_length_ = 0;
 
  public:
-  Message();
-  virtual ~Message();
-  Message(const Message& other);
-  Message& operator=(const Message& rhs);
+  Message() = default;
+  virtual ~Message() = default;
+  Message(const Message& other) = default;
+  Message& operator=(const Message& rhs) = default;
 
   const std::string& getMessage() const;
   const header_t& getHeaders() const;
-  std::string getBody() const;
   size_t getContentLength() const;
   void setContentLength(size_t content_length);
   void addHeader(const std::string& key, const std::string& val);
   void addHeader(const std::string& kv_pair);
-  void setBody(char* body, size_t body_size);  // ? This will change
 
   std::ostream& write(std::ostream& out) const;
 };

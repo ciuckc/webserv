@@ -14,4 +14,18 @@ class Response : public Message {
 
   void setMessage(int status);
   void setKeepAlive(uint32_t timeout, uint32_t max_requests);
+
+  class ResponseBuilder;
+  static ResponseBuilder builder();
+};
+
+class Response::ResponseBuilder {
+ private:
+  Response response_;
+ public:
+  ResponseBuilder& message(int status);
+  ResponseBuilder& content_length(size_t length);
+  ResponseBuilder& header(const std::string& key, const std::string& val);
+  ResponseBuilder& header(const std::string& header_str);
+  Response&& build();
 };

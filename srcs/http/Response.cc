@@ -22,3 +22,31 @@ void Response::setKeepAlive(uint32_t timeout, uint32_t max_requests = 0) {
   }
   addHeader("keep-alive", val);
 }
+
+Response::ResponseBuilder Response::builder() {
+  return {};
+}
+
+Response::ResponseBuilder& Response::ResponseBuilder::message(int status) {
+  response_.setMessage(status);
+  return *this;
+}
+
+Response::ResponseBuilder& Response::ResponseBuilder::content_length(size_t length) {
+  response_.setContentLength(length);
+  return header("Content-Length", std::to_string(length));
+}
+
+Response::ResponseBuilder& Response::ResponseBuilder::header(const std::string& key, const std::string& val) {
+  response_.addHeader(key, val);
+  return *this;
+}
+
+Response::ResponseBuilder& Response::ResponseBuilder::header(const std::string& header_str) {
+  response_.addHeader(header_str);
+  return *this;
+}
+
+Response&& Response::ResponseBuilder::build() {
+  return std::move(response_);
+}

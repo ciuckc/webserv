@@ -15,11 +15,12 @@ static std::pair<Response, std::unique_ptr<char[]>> defaultErrPage(int error) {
   auto body = std::make_unique<char[]>(256);
   size_t content_length = snprintf(body.get(), 256, errpage_template,
                                    error, err_msg, error, err_msg);
-  Response response;
-  response.setMessage(error);
-  response.setContentLength(content_length);
-  response.addHeader("Content-Length", std::to_string(content_length));
-  response.addHeader("Content-Type", "text/html");
-  return {std::move(response), std::move(body)};
+  return {std::forward<Response>(Response::builder()
+              .message(error)
+              .content_length(content_length)
+              .header("Content-Type", "text/html")
+              .build()),
+          std::move(body)
+  };
 }
 }
