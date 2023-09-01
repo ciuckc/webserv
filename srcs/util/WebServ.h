@@ -2,8 +2,6 @@
 
 // often used stuff
 #include <ctime>
-// for prepend_cwd
-#include "http/ErrorResponse.h"
 
 namespace WS {
 enum Dir {
@@ -72,7 +70,7 @@ namespace util {
     char* cwd;
     cwd = getcwd(nullptr, 0);
     if (cwd == nullptr) {
-      throw (ErrorResponse(500)); // maybe returning null would be a bit less agressive?
+      throw (IOException("getcwd returned null")); // maybe returning null would be a bit less agressive?
     }
     str.insert(0, cwd);
     free(cwd);

@@ -62,9 +62,14 @@ void Server::purge_connections() {
     return;
   last_purge_ = now;
   const time_t now_secs = std::time(nullptr);
-  for (auto& connection : connections_)
-    if (connection.second.stale(now_secs))
-      connection.second.timeout();
+  for (auto& connection : connections_) {
+    if (connection.second.stale(now_secs)) {
+      if (!connection.second.idle())
+        connection.second.timeout();
+      else // We're already sending another response but client doesn't want em
+        connection.second.shutdown();
+    }
+  }
 }
 
 

@@ -15,6 +15,7 @@ class SimpleBody : public OTask {
     ofs_ += to_write;
     return ofs_ == len_;
   }
+  void onDone(Connection&) override {}
 
  private:
   std::unique_ptr<char[]> data_;

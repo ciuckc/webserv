@@ -5,7 +5,6 @@
 #include <sstream>
 #include "Cgi.h"
 #include "util/WebServ.h"
-#include "http/ErrorResponse.h"
 #include "http/RequestHandler.h"
 
 static std::string st_find_header_value(const std::string& msg, const std::string& key)

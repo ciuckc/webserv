@@ -48,8 +48,8 @@ add_executable(webserv
         srcs/main.cc
         srcs/Server.h
         srcs/Server.cc
-        srcs/cgi/Cgi.cc
-        srcs/cgi/Cgi.h
+ #       srcs/cgi/Cgi.cc
+ #       srcs/cgi/Cgi.h
         srcs/config/Config.h
         srcs/config/Config.cc
         srcs/config/ConfigFile.h
@@ -71,10 +71,9 @@ add_executable(webserv
         srcs/http/Request.cc
         srcs/http/Response.h
         srcs/http/Response.cc
-        srcs/http/ErrorResponse.h
-        srcs/http/ErrorResponse.cc
         srcs/http/RequestHandler.cc
         srcs/http/RequestHandler.h
+        srcs/http/ErrorPage.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
         srcs/io/EventQueue.h

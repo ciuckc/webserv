@@ -60,4 +60,5 @@ class Connection {
 
   // Returns true, if the last event was more than WS::timeout seconds ago
   bool stale(time_t now) const;
+  bool idle() const;
 };

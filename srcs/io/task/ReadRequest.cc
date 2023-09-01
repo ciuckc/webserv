@@ -1,6 +1,5 @@
 #include "ReadRequest.h"
 #include "http/RequestHandler.h"
-#include "http/ErrorResponse.h"
 #include <algorithm>
 
 // =========== ReadRequest ===========
@@ -28,13 +27,11 @@ bool ReadRequest::operator()(Connection& connection) {
 void ReadRequest::onDone(Connection& connection) {
   if (cfg_ == nullptr && error_ == 0)
     error_ = 400; // No host header..
-  if (error_ != 0)
-    connection.enqueueResponse(ErrorResponse(error_));
-  else {
-    RequestHandler rq(connection, *cfg_, request_);
+  RequestHandler rq(connection, *cfg_, request_);
+  if (error_ == 0)
     rq.execRequest();
-    //connection.enqueueResponse(rq.getResponse());
-  }
+  else
+    rq.handleError_(error_);
 }
 
 // return true if we should stop

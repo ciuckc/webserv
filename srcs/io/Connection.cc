@@ -3,7 +3,6 @@
 #include "io/task/IOTask.h"
 #include "io/task/ReadRequest.h"
 #include "io/task/SendResponse.h"
-#include "http/ErrorResponse.h"
 
 Connection::Connection(int fd, EventQueue& event_queue, const host_map_t& host_map)
     : host_map_(host_map),
@@ -143,9 +142,15 @@ void Connection::timeout() {
   Log::debug('[', socket_.get_fd(), "] Timed out\n");
   keep_alive_ = false;
   request_count_ = 0; // so we don't get 2 log messages
-  enqueueResponse(ErrorResponse(408));
+  Response response;
+  response.setMessage(408);
+  enqueueResponse(std::move(response));
 }
 
 bool Connection::stale(time_t now) const {
   return now - last_event_ > WS::timeout;
+}
+
+bool Connection::idle() const {
+  return oqueue_.empty();
 }

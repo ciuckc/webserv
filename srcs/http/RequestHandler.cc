@@ -1,13 +1,15 @@
 #include <sstream>
 #include <dirent.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "RequestHandler.h"
-#include "ErrorResponse.h"
-#include "cgi/Cgi.h"
+//#include "cgi/Cgi.h"
 #include "util/WebServ.h"
 #include "io/task/SendFile.h"
+#include "io/task/SimpleBody.h"
+#include "Status.h"
+#include "io/task/DiscardBody.h"
+#include "ErrorPage.h"
 
 void  RequestHandler::execRequest()
 {
@@ -82,10 +84,9 @@ void RequestHandler::autoIndex_(std::string& path)
   std::ostringstream body;
   std::string name;
   DIR* dir = opendir(path.c_str());
-  if (dir == nullptr) {
-    handleError_(500);
-    return;
-  }
+  if (dir == nullptr)
+    return handleError_(500);
+
   struct dirent* entry = readdir(dir);
   body << "<html>" << '\n' << "<body>" << '\n';
   while (entry != nullptr) {
@@ -99,36 +100,32 @@ void RequestHandler::autoIndex_(std::string& path)
   closedir(dir);
   body << "</body>" << '\n' << "</html>" << '\n';
   size_t body_size = body.str().length();
-  char* dup;
-  try {
-    dup = new char[body_size + 1];
-  }
-  catch (std::exception&) {
-    response_ = ErrorResponse(500);
-    return;
-  }
-  body.str().copy(dup, body_size);
-  dup[body_size] = '\0';
-  response_.setBody(dup, body_size);
-  response_.addHeader("Content-Type", "text/html");
-  response_.addHeader("Content-Length", std::to_string(body_size));
-  response_.setMessage(200);
+  auto dup = std::make_unique<char[]>(body_size + 1);
+  body.str().copy(dup.get(), body_size);
+  Response response;
+  response.addHeader("Content-Type", "text/html");
+  response.addHeader("Content-Length", std::to_string(body_size));
+  response.setMessage(200);
+  connection_.enqueueResponse(std::move(response));
+  connection_.addTask(std::make_unique<SimpleBody>(std::move(dup), body_size));
+  if (request_.getContentLength() != 0)
+    connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }
 
-void RequestHandler::handleFile_(stat_t& file_info, std::string& path)
+void RequestHandler::handleFile_(stat_t& file_info, const std::string& path, int status)
 {
-  const std::string cgi_ext = ".cgi"; // fetch this from config instead
-  if (path.find(cgi_ext) != std::string::npos) {
-    Cgi cgi(request_);
-    response_ = cgi.act();
-    return;
-  }
+ // const std::string cgi_ext = ".cgi"; // fetch this from config instead
+ // if (path.find(cgi_ext) != std::string::npos) {
+ //   Cgi cgi(request_);
+ //   response_ = cgi.act();
+ //   return;
+ // }
   Response response;
   int fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) { // todo: handle as error response
     throw IOException("shit's fucked yo", errno);
   }
-  response.setMessage(200);
+  response.setMessage(status);
   response.setContentLength(file_info.st_size);
   response.addHeader("Content-Length", std::to_string(file_info.st_size));
   response.addHeader("Content-Type", request_.getContentType());
@@ -136,12 +133,20 @@ void RequestHandler::handleFile_(stat_t& file_info, std::string& path)
   connection_.addTask(std::make_unique<SendFile>(fd));
 }
 
-void RequestHandler::handleError_(int) {
-  // todo: generate error responses here instead of using that class?
-  // note SimpleBody class to send a char[] as body
-}
+void RequestHandler::handleError_(int error) {
+  auto& error_pages = cfg_.getErrorPages();
+  auto it = error_pages.find(error);
+  if (it != error_pages.end()) {
+    stat_t s;
+    if (stat(it->second.c_str(), &s)) {
+      return handleFile_(s, it->second, error);
+    }
+  }
 
-Response&& RequestHandler::getResponse()
-{
-  return std::move(response_);
+  auto perr = http::defaultErrPage(error);
+  size_t content_len = perr.first.getContentLength();
+  connection_.enqueueResponse(std::move(perr.first));
+  connection_.addTask(std::make_unique<SimpleBody>(std::move(perr.second), content_len));
+  if (request_.getContentLength() != 0)
+    connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }

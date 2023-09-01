@@ -1,6 +1,5 @@
 #include "Response.h"
 
-#include <fstream>
 #include "Status.h"
 #include "util/WebServ.h"
 
@@ -22,31 +21,4 @@ void Response::setKeepAlive(uint32_t timeout, uint32_t max_requests = 0) {
     val += ", max=" + std::to_string(max_requests);
   }
   addHeader("keep-alive", val);
-}
-
-void Response::makeBody(const char* type, const std::string& path)
-{
-  std::ios_base::openmode openmode = std::ios::in;
-  if (type) {
-    std::string type_str(type);
-    if (type_str.find("text") != std::string::npos)
-      openmode |= std::ios::binary;
-  }
-  std::ifstream file(path, openmode);
-  if (!file.is_open()) {
-    throw (ErrorResponse(500));
-  }
-  std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-  file.close();
-  size_t body_size = str.length();
-  char* body;
-  try {
-    body = new char[body_size + 1];
-  }
-  catch (std::exception&) {
-    throw (ErrorResponse(500));
-  }
-  str.copy(body, body_size);
-  body[body_size] = '\0';
-  this->setBody(body, body_size);
 }
