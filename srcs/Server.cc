@@ -50,7 +50,7 @@ void Server::accept_connection(const EventQueue::event_t& event) {
   if (EventQueue::isWrHangup(event) || EventQueue::isError(event) || EventQueue::isWrite(event))
     throw IOException("Hangup/err/write on listen socket?! The world has gone mad..\n");
   const Socket& socket = listen_sockets_[EventQueue::getFileDes(event) - listen_start_];
-  Log::debug(socket.getName(), "\t\t\t\t\t\t\t", event);
+  Log::debug(socket.getName(), "\t", event);
   Socket new_sock = socket.accept();
   const int fd = new_sock.get_fd();
   connections_.emplace(std::piecewise_construct,

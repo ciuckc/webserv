@@ -18,7 +18,7 @@ void Response::setMessage(int status) {
 void Response::setKeepAlive(uint32_t timeout, uint32_t max_requests = 0) {
   std::string val = "timeout=" + std::to_string(timeout);
   if (max_requests != 0) {
-    val += ", max=" + std::to_string(max_requests);
+    val.append(", max=").append(std::to_string(max_requests));
   }
   addHeader("keep-alive", val);
 }

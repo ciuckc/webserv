@@ -11,6 +11,7 @@
 #include "IOException.h"
 #include "util/Log.h"
 #include "util/WebServ.h"
+#include "util/String.h"
 
 Socket::Socket() {
   fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -94,9 +95,10 @@ Socket Socket::accept() const {
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
-  std::string addrstr = (inet_ntoa(addr.sin_addr) + (':' + std::to_string(ntohs(addr.sin_port))));
+  std::string addrstr = Str::join(inet_ntoa(addr.sin_addr), ":", std::to_string(ntohs(addr.sin_port)));
+  std::string name = Str::join(util::terminal_colours[fd % 8], name_, "->[", addrstr, "]", util::RESET);
   Log::info(name_, "==[Listening]\t\t\t\tAccept ", addrstr, "-> fd ", fd, '\n');
-  return {fd, util::terminal_colours[fd % 8] + name_ + "->[" + addrstr + ']' + util::RESET};
+  return {fd, std::move(name)};
 }
 
 int Socket::get_fd() const {

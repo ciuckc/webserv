@@ -104,7 +104,7 @@ void RequestHandler::autoIndex_(std::string& path)
   connection_.enqueueResponse(std::forward<Response>(Response::builder()
                                                          .message(200)
                                                          .content_length(body_size)
-                                                         .header("Content-Type", "text/html")
+                                                         .header("Content-Type: text/html\r\n")
                                                          .build()));
   connection_.addTask(std::make_unique<SimpleBody>(std::move(dup), body_size));
   if (request_.getContentLength() != 0)

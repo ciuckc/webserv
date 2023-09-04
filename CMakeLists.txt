@@ -80,7 +80,8 @@ add_executable(webserv
         srcs/io/task/SendFile.h
         srcs/io/task/SimpleBody.h
         srcs/util/WebServ.h
-        srcs/util/Log.h)
+        srcs/util/Log.h
+        srcs/util/String.h)
 
 set_target_properties(webserv PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                          ${CMAKE_SOURCE_DIR})

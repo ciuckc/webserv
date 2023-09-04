@@ -69,5 +69,5 @@ class Connection {
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const Connection& connection) {
-  return stream << connection.getName() << "\t\t";
+  return stream << connection.getName() << "\t";
 }

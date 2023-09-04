@@ -18,7 +18,7 @@ static std::pair<Response, std::unique_ptr<char[]>> defaultErrPage(int error) {
   return {std::forward<Response>(Response::builder()
               .message(error)
               .content_length(content_length)
-              .header("Content-Type", "text/html")
+              .header("Content-Type: text/html\r\n")
               .build()),
           std::move(body)
   };

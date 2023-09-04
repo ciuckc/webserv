@@ -1,4 +1,5 @@
 #include "Message.h"
+#include "util/String.h"
 
 #include <ostream>
 
@@ -15,7 +16,7 @@ void Message::addHeader(const std::string& kv_pair) {
 }
 
 void Message::addHeader(const std::string& key, const std::string& val) {
-  headers_.push_back(key + ": " + val + "\r\n");
+  headers_.push_back(std::forward<std::string>(Str::join(key, ": ", val, "\r\n")));
 }
 
 size_t Message::getContentLength() const {
