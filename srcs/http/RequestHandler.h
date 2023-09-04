@@ -11,7 +11,7 @@ class RequestHandler {
   ~RequestHandler() = default;
   RequestHandler(const RequestHandler& that) = delete;
   RequestHandler& operator=(const RequestHandler& that) = delete;
-  void       execRequest();
+  void       execRequest(const ConfigRoute& route);
   void handleError_(int err); // public so we can send errors more easily
 
  private:

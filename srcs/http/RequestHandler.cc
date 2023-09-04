@@ -11,8 +11,9 @@
 #include "ErrorPage.h"
 #include "MIME.h"
 
-void  RequestHandler::execRequest()
+void  RequestHandler::execRequest(const ConfigRoute& route)
 {
+  (void) route;
   // for route in cfg_.routes
   //   if route matches (location, method, all that)
   //     add ITask to get body if necessary

@@ -28,10 +28,14 @@ void ReadRequest::onDone(Connection& connection) {
   if (cfg_ == nullptr && error_ == 0)
     error_ = 400; // No host header..
   RequestHandler rq(connection, *cfg_, request_);
-  if (error_ == 0)
-    rq.execRequest();
-  else
-    rq.handleError_(error_);
+  if (error_ == 0) {
+    const auto route = cfg_->getRoutes().lower_bound(request_.getPath());
+    if (route != cfg_->getRoutes().end())
+      return rq.execRequest(route->second);
+    else
+      error_ = 404;
+  }
+  rq.handleError_(error_);
 }
 
 // return true if we should stop
