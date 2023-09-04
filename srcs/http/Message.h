@@ -10,7 +10,6 @@ class Message {
  protected:
   std::string message_;
   header_t headers_;
-  char* body_;
   size_t content_length_ = 0;
 
  public:

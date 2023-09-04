@@ -8,8 +8,7 @@ class SendResponse : public OTask {
   enum State {
     MSG,
     HEADERS,
-    SEPARATOR,
-    BODY
+    SEPARATOR
   };
 
   typedef Message::header_t::const_iterator header_iter_t;

@@ -31,8 +31,6 @@ std::ostream& Message::write(std::ostream& out) const {
   for (const auto& header : headers_)
     out << header;
   out << "\r\n";
-  if (body_)
-    out.write(body_, std::streamsize(content_length_));
   return out;
 }
 

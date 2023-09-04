@@ -20,11 +20,6 @@ bool SendResponse::operator()(Connection& connection) {
         break;
       case SEPARATOR:
         connection.getBuffer() << "\r\n";
-        if (response_.getContentLength() == 0)
-          return true;
-        state_ = BODY;
-        break;
-      case BODY:
         return true;
     }
   }

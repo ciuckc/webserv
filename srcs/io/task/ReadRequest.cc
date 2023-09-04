@@ -5,30 +5,41 @@
 // =========== ReadRequest ===========
 bool ReadRequest::operator()(Connection& connection) {
   ConnectionBuffer& buf = connection.getBuffer();
-  if (state_ != BODY) {
-    std::string line;
-    while (!buf.getline(line).readFailed()) {
-      if (use_line(connection, line)) {
-        if (error_ != 0)
-          return true;
-        break;
-      }
-    }
+  std::string line;
+  while (!buf.getline(line).readFailed())
+    if (use_line(connection, line))
+      return true;
+  return false;
+}
+
+bool ReadRequest::checkError(Connection& connection) {
+  if (error_ != 0) {
+    // because we errored halfway through reading request we
+    // need to reset the connection unless we want to find the next request
+    // by digging through invalid request
+    connection.setKeepAlive(false);
+    return true;
   }
-  if (buf.readFailed() || state_ != BODY)
-    return false;
-  if (request_.getContentLength() == 0)
-    if (request_.getMethod() == HTTP::POST)
-      error_ = 411; // Length required
-  // Todo: read body (or BodyReader task...)
+  if (cfg_ == nullptr)
+    error_ = 400;
+  else if (request_.getPath().find("..") != std::string::npos)
+    error_ = 403; // don't escape root, forbidden
+  else if (request_.getMethod() == HTTP::INVALID)
+    error_ = 405; // Method not allowed
+  else if (request_.getMethod() == HTTP::POST && request_.getContentLength() == 0)
+    error_ = 411;
+  else if (request_.getUri().size() > WS::uri_maxlen)
+    error_ = 414;
+  else if (request_.getVersion() != Request::VER_1_1)
+    error_ = 505; // Http version not supported
+  else
+   return false;
   return true;
 }
 
 void ReadRequest::onDone(Connection& connection) {
-  if (cfg_ == nullptr && error_ == 0)
-    error_ = 400; // No host header..
   RequestHandler rq(connection, *cfg_, request_);
-  if (error_ == 0) {
+  if (!checkError(connection)) {
     const auto route = cfg_->getRoutes().lower_bound(request_.getPath());
     if (route != cfg_->getRoutes().end())
       return rq.execRequest(route->second);
@@ -50,8 +61,6 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
       return handle_msg(connection, line);
     case HEADERS:
       return handle_header(connection, line);
-    case BODY:
-      return handle_body(connection, line);
     case DONE:
       return true;
   }
@@ -61,18 +70,13 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
 bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
   Log::info(connection, "IN: \t", std::string_view(line.data(), line.find_last_not_of("\n\r") + 1), '\n');
 
-  if (!request_.setMessage(line)) {
-    if (request_.getMethod() == HTTP::INVALID) {
-      error_ = 405; // Method not allowed
-    } else if (request_.getUri().empty()) {
-      error_ = 400; // Bad Request
-    }/* else if (request_.getVersion() != Request::VER_1_1) {
-      error_ = 505; // Http version not supported
-    } // We could have 414 URI too long here as well*/
+  if (request_.setMessage(line)) {
+    state_ = HEADERS;
+    return false;
+  } else {
+    error_ = 400;
     return true;
   }
-  state_ = HEADERS;
-  return false;
 }
 
 bool ReadRequest::handle_header(Connection& connection, std::string& line) {
@@ -80,7 +84,6 @@ bool ReadRequest::handle_header(Connection& connection, std::string& line) {
     error_ = 431;
     return true;
   } else if (line == "\r\n" || line == "\n") {
-    state_ = BODY;
     return true;
   }
 
@@ -96,13 +99,6 @@ bool ReadRequest::handle_header(Connection& connection, std::string& line) {
                 });
   request_.addHeader(line);
   return error_ != 0;
-}
-
-bool ReadRequest::handle_body(Connection& connection, std::string& line) {
-  (void) connection;
-  (void) line;
-  state_ = DONE;
-  return true;
 }
 
 std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& line) {
@@ -158,15 +154,10 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
       (void)connection;
       char *pos;
       size_t content_length = std::strtoul(value.data(), &pos, 10);
-      if (value.find_first_not_of(" \t\r\n", pos - value.data()) != std::string::npos)
+      if (*pos)
         return 400;
       request.request_.setContentLength(content_length);
       // todo: make sure this body length is not too big onDone
-      return 0;
-    }),
-    HEADER_HOOK("content-type", {
-      (void)connection;
-      request.request_.setContentType(std::string(value));
       return 0;
     })}, WS::case_cmp_less};
 

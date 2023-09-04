@@ -23,6 +23,8 @@ static constexpr size_t request_maxlen = 32768;
 // this limit is not set by the rfc, 8k is the most common value I see
 static constexpr size_t header_maxlen = 8192;
 
+static constexpr size_t uri_maxlen = 8192;
+
 // How many seconds will we keep idle connections alive for?
 static constexpr uint32_t timeout = 5;
 

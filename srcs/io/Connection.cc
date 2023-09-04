@@ -9,7 +9,7 @@ Connection::Connection(Socket&& socket, EventQueue& event_queue, const host_map_
       socket_(std::forward<Socket>(socket)),
       buffer_(),
       event_queue_(event_queue) {
-  event_queue_.add(fd);
+  event_queue_.add(socket_.get_fd());
   awaitRequest();
   last_event_ = std::time(nullptr);
 }
@@ -98,10 +98,6 @@ void Connection::addTask(OTask::ptr_type&& task) {
   oqueue_.push_back(std::forward<OTask::ptr_type>(task));
 }
 
-Socket& Connection::getSocket() {
-  return socket_;
-}
-
 ConnectionBuffer& Connection::getBuffer() {
   return buffer_;
 }
@@ -149,4 +145,8 @@ bool Connection::stale(time_t now) const {
 
 bool Connection::idle() const {
   return oqueue_.empty();
+}
+
+const std::string& Connection::getName() const {
+  return socket_.getName();
 }

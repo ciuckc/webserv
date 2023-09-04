@@ -77,7 +77,6 @@ static char** st_make_env(const Request& req)
 }
 
 Cgi::Cgi(const Request& req) :
-    body_(req.getBody()),
     path_("." + req.getPath().substr(0, req.getPath().find(".cgi") + 4)), // fix getPath() !!! (or confirm that it's working)
     envp_(st_make_env(req)),
     req_(req)

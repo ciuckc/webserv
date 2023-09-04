@@ -40,7 +40,6 @@ class Connection {
   WS::IOStatus handleIn();
   WS::IOStatus handleOut();
 
-  Socket& getSocket();
   ConnectionBuffer& getBuffer();
   const host_map_t& getHostMap() const;
 

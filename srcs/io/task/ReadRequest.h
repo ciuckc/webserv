@@ -7,7 +7,6 @@ class ReadRequest : public ITask {
   enum State {
     MSG,
     HEADERS,
-    BODY,
     DONE,
   };
 
@@ -21,8 +20,9 @@ class ReadRequest : public ITask {
   bool use_line(Connection& connection, std::string& line);
   bool handle_msg(Connection&, std::string& line);
   bool handle_header(Connection& connection, std::string& line);
-  bool handle_body(Connection& connection, std::string& line);
   std::pair<std::string, std::string_view> split_header(std::string& line);
+
+  bool checkError(Connection&);
 
  public:
   explicit ReadRequest() = default;
