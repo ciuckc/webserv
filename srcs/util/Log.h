@@ -2,6 +2,7 @@
 #include <ctime>
 #include <iostream>
 #include <iomanip>
+#include <chrono>
 
 class Log {
  public:
@@ -60,8 +61,10 @@ class Log {
 
  private:
   static void print_time(std::ostream& to) {
-    time_t time = std::time(nullptr);
-    to << std::put_time(std::localtime(&time), "%d/%m %T ");
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    int ms = (int)(duration_cast<milliseconds>(now.time_since_epoch()) % 1000).count();
+    time_t timer = system_clock::to_time_t(now);
+    to << std::put_time(std::localtime(&timer), "%d/%m %T.") << std::setw(3) << std::setfill('0') << ms << std::setw(0) << " ";
   }
-
 };

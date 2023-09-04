@@ -13,8 +13,8 @@ class RecvFile : public ITask {
     return remaining_ == 0;
   };
 
-  void onDone(Connection&) override {
-    Log::trace("RecvFile done");
+  void onDone(Connection& connection) override {
+    Log::trace(connection, "RecvFile done\n");
   };
 
  protected:

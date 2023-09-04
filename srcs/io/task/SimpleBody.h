@@ -15,7 +15,9 @@ class SimpleBody : public OTask {
     ofs_ += to_write;
     return ofs_ == len_;
   }
-  void onDone(Connection&) override {}
+  void onDone(Connection& connection) override {
+    Log::trace(connection, "Sent simple body\n");
+  }
 
  private:
   std::unique_ptr<char[]> data_;

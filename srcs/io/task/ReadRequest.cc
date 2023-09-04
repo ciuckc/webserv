@@ -68,7 +68,7 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
 }
 
 bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
-  Log::info(connection, "IN: \t", std::string_view(line.data(), line.find_last_not_of("\n\r") + 1), '\n');
+  Log::info(connection, "IN: \t", util::without_crlf(line), '\n');
 
   if (request_.setMessage(line)) {
     state_ = HEADERS;

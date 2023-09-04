@@ -17,8 +17,8 @@ class SendFile : public OTask {
     return false;
   };
 
-  void onDone(Connection&) override {
-    Log::trace("Sendfile done\n");
+  void onDone(Connection& connection) override {
+    Log::trace(connection, "Sendfile done\n");
   };
 
  private:

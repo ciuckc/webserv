@@ -82,6 +82,11 @@ namespace util {
     free(cwd);
   }
 
+  static inline std::string_view without_crlf(std::string_view sv) {
+    sv.remove_suffix(1 + (sv[sv.size() - 2] == '\r'));
+    return sv;
+  }
+
   struct FileInfo {
     FileInfo() = default;
     struct stat s;
@@ -107,16 +112,16 @@ namespace util {
     return path.substr(dot + 1);
   }
 
-  constexpr const char* RESET = "\033[0m";
-  constexpr const char* BLACK = "\033[30m";
-  constexpr const char* RED = "\033[31m";
-  constexpr const char* GREEN = "\033[32m";
-  constexpr const char* YELLOW = "\033[33m";
-  constexpr const char* BLUE = "\033[34m";
-  constexpr const char* MAGENTA = "\033[35m";
-  constexpr const char* CYAN = "\033[36m";
-  constexpr const char* WHITE = "\033[37m";
-  constexpr const char* terminal_colours[8] = {
+  static constexpr const char* RESET = "\033[0m";
+  static constexpr const char* BLACK = "\033[30m";
+  static constexpr const char* RED = "\033[31m";
+  static constexpr const char* GREEN = "\033[32m";
+  static constexpr const char* YELLOW = "\033[33m";
+  static constexpr const char* BLUE = "\033[34m";
+  static constexpr const char* MAGENTA = "\033[35m";
+  static constexpr const char* CYAN = "\033[36m";
+  static constexpr const char* WHITE = "\033[37m";
+  static constexpr const char* terminal_colours[8] = {
       BLACK, RED, GREEN, YELLOW,
       BLUE, MAGENTA, CYAN, WHITE
   };
