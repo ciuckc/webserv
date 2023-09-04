@@ -17,7 +17,7 @@ class ConfigServer {
   ConfigServer& operator=(const ConfigServer&) = default;
   ~ConfigServer() = default;
 
-  using routes_t = std::multimap<std::string, ConfigRoute, std::greater<>>;
+  using routes_t = std::map<std::string, ConfigRoute, std::greater<>>;
 
   void setPort(uint16_t port);
   void addServerName(const std::string& server_name);

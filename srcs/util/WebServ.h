@@ -29,6 +29,9 @@ static constexpr uint32_t timeout = 5;
 // How many requests do we want to handle per connection?
 static constexpr uint32_t max_requests = 10;
 
+// File containing mime types
+static constexpr const char* mimes_file = "./mime.types";
+
 static inline std::string get_date_header() {
   // strlen("date: Tue, 22 Aug 2023 19:39:33 GMT\r\n\0")
   static constexpr size_t date_header_len = 38;

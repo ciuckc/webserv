@@ -24,7 +24,7 @@ static struct MIME {
   void readTypes() {
     have_read_file_ = true;
 
-    std::ifstream mime_stream("/etc/mime.types");
+    std::ifstream mime_stream(WS::mimes_file);
     std::string line;
     while (std::getline(mime_stream, line)) {
       if (line.empty() || line[0] == '#')

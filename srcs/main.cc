@@ -18,11 +18,16 @@ static Config fakeConfig() {
   srv.setPort(6969);
   srv.addServerName("localhost");
   srv.addServerName("127.0.0.1");
+  srv.addRoute("/", {});
+  srv.addRoute("/html/", {});
+  srv.addRoute("/html/site/", {});
+  srv.addRoute("/poop/", {});
   cfg.addServer(srv);
   srv.setPort(8080);
   cfg.addServer(srv);
   srv.setPort(12345);
   cfg.addServer(srv);
+
   return cfg;
 }
 
