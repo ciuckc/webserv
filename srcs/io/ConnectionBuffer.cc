@@ -24,7 +24,7 @@ WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
   }
   auto& buf = i_bufs_.back().getData();
   ssize_t readed = socket.read(&buf[buf_size_ - to_read], to_read);
-  if (readed <= 0)
+  if (readed < 0)
     return WS::IO_FAIL;
   read_fail_ = false;
   i_end_ += readed;
@@ -105,7 +105,7 @@ WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
     auto& buffer = o_bufs_.front().getData();
     ssize_t to_write = (ssize_t)(std::min(buf_size_, o_offset_) - o_start_);
     ssize_t written = socket.write(&buffer[o_start_], to_write, 0);
-    if (written <= 0)
+    if (written < 0)
       return WS::IO_FAIL;
     if (written < to_write) {
       o_start_ += written;

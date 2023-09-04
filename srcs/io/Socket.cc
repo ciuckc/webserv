@@ -18,12 +18,6 @@ Socket::Socket() {
     throw IOException("Opening socket failed", errno);
   if (fcntl(fd_, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
-
-#ifdef __linux__
-  // Wait until uncorked to send partial packets, require flush!
-  int cork = true;
-  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-#endif
 }
 
 Socket::~Socket() {
@@ -111,17 +105,6 @@ int Socket::get_fd() const {
 
 const std::string& Socket::getName() const {
   return name_;
-}
-
-void Socket::flush() {
-  // Unsetting the TCP_NOPUSH option does not actually flush a socket on MacOS
-  // so we can't use this option (unless we want to wait 5 seconds for our response)
-#ifdef __linux__
-  int cork = false;
-  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-  cork = !cork;
-  setsockopt(fd_, IPPROTO_TCP, TCP_CORK, &cork, sizeof(cork));
-#endif
 }
 
 ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {

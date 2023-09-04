@@ -36,7 +36,6 @@ class Socket {
   int get_fd() const;
   const std::string& getName() const;
 
-  void flush();
   ssize_t write(char* buf, ssize_t len, size_t offs = 0) const;
   ssize_t write(const std::string& str, size_t offs = 0) const;
   ssize_t read(char* buf, ssize_t len, size_t offs = 0) const;

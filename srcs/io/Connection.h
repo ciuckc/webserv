@@ -28,9 +28,14 @@ class Connection {
 
   bool keep_alive_ = true;
   bool client_fin_ = false;
+  // If client is misbehaving, set to true to reset connection after
+  // response is sent
+  bool reset_ = false;
 
   time_t last_event_;
   uint32_t request_count_ = 0;
+
+  bool awaitRequest();
 
  public:
   Connection(Socket&& socket, EventQueue& event_queue, const host_map_t& host_map);
@@ -52,7 +57,6 @@ class Connection {
   // also send one, we can then close the socket!
   void shutdown();
 
-  void awaitRequest();
   void enqueueResponse(Response&& response);
   // Enqueue a 408 Request Timeout response
   void timeout();

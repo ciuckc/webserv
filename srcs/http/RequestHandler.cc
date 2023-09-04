@@ -47,8 +47,6 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
       handleFile_(s, path);
     }
   }
-  if (connection_.keepAlive())
-    connection_.awaitRequest();
 }
 
 bool RequestHandler::legalMethod_() const
