@@ -1,7 +1,7 @@
 #include <csignal>
 
-#include "ConfigFile.h"
-#include "ConfigParse.h"
+#include "config/ConfigFile.h"
+#include "config/ConfigParse.h"
 #include "Server.h"
 
 #define DEFAULT_CONFIG_FILE "./webserv.conf"

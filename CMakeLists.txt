@@ -30,19 +30,11 @@ set(CMAKE_CXX_FLAGS_RELEASE -O3)
 
 # Compilation specifications
 # ------------------------------------------------------------------------------
-add_compile_options(-Wall -Wextra -Werror -g -fsanitize=address)
-add_link_options(-fsanitize=address)
-add_link_options(-g)
-# add_compile_options(-Wconversion -Wnull-dereference -Wnon-virtual-dtor
-# -Wcast-align)
+add_compile_options(-Wall -Wextra -Werror)
 
 # Includes
 # ------------------------------------------------------------------------------
 include_directories(srcs)
-include_directories(srcs/config)
-include_directories(srcs/http)
-include_directories(srcs/io)
-include_directories(srcs/server)
 
 add_executable(webserv
         srcs/main.cc

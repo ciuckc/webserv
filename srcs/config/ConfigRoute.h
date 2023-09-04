@@ -2,7 +2,7 @@
 
 #include <bitset>
 #include <vector>
-#include "Method.h"
+#include "http/Method.h"
 
 class ConfigRoute {
  private:
