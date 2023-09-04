@@ -115,18 +115,18 @@ void RequestHandler::autoIndex_(std::string& path)
 
 void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, int status, std::string type)
 {
- // const std::string cgi_ext = ".cgi"; // fetch this from config instead
- // if (path.find(cgi_ext) != std::string::npos) {
- //   Cgi cgi(request_);
- //   response_ = cgi.act();
- //   return;
- // }
- bool addType = true;
- if (type.empty()) {
-   std::string extension = util::getExtension(path);
-   if (extension.empty() || (type = MIME.getType(extension)).empty())
-     addType = false;
- }
+  // const std::string cgi_ext = ".cgi"; // fetch this from config instead
+  // if (path.find(cgi_ext) != std::string::npos) {
+  //   Cgi cgi(request_);
+  //   response_ = cgi.act();
+  //   return;
+  // }
+  bool addType = true;
+  if (type.empty()) {
+    std::string extension = util::getExtension(path);
+    if (extension.empty() || (type = MIME.getType(extension)).empty())
+      addType = false;
+  }
 
   int fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) { // todo: handle as error response
