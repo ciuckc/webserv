@@ -14,12 +14,14 @@
 class Socket {
  private:
   int fd_;
+  std::string name_;
 
  public:
   Socket();
   ~Socket();
 
   explicit Socket(int fd);
+  Socket(int fd, std::string name);
   Socket(Socket&& other) noexcept;
   Socket& operator=(Socket&& other) noexcept;
 
@@ -27,11 +29,12 @@ class Socket {
   Socket& operator=(const Socket& rhs) = delete;
 
 
-  void bind(uint16_t port) const;
+  void bind(uint16_t port);
   void listen(int backlog) const;
-  int accept() const;
+  Socket accept() const;
 
   int get_fd() const;
+  const std::string& getName() const;
 
   void flush();
   ssize_t write(char* buf, ssize_t len, size_t offs = 0) const;
@@ -41,7 +44,7 @@ class Socket {
   void shutdown(int channel);
 
   inline void close() {
-    Log::debug('[', fd_, "]\tSocket destroyed\n");
+    Log::debug(name_, "\t\tSocket destroyed\n");
     ::close(fd_);
     fd_ = -1;
   }

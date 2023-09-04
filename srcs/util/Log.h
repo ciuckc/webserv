@@ -52,11 +52,11 @@ class Log {
    * info("Surf's up", ',', " hi ", 5, '\n')
    * would print "Surf's up, hi 5\n" to stdout (unless log level is set to ERROR or WARN
    */
-  template<typename... Ts> static inline void error(const Ts&... args) { log<ERROR>("[ERROR]\t", args...); }
-  template<typename... Ts> static inline void warn(const Ts&... args) { log<WARN>("[WARN]\t", args...); }
-  template<typename... Ts> static inline void info(const Ts&... args) { log<INFO>("[INFO]\t", args...); }
-  template<typename... Ts> static inline void debug(const Ts&... args) { log<DEBUG>("[DEBUG]\t", args...); }
-  template<typename... Ts> static inline void trace(const Ts&... args) { log<TRACE>("[TRACE]\t", args...); }
+  template<typename... Ts> static inline void error(const Ts&... args) { log<ERROR>("[ERROR] ", args...); }
+  template<typename... Ts> static inline void warn(const Ts&... args) { log<WARN>("[WARN]  ", args...); }
+  template<typename... Ts> static inline void info(const Ts&... args) { log<INFO>("[INFO]  ", args...); }
+  template<typename... Ts> static inline void debug(const Ts&... args) { log<DEBUG>("[DEBUG] ", args...); }
+  template<typename... Ts> static inline void trace(const Ts&... args) { log<TRACE>("[TRACE] ", args...); }
 
  private:
   static void print_time(std::ostream& to) {

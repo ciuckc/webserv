@@ -50,10 +50,12 @@ void Server::accept_connection(const EventQueue::event_t& event) {
   if (EventQueue::isWrHangup(event) || EventQueue::isError(event) || EventQueue::isWrite(event))
     throw IOException("Hangup/err/write on listen socket?! The world has gone mad..\n");
   const Socket& socket = listen_sockets_[EventQueue::getFileDes(event) - listen_start_];
-  int conn_fd = socket.accept();
+  Log::debug(socket.getName(), "\t\t\t\t\t\t\t", event);
+  Socket new_sock = socket.accept();
+  const int fd = new_sock.get_fd();
   connections_.emplace(std::piecewise_construct,
-                       std::forward_as_tuple(conn_fd),
-                       std::forward_as_tuple(conn_fd, evqueue_, socket_map_[socket.get_fd()]));
+                       std::forward_as_tuple(fd),
+                       std::forward_as_tuple(std::move(new_sock), evqueue_, socket_map_[socket.get_fd()]));
 }
 
 void Server::purge_connections() {
@@ -77,9 +79,12 @@ void Server::handle_connection(EventQueue::event_t& event) {
   const int fd = EventQueue::getFileDes(event);
   auto found_connection = connections_.find(fd);
   if (found_connection == connections_.end()) {
-    Log::warn('[', fd, "]\tGot event on nonexistent connection?\n");
-  } else if (EventQueue::isError(event)) {
-    Log::warn('[', fd, "]\tError event?!?!\n");
+    Log::warn("Got event on nonexistent connection? fd: ", fd, '\n');
+    return;
+  }
+  Log::debug(found_connection->second, event);
+  if (EventQueue::isError(event)) {
+    Log::warn(found_connection->second, "Error event?!?!\n");
     connections_.erase(found_connection);
   } else if (found_connection->second.handle(event)) {
     connections_.erase(found_connection);

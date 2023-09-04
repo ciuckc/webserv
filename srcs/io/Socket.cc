@@ -10,6 +10,7 @@
 
 #include "IOException.h"
 #include "util/Log.h"
+#include "util/WebServ.h"
 
 Socket::Socket() {
   fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -33,18 +34,22 @@ Socket::~Socket() {
 
 Socket::Socket(int fd) : fd_(fd) {}
 
+Socket::Socket(int fd, std::string name) : fd_(fd), name_(std::move(name)) {}
+
 Socket::Socket(Socket&& other) noexcept {
   fd_ = other.fd_;
   other.fd_ = -1;
+  name_ = std::move(other.name_);
 }
 
 Socket& Socket::operator=(Socket&& other) noexcept {
   fd_ = other.fd_;
   other.fd_ = -1;
+  name_ = std::move(other.name_);
   return *this;
 }
 
-void Socket::bind(uint16_t port) const {
+void Socket::bind(uint16_t port) {
   addrinfo* bind_info;
 
   int yes = 1;
@@ -52,6 +57,7 @@ void Socket::bind(uint16_t port) const {
   setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   {
     std::string port_str = std::to_string(port);
+    name_ = '[' + port_str + ']';
     addrinfo hints = {};
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -85,7 +91,7 @@ void Socket::listen(int backlog) const {
     throw IOException("Failed to set socket to listen", errno);
 }
 
-int Socket::accept() const {
+Socket Socket::accept() const {
   sockaddr_in addr = {};
   socklen_t len = sizeof(sockaddr_in);
   int fd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
@@ -94,13 +100,17 @@ int Socket::accept() const {
   if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
     throw IOException("Failed to set fd to NONBLOCK", errno);
 
-  Log::info('[', fd_, "]\tAccept\t", inet_ntoa(addr.sin_addr), ':', ntohs(addr.sin_port),
-            "\tfd: ", fd, '\n');
-  return fd;
+  std::string addrstr = (inet_ntoa(addr.sin_addr) + (':' + std::to_string(ntohs(addr.sin_port))));
+  Log::info(name_, "==[Listening]\t\t\t\tAccept ", addrstr, "-> fd ", fd, '\n');
+  return {fd, util::terminal_colours[fd % 8] + name_ + "->[" + addrstr + ']' + util::RESET};
 }
 
 int Socket::get_fd() const {
   return fd_;
+}
+
+const std::string& Socket::getName() const {
+  return name_;
 }
 
 void Socket::flush() {
@@ -117,6 +127,7 @@ void Socket::flush() {
 ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {
   return ::write(fd_, buf + offs, len);
 }
+
 ssize_t Socket::write(const std::string& str, size_t offs) const {
   return ::write(fd_, str.c_str() + offs, str.length() - offs);
 }
@@ -124,6 +135,7 @@ ssize_t Socket::write(const std::string& str, size_t offs) const {
 ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
   return ::read(fd_, buf + offs, len - offs);
 }
+
 void Socket::shutdown(int channel) {
   ::shutdown(fd_, channel);
 }

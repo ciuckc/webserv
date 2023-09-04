@@ -59,7 +59,7 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
 }
 
 bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
-  Log::info('[', connection.getSocket().get_fd(), "]\tIN:\t", std::string_view(line.data(), line.find_last_not_of("\n\r") + 1), '\n');
+  Log::info(connection, "IN: \t", std::string_view(line.data(), line.find_last_not_of("\n\r") + 1), '\n');
 
   if (!request_.setMessage(line)) {
     if (request_.getMethod() == HTTP::INVALID) {
@@ -85,7 +85,7 @@ bool ReadRequest::handle_header(Connection& connection, std::string& line) {
   }
 
   auto kvpair = split_header(line);
-  Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", kvpair.first, ": ", kvpair.second, '\n');
+  Log::trace(connection, "H:\t\t", kvpair.first, ": ", kvpair.second, '\n');
   if (error_ != 0)
     return true;
   auto hooks = hhooks_.equal_range(kvpair.first);

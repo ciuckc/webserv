@@ -38,6 +38,5 @@ EventQueue::event_t& EventQueue::getNext(Server& server) {
     if (event_count_ == -1)
       throw IOException("EventQueue", errno);
   }
-  Log::debug(events_[event_index_]);
   return events_[event_index_++];
 }

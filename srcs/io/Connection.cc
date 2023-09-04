@@ -4,9 +4,9 @@
 #include "io/task/ReadRequest.h"
 #include "io/task/SendResponse.h"
 
-Connection::Connection(int fd, EventQueue& event_queue, const host_map_t& host_map)
+Connection::Connection(Socket&& socket, EventQueue& event_queue, const host_map_t& host_map)
     : host_map_(host_map),
-      socket_(fd),
+      socket_(std::forward<Socket>(socket)),
       buffer_(),
       event_queue_(event_queue) {
   event_queue_.add(fd);
@@ -14,15 +14,11 @@ Connection::Connection(int fd, EventQueue& event_queue, const host_map_t& host_m
   last_event_ = std::time(nullptr);
 }
 
-Connection::~Connection() {
-  // Destructing the socket removes the connection from the eventqueue
-  iqueue_.clear();
-  oqueue_.clear();
-}
+Connection::~Connection() = default;
 
 bool Connection::handle(EventQueue::event_t& event) {
   if (EventQueue::isWrHangup(event)) {
-    Log::info('[', socket_.get_fd(), "]\tClient dropped connection\n");
+    Log::info(*this, "Client closed connection\n");
     return true;
   }
   if (EventQueue::isRead(event)) {
@@ -41,7 +37,7 @@ bool Connection::handle(EventQueue::event_t& event) {
     }
   }
   if (EventQueue::isRdHangup(event)) {
-    Log::debug('[', socket_.get_fd(), "]\tClient done transmitting\n");
+    Log::debug(*this, "Client done transmitting\n");
     client_fin_ = true;
   }
   socket_.flush();
@@ -115,7 +111,7 @@ const Connection::host_map_t& Connection::getHostMap() const {
 }
 
 void Connection::shutdown() {
-  Log::debug('[', socket_.get_fd(), "]\tServer done transmitting\n");
+  Log::debug(*this, "Server done transmitting\n");
   socket_.shutdown(SHUT_WR);
 }
 
@@ -139,7 +135,7 @@ void Connection::enqueueResponse(Response&& response) {
 }
 
 void Connection::timeout() {
-  Log::debug('[', socket_.get_fd(), "] Timed out\n");
+  Log::debug(*this, "Timed out\n");
   keep_alive_ = false;
   request_count_ = 0; // so we don't get 2 log messages
   Response response;

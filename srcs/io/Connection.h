@@ -33,7 +33,7 @@ class Connection {
   uint32_t request_count_ = 0;
 
  public:
-  Connection(int fd, EventQueue& event_queue, const host_map_t& host_map);
+  Connection(Socket&& socket, EventQueue& event_queue, const host_map_t& host_map);
   ~Connection();
 
   bool handle(EventQueue::event_t& event);
@@ -61,4 +61,10 @@ class Connection {
   // Returns true, if the last event was more than WS::timeout seconds ago
   bool stale(time_t now) const;
   bool idle() const;
+
+  const std::string& getName() const;
 };
+
+inline std::ostream& operator<<(std::ostream& stream, const Connection& connection) {
+  return stream << connection.getName() << "\t\t";
+}
