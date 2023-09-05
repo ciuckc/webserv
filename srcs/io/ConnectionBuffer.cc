@@ -1,192 +1,159 @@
 #include "ConnectionBuffer.h"
 
 #include <algorithm>
-
-ConnectionBuffer::ConnectionBuffer()
-    : i_offset_(),
-      i_end_(),
-      read_fail_(true),
-      o_start_(),
-      o_offset_(),
-      need_write_() {}
-
-ConnectionBuffer::~ConnectionBuffer() {
-  i_bufs_.clear();
-  o_bufs_.clear();
-}
+#include <cassert>
 
 // =========== IN ===========
-WS::IOStatus ConnectionBuffer::readIn(Socket& socket) {
-  auto to_read = (ssize_t)toBuffer(buf_size_ - i_end_);
-  if (to_read == 0) {  // We've already fully filled the buffers
-    i_bufs_.emplace_back();
-    to_read += (ssize_t)buf_size_;
-  }
-  auto& buf = i_bufs_.back().getData();
-  ssize_t readed = socket.read(&buf[buf_size_ - to_read], to_read);
-  if (readed < 0)
-    return WS::IO_FAIL;
-  read_fail_ = false;
-  i_end_ += readed;
-  if (readed < to_read)
-    return WS::IO_WAIT;
-  return WS::IO_GOOD;
+bool ConnectionBuffer::readIn(Socket& socket, WS::IOStatus& status) {
+  if (i_bufs_.empty() || i_bufs_.back().full())
+    i_bufs_.emplace_back(i_size_);
+  Buf& buf = i_bufs_.back();
+  ssize_t available = (ssize_t)buf.avail();
+  ssize_t bytes_rd = socket.read(buf.end(), available);
+  if (bytes_rd < 0)
+    return status = WS::IO_FAIL, false;
+  if (bytes_rd == 0)
+    return status = WS::IO_WAIT, false;
+  buf.stretch(bytes_rd);
+  status = bytes_rd < available ? WS::IO_WAIT : WS::IO_GOOD;
+  need_read_ = false;
+  return true;
 }
 
-ConnectionBuffer& ConnectionBuffer::getline(std::string& str) {
-  str = std::string();
-
-  size_t old_offs = i_offset_;
-  size_t offs = old_offs;
-
-  for (auto buf_iter = i_bufs_.begin(); buf_iter != i_bufs_.end(); ++buf_iter) {
-    bool first = buf_iter == i_bufs_.begin();
-    bool last  = buf_iter == std::prev(i_bufs_.end());
-
-    auto buf_view = buf_iter->getView(
-        first ? i_offset_ : 0,
-        last ? toBuffer(i_end_) : std::string::npos);
-    size_t newline = buf_view.find('\n');
-
-    offs += std::min(newline, buf_view.size());
-    if (newline != std::string::npos) {
-      str = get_str(offs - old_offs + 1);
-      return *this;
-    }
+bool ConnectionBuffer::getline(std::string& str) {
+  assert(!i_bufs_.empty() && !i_bufs_.front().empty());
+  size_t nl = i_bufs_.back().getView().find('\n');
+  if (nl == std::string::npos) {
+    need_read_ = true;
+    return false;
   }
-  read_fail_ = true;
-  return *this;
+
+  size_t linelen = nl + 1;
+  for (auto it = i_bufs_.begin(); it != std::prev(i_bufs_.end()); ++it)
+    linelen += it->len();
+  str.clear();
+  str.reserve(linelen);
+  while (linelen != 0) {
+    Buf& buf = i_bufs_.front();
+    auto view = buf.getView(linelen);
+    str.append(view);
+    linelen = buf.shrink(linelen);
+    if (buf.empty() && buf != i_bufs_.back())
+      i_bufs_.pop_front();
+  }
+  need_read_ = i_bufs_.front().empty();
+  return true;
 }
 
 size_t ConnectionBuffer::discard(size_t n) {
-  size_t in_avail = inAvailable();
-
-  if (in_avail >= n) {
-    i_offset_ += n;
-    while (i_offset_ >= buf_size_)
-      pop_inbuf();
-    return 0;
+  while (n != 0) {
+    n = i_bufs_.front().shrink(n);
+    if (i_bufs_.front().empty() && i_bufs_.front() == i_bufs_.back())
+      return n;
   }
-  i_offset_ = i_end_ = 0;
-  i_bufs_.clear();
-  read_fail_ = true;
-  return n - in_avail;
-}
-
-std::string ConnectionBuffer::get_str(size_t len) {
-  std::string str(len, '\0');
-  size_t pos = 0;
-  while (len > 0) {
-    auto view = i_bufs_.front().getView(i_offset_, len);
-    auto to_get = std::min(len, view.size());
-    str.replace(pos, len, view);
-    pos += to_get; len -= to_get;
-    i_offset_ += to_get;
-    if (i_offset_ >= buf_size_)
-      pop_inbuf();
-  }
-  return str;
-}
-
-void ConnectionBuffer::pop_inbuf() {
-  i_bufs_.pop_front();
-  if (i_offset_ < buf_size_) {
-    i_offset_ = i_end_ = 0;
-    read_fail_ = true;
-  } else {
-    i_offset_ -= buf_size_;
-    i_end_ -= buf_size_;
-  }
+  return 0;
 }
 
 // =========== OUT ==========
-WS::IOStatus ConnectionBuffer::writeOut(Socket& socket) {
-  while (!o_bufs_.empty()) {
-    auto& buffer = o_bufs_.front().getData();
-    ssize_t to_write = (ssize_t)(std::min(buf_size_, o_offset_) - o_start_);
-    ssize_t written = socket.write(&buffer[o_start_], to_write, 0);
-    if (written < 0)
-      return WS::IO_FAIL;
-    if (written < to_write) {
-      o_start_ += written;
-      return WS::IO_WAIT;
-    }
-    o_offset_ -= to_write;
-    o_start_ = 0;
-    o_bufs_.pop_front();
+bool ConnectionBuffer::writeOut(Socket& socket, WS::IOStatus& status) {
+  const size_t bufcount = o_bufs_.size();
+  assert(bufcount != 0);
+  iovec vec[bufcount];
+  size_t i = 0;
+  for (Buf& buf : o_bufs_)
+    vec[i++] = buf.asOutVec();
+  ssize_t bytes_wr = writev(socket.get_fd(), vec, (int)bufcount);
+  if (bytes_wr < 0)
+    return status = WS::IO_FAIL, false;
+  while (bytes_wr != 0) {
+    auto& buf = o_bufs_.front();
+    bytes_wr = buf.shrink(bytes_wr);
+    if (buf.empty())
+      o_bufs_.pop_front();
   }
-  need_write_ = false;
-  return WS::IO_GOOD;
+  if (o_bufs_.empty()) {
+    need_write_ = false;
+    return status = WS::IO_GOOD, true;
+  } else {
+    need_write_ = true;
+    return status = WS::IO_WAIT, false;
+  }
 }
 
 void ConnectionBuffer::put(const char* data, size_t len) {
-  if (o_bufs_.empty()) {
-    o_bufs_.emplace_back();
-    o_offset_ = o_start_ = 0;
+  assert(len != 0);
+  if (o_bufs_.empty() || o_bufs_.back().full())
+    o_bufs_.emplace_back(o_size_);
+  while (len != 0) {
+    Buf& buf = o_bufs_.back();
+    size_t available = buf.avail();
+    size_t copy_len = std::min(available, len);
+    std::copy(data, data + copy_len, buf.end());
+    buf.stretch(copy_len);
+    if (len > available) {
+      need_write_ = true;
+      o_bufs_.emplace_back(o_size_);
+    }
+    len -= copy_len; data += copy_len;
   }
-
-  Buf::type& buf = o_bufs_.back().getData();
-  size_t buf_ofs = toBuffer(o_offset_);
-  size_t copy_len = std::min(len, buf_size_ - buf_ofs);
-
-  std::memcpy(&buf.at(buf_ofs), data, copy_len);
-
-  o_offset_ += copy_len;
-  if (len > copy_len)
-    overflow(data + copy_len, len - copy_len);
-  if (o_offset_ >= buf_size_)
-    need_write_ = true;
 }
 
-void ConnectionBuffer::overflow(const char* data, size_t len) {
-  if (need_write_)
-    Log::warn("You're writing into a buffer that has already overflowed before..\n");
-  need_write_ = true;
-  o_bufs_.emplace_back();
-  put(data, len);
-}
+bool ConnectionBuffer::readFrom(int fd, size_t& filesize) {
+  assert(filesize != 0);
+  if (o_bufs_.empty())
+    o_bufs_.emplace_back(o_size_);
+  const auto last_av = o_bufs_.back().avail();
+  if (last_av > filesize)
+    return o_bufs_.back().read_file(fd, filesize);
 
-bool ConnectionBuffer::readFrom(int fd) {
-  size_t buf_count = o_bufs_.size();
-  if (buf_count == 0) {
-    o_bufs_.emplace_back();
-    o_offset_ = o_start_ = 0;
-    buf_count = 1;
-  }
+  size_t read_len = std::min(filesize, file_buf_size_ + last_av);
+  iovec vec[file_buf_size_ / buf_size_ + 1];
 
-  size_t read_len = buf_size_ - toBuffer(o_offset_);
-  char* buf_ptr = &o_bufs_.back().getData().at(buf_size_ - read_len);
+  int i = 0;
+  if (last_av == 0)
+    o_bufs_.emplace_back(o_size_);
   while (true) {
-    ssize_t read_bytes = read(fd, buf_ptr, read_len);
-    if (read_bytes < 0)
-      throw IOException("Borked file bro");
-    o_offset_ += read_bytes;
-    if ((size_t)read_bytes < read_len) {
-      need_write_ = true;
-      // end of file
-      return true;
-    }
-    if (++buf_count > max_file_bufs_) {
-      need_write_ = true;
-      // send some first
-      return false;
-    }
-    o_bufs_.emplace_back();
-    buf_ptr = o_bufs_.back().getData().begin();
-    read_len = buf_size_;
+    vec[i++] = o_bufs_.back().asInVec(read_len);
+    if (read_len == 0)
+      break;
+    o_bufs_.emplace_back(o_size_);
   }
+  ssize_t bytes_rd = readv(fd, vec, i);
+  if (bytes_rd < 0)
+    throw IOException("Can't read from file :(\n");
+  if (bytes_rd == 0)
+    return false;
+  filesize -= (size_t)bytes_rd;
+  for (auto it = o_bufs_.begin(); bytes_rd != 0; ++it)
+    bytes_rd = it->stretch(bytes_rd);
+  need_write_ = true;
+  return true;
 }
 
 void ConnectionBuffer::writeTo(int fd, size_t& remaining) {
-  while (remaining && i_offset_ < i_end_) {
-    auto& buf = i_bufs_.front().getData();
-    size_t to_write = std::min(std::min(buf_size_, i_end_) - i_offset_, remaining);
-    ssize_t written = write(fd, &buf.at(i_offset_), to_write);
-    if (written == -1)
-      throw IOException("That's messed up");
-    i_offset_ += written; remaining -= written;
-    if (i_offset_ == buf_size_ || i_offset_ == i_end_)
-      pop_inbuf();
+  assert(remaining != 0);
+  size_t bufcount = i_bufs_.size();
+  iovec vec[bufcount];
+  size_t max = remaining;
+  int i = 0;
+  for (Buf& buf : i_bufs_) {
+    vec[i++] = buf.asOutVec(max);
+    if (max == 0)
+      break;
   }
-  read_fail_ = true;
+  ssize_t bytes_wr = writev(fd, vec, (int)i);
+  if (bytes_wr < 0)
+    throw IOException("Couldn't write to file\n");
+  if (bytes_wr == 0)
+    return;
+  remaining -= bytes_wr;
+  while (bytes_wr != 0) {
+    auto& buf = i_bufs_.front();
+    bytes_wr = buf.shrink(bytes_wr);
+    if (buf.empty())
+      if (buf != i_bufs_.back())
+        i_bufs_.pop_front();
+  }
+  if (i_bufs_.front().empty())
+    need_read_ = true;
 }

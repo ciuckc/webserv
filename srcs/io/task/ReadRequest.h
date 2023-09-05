@@ -26,8 +26,8 @@ class ReadRequest : public ITask {
 
  public:
   explicit ReadRequest() = default;
-  bool operator()(Connection& connection) final;
-  void onDone(Connection& connection) final;
+  bool operator()(Connection& connection) override;
+  void onDone(Connection& connection) override;
 
  private:
 

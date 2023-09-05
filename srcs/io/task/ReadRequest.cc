@@ -6,7 +6,7 @@
 bool ReadRequest::operator()(Connection& connection) {
   ConnectionBuffer& buf = connection.getBuffer();
   std::string line;
-  while (!buf.getline(line).readFailed())
+  while (buf.getline(line))
     if (use_line(connection, line))
       return true;
   return false;
@@ -28,6 +28,8 @@ bool ReadRequest::checkError(Connection& connection) {
     error_ = 405; // Method not allowed
   else if (request_.getMethod() == HTTP::POST && request_.getContentLength() == 0)
     error_ = 411;
+  //else if (request_.getContentLength() > cfg_->getClientMaxBodySize())
+  //  error_ = 413; todo: this should be in route. route here?
   else if (request_.getUri().size() > WS::uri_maxlen)
     error_ = 414;
   else if (request_.getVersion() != Request::VER_1_1)

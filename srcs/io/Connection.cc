@@ -30,10 +30,9 @@ bool Connection::handle(EventQueue::event_t& event) {
   if (EventQueue::isRdHangup(event)) {
     Log::debug(*this, "Client done transmitting\n");
     client_fin_ = true;
+    if (oqueue_.empty() && buffer_.outEmpty())
+      return true;
   }
-
-  if (client_fin_ && oqueue_.empty() && !buffer_.needWrite())
-    return true;
 
   last_event_ = std::time(nullptr);
   return false;
@@ -44,11 +43,10 @@ WS::IOStatus Connection::handleIn() {
     return WS::IO_WAIT;
 
   WS::IOStatus status = WS::IO_GOOD;
-  while (status == WS::IO_GOOD
-      && (status = buffer_.readIn(socket_)) != WS::IO_FAIL
-      && buffer_.inAvailable() != 0) {
-    if (iqueue_.empty())
-      if (!awaitRequest())
+  while (status == WS::IO_GOOD) {
+    if (buffer_.needRead() && !buffer_.readIn(socket_, status))
+        return status;
+    if (iqueue_.empty() && !awaitRequest())
         return WS::IO_WAIT;
     ITask& task = *iqueue_.front();
     if (task(*this)) {
@@ -62,12 +60,11 @@ WS::IOStatus Connection::handleIn() {
 WS::IOStatus Connection::handleOut() {
   WS::IOStatus status = WS::IO_GOOD;
 
-  while (status == WS::IO_GOOD) {
+  while (buffer_.needWrite() || !oqueue_.empty()) {
     if (buffer_.needWrite()) {
-      status = buffer_.writeOut(socket_);
+      if (!buffer_.writeOut(socket_, status))
+        return status;
       continue;
-    } else if (oqueue_.empty()) {
-      break;
     }
     OTask& task = *oqueue_.front();
     if (task(*this)) {
@@ -75,8 +72,8 @@ WS::IOStatus Connection::handleOut() {
       oqueue_.pop_front();
     }
   }
-  if (!oqueue_.empty())
-    return status;
+  if (!buffer_.outEmpty() && !buffer_.writeOut(socket_, status))
+      return status;
   if (!keep_alive_)
     shutdown();
   if (client_fin_ || reset_)
@@ -107,14 +104,15 @@ void Connection::shutdown() {
 }
 
 bool Connection::awaitRequest() {
+  if (!keep_alive_)
+    return false;
   if (++request_count_ > WS::max_requests) {
     // Don't read more, do not pass start, do not get 200
     Log::warn(*this, "Max requests exceeded\n");
     enqueueResponse(std::forward<Response>(Response::builder().message(429).build()));
     reset_ = true;
     return false;
-  }
-  if (request_count_ == WS::max_requests) {
+  } else if (request_count_ == WS::max_requests) {
     Log::debug(*this, "Max requests reached\n");
     keep_alive_ = false;
   }

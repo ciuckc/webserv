@@ -7,9 +7,7 @@ class RecvFile : public ITask {
   explicit RecvFile(int fd, size_t size) : fd_(fd), remaining_(size) {};
 
   bool operator()(Connection& connection) override {
-    while (!connection.getBuffer().readFailed())
-      connection.getBuffer().writeTo(fd_, remaining_);
-
+    connection.getBuffer().writeTo(fd_, remaining_);
     return remaining_ == 0;
   };
 

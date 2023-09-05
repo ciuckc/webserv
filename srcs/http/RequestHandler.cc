@@ -137,7 +137,7 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, i
   if (addType)
     builder.header("Content-Type", type);
   connection_.enqueueResponse(std::forward<Response>(builder.build()));
-  connection_.addTask(std::make_unique<SendFile>(fd));
+  connection_.addTask(std::make_unique<SendFile>(fd, file_info.size()));
   Log::trace(connection_, "Adding SendFile(", path, ") to queue\n");
 }
 

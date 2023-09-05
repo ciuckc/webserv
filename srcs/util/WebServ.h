@@ -26,10 +26,10 @@ static constexpr size_t header_maxlen = 8192;
 static constexpr size_t uri_maxlen = 8192;
 
 // How many seconds will we keep idle connections alive for?
-static constexpr uint32_t timeout = 5;
+static constexpr uint32_t timeout = 30;
 
 // How many requests do we want to handle per connection?
-static constexpr uint32_t max_requests = 10;
+static constexpr uint32_t max_requests = 100;
 
 // File containing mime types
 static constexpr const char* mimes_file = "./mime.types";
@@ -64,14 +64,14 @@ static const struct CaseCmpG {
 
 namespace util {
   // iT's A cOoPeRaTiVe PrOtOcOl!!1!
-  inline size_t find_header_end(const std::string& str)
+  static inline size_t find_header_end(const std::string& str)
   {
     size_t nn = str.find("\n\n");
     size_t rn = str.find("\r\n\r\n");
     return (std::min(nn, rn));
   }
 
-  inline void prepend_cwd(std::string& str)
+  static inline void prepend_cwd(std::string& str)
   {
     char* cwd;
     cwd = getcwd(nullptr, 0);
@@ -104,7 +104,7 @@ namespace util {
       return s.st_size;
     }
   };
-  inline std::string getExtension(const std::string& path) {
+  static inline std::string getExtension(const std::string& path) {
     size_t dot = path.find_last_of('.');
     if (dot == std::string::npos) {
       return {};

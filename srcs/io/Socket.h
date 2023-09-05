@@ -43,7 +43,7 @@ class Socket {
   void shutdown(int channel);
 
   inline void close() {
-    Log::debug(name_, "\tdestroyed\n");
+    Log::debug(name_, "\tSocket destroyed\n");
     ::close(fd_);
     fd_ = -1;
   }

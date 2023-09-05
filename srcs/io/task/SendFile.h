@@ -4,16 +4,14 @@
 
 class SendFile : public OTask {
  public:
-  explicit SendFile(int fd) : fd_(fd) {};
+  explicit SendFile(int fd, size_t size) : fd_(fd), size_(size) {};
   ~SendFile() override {
     close(fd_);
   }
 
   bool operator()(Connection& connection) override {
-    while (!connection.getBuffer().needWrite())
-      if (connection.getBuffer().readFrom(fd_))
-        return true;
-
+    if (connection.getBuffer().readFrom(fd_, size_))
+      return size_ == 0;
     return false;
   };
 
@@ -23,4 +21,5 @@ class SendFile : public OTask {
 
  private:
   int fd_;
+  size_t size_;
 };

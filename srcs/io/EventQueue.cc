@@ -6,7 +6,6 @@
 
 #include "IOException.h"
 #include "Server.h"
-#include "util/Log.h"
 
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
   queue_fd_ = Platform::create_queue();

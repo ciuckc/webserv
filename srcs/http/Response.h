@@ -16,16 +16,44 @@ class Response : public Message {
   void setKeepAlive(uint32_t timeout, uint32_t max_requests);
 
   class ResponseBuilder;
-  static ResponseBuilder builder();
+  static inline ResponseBuilder builder();
 };
 
 class Response::ResponseBuilder {
  private:
   Response response_;
  public:
-  ResponseBuilder& message(int status);
-  ResponseBuilder& content_length(size_t length);
-  ResponseBuilder& header(const std::string& key, const std::string& val);
-  ResponseBuilder& header(const std::string& header_str);
-  Response&& build();
+  inline ResponseBuilder& message(int status);
+  inline ResponseBuilder& content_length(size_t length);
+  inline ResponseBuilder& header(const std::string& key, const std::string& val);
+  inline ResponseBuilder& header(const std::string& header_str);
+  inline Response&& build();
 };
+
+inline Response::ResponseBuilder Response::builder() {
+  return {};
+}
+
+inline Response::ResponseBuilder& Response::ResponseBuilder::message(int status) {
+  response_.setMessage(status);
+  return *this;
+}
+
+inline Response::ResponseBuilder& Response::ResponseBuilder::content_length(size_t length) {
+  response_.setContentLength(length);
+  return header("Content-Length", std::to_string(length));
+}
+
+inline Response::ResponseBuilder& Response::ResponseBuilder::header(const std::string& key, const std::string& val) {
+  response_.addHeader(key, val);
+  return *this;
+}
+
+inline Response::ResponseBuilder& Response::ResponseBuilder::header(const std::string& header_str) {
+  response_.addHeader(header_str);
+  return *this;
+}
+
+inline Response&& Response::ResponseBuilder::build() {
+  return std::move(response_);
+}
