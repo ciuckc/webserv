@@ -23,9 +23,8 @@ class RequestHandler {
 
   // some kind of method that finds all servers listening to used socket
   // and returns the one with the server_name specified in the HOST header
-  bool legalMethod_() const;
-  bool isRedirect_() const;
-  void handleDir_(std::string& path);
+  bool legalMethod_(const ConfigRoute& route) const;
+  void handleDir_(std::string& path, const ConfigRoute& route, FileInfo& file_info);
   void handleFile_(FileInfo& file_info, const std::string& path, int status = 200, std::string type = "");
   void autoIndex_(std::string& path);
 };

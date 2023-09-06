@@ -35,7 +35,7 @@ class ConfigRoute {
   [[nodiscard]] const std::string& getRoot() const {
     return root_;
   }
-  [[nodiscard]] bool isMethodAllowed(HTTP::Method method) {
+  [[nodiscard]] bool isMethodAllowed(HTTP::Method method) const {
     return accepted_methods_.test(method);
   }
   [[nodiscard]] const std::vector<std::string>& getIndexFiles() const {

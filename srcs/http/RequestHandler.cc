@@ -13,7 +13,6 @@
 
 void  RequestHandler::execRequest(const ConfigRoute& route)
 {
-  (void) route;
   // for route in cfg_.routes
   //   if route matches (location, method, all that)
   //     add ITask to get body if necessary
@@ -27,9 +26,9 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
   // add SendFile task for error page
 
   // find correct configserver or return 400
-  if (!legalMethod_()) {
+  if (!legalMethod_(route)) {
     handleError_(405);
-  } else if (isRedirect_()) {
+  } else if (route.getRedir().length() != 0) {
     handleError_(302); // not an actual error but hey
     // get location from config and add header
   } else {
@@ -42,7 +41,7 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
     if (!s.open(path.c_str())) {
       handleError_(404);
     } else if (s.isDir()) {
-      handleDir_(path);
+      handleDir_(path, route, s);
     } else if (s.isFile()) {
       handleFile_(s, path);
     }
@@ -51,33 +50,29 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
     connection_.awaitRequest();
 }
 
-bool RequestHandler::legalMethod_() const
+bool RequestHandler::legalMethod_(const ConfigRoute& route) const
 {
-  // here we want to check config to see allowed methods for this route
-  // if method == POST, also check if path contains the cgi extension
-  // after finding the right route/location save it for later reference
-  //
-  // should the root be applied before checking tho??
-  return (true);
+  if (request_.getMethod() == HTTP::POST && request_.getUri().find(".cgi")) { // not %100 waterproof
+    return (false);
+  }
+  return (route.isMethodAllowed(request_.getMethod()));
 }
 
-bool RequestHandler::isRedirect_() const
+void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, FileInfo& file_info)
 {
-  // check config to see if a redirect is defined for this route
-  //
-  // should the root be applied before checking tho??
-  return (false);
-}
-
-void RequestHandler::handleDir_(std::string& path)
-{
-  // get array of index files from config
-  // for each: if (!access(that file)):
-  // response_ = handleFile_(that file)
-
+  for (const auto& file : route.getIndexFiles()) {
+    if (!access(std::string(path + file).c_str(), R_OK)) {
+      handleFile_(file_info, path + file);
+      return;
+    }
+  }
   // if we get here it's autoindex or error
-  // for now assume autoindex is enabled
-  autoIndex_(path);
+  if (route.isAutoIndex()){
+    autoIndex_(path);
+  }
+  else {
+    handleError_(405);
+  }
 }
 
 void RequestHandler::autoIndex_(std::string& path)
