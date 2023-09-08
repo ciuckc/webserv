@@ -40,8 +40,8 @@ add_executable(webserv
         srcs/main.cc
         srcs/Server.h
         srcs/Server.cc
- #       srcs/cgi/Cgi.cc
- #       srcs/cgi/Cgi.h
+        srcs/cgi/Cgi.cc
+        srcs/cgi/Cgi.h
         srcs/config/Config.h
         srcs/config/Config.cc
         srcs/config/ConfigFile.h

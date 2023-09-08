@@ -153,6 +153,30 @@ srcs/Server.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cc.s
 .PHONY : srcs/Server.cc.s
 
+srcs/cgi/Cgi.o: srcs/cgi/Cgi.cc.o
+.PHONY : srcs/cgi/Cgi.o
+
+# target to build an object file
+srcs/cgi/Cgi.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.o
+.PHONY : srcs/cgi/Cgi.cc.o
+
+srcs/cgi/Cgi.i: srcs/cgi/Cgi.cc.i
+.PHONY : srcs/cgi/Cgi.i
+
+# target to preprocess a source file
+srcs/cgi/Cgi.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.i
+.PHONY : srcs/cgi/Cgi.cc.i
+
+srcs/cgi/Cgi.s: srcs/cgi/Cgi.cc.s
+.PHONY : srcs/cgi/Cgi.s
+
+# target to generate assembly for a file
+srcs/cgi/Cgi.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.s
+.PHONY : srcs/cgi/Cgi.cc.s
+
 srcs/config/Config.o: srcs/config/Config.cc.o
 .PHONY : srcs/config/Config.o
 
@@ -525,6 +549,9 @@ help:
 	@echo "... srcs/Server.o"
 	@echo "... srcs/Server.i"
 	@echo "... srcs/Server.s"
+	@echo "... srcs/cgi/Cgi.o"
+	@echo "... srcs/cgi/Cgi.i"
+	@echo "... srcs/cgi/Cgi.s"
 	@echo "... srcs/config/Config.o"
 	@echo "... srcs/config/Config.i"
 	@echo "... srcs/config/Config.s"

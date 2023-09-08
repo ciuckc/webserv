@@ -4,8 +4,8 @@
 #include <sys/wait.h>
 #include <sstream>
 #include "Cgi.h"
+#include "io/task/SimpleBody.h"
 #include "util/WebServ.h"
-#include "http/RequestHandler.h"
 
 static std::string st_find_header_value(const std::string& msg, const std::string& key)
 {
@@ -60,38 +60,29 @@ static char** st_make_env(const Request& req)
     std::string("SERVER_PROTOCOL=HTTP/1.1"),
     std::string("SERVER_SOFTWARE=SuperWebserv10K/0.9.1 (Unix)")
   };
-  try {
-    env = new char*[arr.size() + 1];
-    env[arr.size()] = nullptr;
-    for (size_t i = 0; i < arr.size(); i++) {
-      env[i] = new char[arr[i].length() + 1];
-      arr[i].copy(env[i], arr[i].length());
-      env[i][arr[i].length()] = '\0';
-    }
-  }
-  catch (std::exception&) {
-    st_del_arr(env);
-    throw (ErrorResponse(500));
+  env = new char*[arr.size() + 1];
+  env[arr.size()] = nullptr;
+  for (size_t i = 0; i < arr.size(); i++) {
+    env[i] = new char[arr[i].length() + 1];
+    arr[i].copy(env[i], arr[i].length());
+    env[i][arr[i].length()] = '\0';
   }
   return (env);
 }
 
-Cgi::Cgi(const Request& req) :
-    path_("." + req.getPath().substr(0, req.getPath().find(".cgi") + 4)), // fix getPath() !!! (or confirm that it's working)
-    envp_(st_make_env(req)),
-    req_(req)
-{}
+Cgi::Cgi(RequestHandler& rh, const std::string& path) : rh_(rh), path_(path) {}
 
 Cgi::~Cgi()
 {
   st_del_arr(this->envp_);
 }
 
-Response  Cgi::act()
+void Cgi::act()
 {
+  envp_ = st_make_env(rh_.getRequest());
   Response res;
   std::string result = execute_();
-  std::string headers = result.substr(0, HTTP::find_header_end(result));
+  std::string headers = result.substr(0, util::find_header_end(result));
   // document response
   if (headers.find("Content-Type") != std::string::npos) {
     makeDocumentResponse_(result, res);
@@ -102,13 +93,12 @@ Response  Cgi::act()
   }
   // local-redir response AKA server redirect
   else if (headers.find("Location") != std::string::npos) {
-    makeLocalRedirResponse_(result, res, req_);
+    makeLocalRedirResponse_(result, res, rh_.getRequest());
   }
   // invalid response (not compliant with CGI spec)
   else {
-    return ErrorResponse(500);
+    rh_.handleError_(500);
   }
-  return res;
 }
 
 // read from parent process on stdin
@@ -117,11 +107,11 @@ Response  Cgi::act()
 // make sure to test for leaking fd's!!!
 void Cgi::exec_child_()
 {
-  if (this->body_.length() > 0) {
-    dup2(this->pipe_in_[0], STDIN_FILENO);
-    close(this->pipe_in_[0]);
-    close(this->pipe_in_[1]);
-  }
+  // if (rh_.getRequest().getContentLength() > 0) {
+  //   dup2(this->pipe_in_[0], STDIN_FILENO);
+  //   close(this->pipe_in_[0]);
+  //   close(this->pipe_in_[1]);
+  // }
   dup2(this->pipe_out_[1], STDOUT_FILENO);
   close(this->pipe_out_[0]);
   close(this->pipe_out_[1]);
@@ -137,13 +127,13 @@ void Cgi::exec_child_()
 // these read/write ops should go through epoll?!
 std::string Cgi::exec_parent_(int pid)
 {
-  if (this->body_.length() > 0) {
-    close(this->pipe_in_[0]);
-    if (write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()) == -1) { // this won't work for cte
-      throw (ErrorResponse(500));
-    }
-    close(this->pipe_in_[1]);
-  }
+  // if (rh_.getRequest().getContentLength() > 0) {
+  //   close(this->pipe_in_[0]);
+  //   if (write(this->pipe_in_[1], this->body_.c_str(), this->body_.length()) == -1) { // this won't work for cte
+  //     return ("");
+  //   }
+  //   close(this->pipe_in_[1]);
+  // }
   close(this->pipe_out_[1]);
   waitpid(pid, nullptr, 0);
 
@@ -154,7 +144,7 @@ std::string Cgi::exec_parent_(int pid)
   do {
     read_bytes = read(this->pipe_out_[0], buf, buf_size);
     if (read_bytes < 0)
-      throw (ErrorResponse(500));
+      return(""); // TODO close fd's
     body.write(buf, read_bytes);
   } while (read_bytes == buf_size);
 
@@ -166,19 +156,19 @@ std::string Cgi::execute_()
 {
   // open pipes, input pipe is only necessary if there is a body to write
   // both stdin are redirected the the other process stdout
-  if (this->body_.length() > 0) {
-    if (pipe(this->pipe_in_) == -1) {
-      throw (ErrorResponse(500));
-    }
-  }
+  // if (this->body_.length() > 0) {
+  //   if (pipe(this->pipe_in_) == -1) {
+  //     return ("");
+  //   }
+  // }
   if (pipe(this->pipe_out_) == -1) {
-    throw (ErrorResponse(500));
+    return ("");
   }
 
   // fork and run the parent and child process in separate functions
   int pid = fork();
   if (pid < 0) {
-    throw (ErrorResponse(500));
+    return ("");
   }
   if (pid == 0) {
     exec_child_();
@@ -193,18 +183,12 @@ void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
   size_t body_begin = util::find_header_end(raw);
   // size_t body_begin = raw.find("\n\n");
   if (body_begin == std::string::npos) { // not compliant with rfc
-    throw (ErrorResponse(500));
+    rh_.handleError_(500);
+    return;
   }
   body_begin += 2;
-  char* dup;
-  try {
-    dup = new char[raw.length() - body_begin];
-  }
-  catch (std::exception&) {
-    throw (ErrorResponse(500));
-  }
-  raw.copy(dup, raw.length(), body_begin);
-  res.setBody(dup, raw.length() - body_begin);
+  auto dup = std::make_unique<char[]>(raw.length() - body_begin);
+  raw.copy(dup.get(), raw.length(), body_begin);
   size_t substr_start = raw.find("Content-Type: ") + std::string("Content-Type: ").length();
   size_t substr_len = raw.find(';', substr_start) - substr_start; // spec does not specify ";" as delimiter?
   std::string content_type = raw.substr(substr_start, substr_len);
@@ -212,6 +196,9 @@ void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
   res.addHeader("Content-Length", std::to_string(raw.length() - body_begin));
   res.addHeader("Content-Type", content_type);
   res.setMessage(200);
+
+  rh_.getConnection().enqueueResponse(std::move(res));
+  rh_.getConnection().addTask(std::make_unique<SimpleBody>(std::move(dup), raw.length() - body_begin));
 }
 
 // function to process raw cgi local redirect response into http response
@@ -230,7 +217,7 @@ void Cgi::makeLocalRedirResponse_(const std::string& raw, Response& res, Request
 void Cgi::makeClientRedirResponse_(const std::string& raw, Response& res)
 {
   // This is done to add the 302 body!
-  res = ErrorResponse(302);
+  res.setMessage(302);
   res.addHeader("Location", st_find_header_value(raw, "Location: "));
   res.addHeader("Server", "SuperWebserv10K/0.9.1 (Unix)");
   // does not contain body
@@ -241,14 +228,8 @@ void Cgi::makeClientRedirResponse_(const std::string& raw, Response& res)
   res.addHeader("Content-Type", st_find_header_value(raw, "Content-Type: "));
   const std::string body = raw.substr(util::find_header_end(raw) + 2);
   res.addHeader("Content-Length", std::to_string(body.length()));
-  char* dup;
-  try {
-    dup = new char[body.length() + 1];
-  }
-  catch (std::exception&) {
-    throw (ErrorResponse(500));
-  }
-  body.copy(dup, body.length());
-  dup[body.length()] = '\0';
-  res.setBody(dup, body.length());
+  auto dup = std::make_unique<char[]>(body.length());
+  body.copy(dup.get(), body.length());
+  rh_.getConnection().enqueueResponse(std::move(res));
+  rh_.getConnection().addTask(std::make_unique<SimpleBody>(std::move(dup), body.length()));
 }
