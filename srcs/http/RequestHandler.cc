@@ -59,8 +59,10 @@ bool RequestHandler::legalMethod_(const ConfigRoute& route) const
 void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, FileInfo& file_info)
 {
   for (const auto& file : route.getIndexFiles()) {
-    if (!access(std::string(path + file).c_str(), R_OK)) {
-      handleFile_(file_info, path + file);
+    std::string actual_file = path + file;
+    if (!access(actual_file.c_str(), R_OK)) {
+      file_info.open(actual_file.data());
+      handleFile_(file_info, actual_file);
       return;
     }
   }
