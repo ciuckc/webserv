@@ -153,53 +153,101 @@ srcs/Server.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cc.s
 .PHONY : srcs/Server.cc.s
 
-srcs/cgi/Cgi.o: srcs/cgi/Cgi.cc.o
-.PHONY : srcs/cgi/Cgi.o
+srcs/config/Config.o: srcs/config/Config.cc.o
+.PHONY : srcs/config/Config.o
 
 # target to build an object file
-srcs/cgi/Cgi.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.o
-.PHONY : srcs/cgi/Cgi.cc.o
+srcs/config/Config.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/Config.cc.o
+.PHONY : srcs/config/Config.cc.o
 
-srcs/cgi/Cgi.i: srcs/cgi/Cgi.cc.i
-.PHONY : srcs/cgi/Cgi.i
+srcs/config/Config.i: srcs/config/Config.cc.i
+.PHONY : srcs/config/Config.i
 
 # target to preprocess a source file
-srcs/cgi/Cgi.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.i
-.PHONY : srcs/cgi/Cgi.cc.i
+srcs/config/Config.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/Config.cc.i
+.PHONY : srcs/config/Config.cc.i
 
-srcs/cgi/Cgi.s: srcs/cgi/Cgi.cc.s
-.PHONY : srcs/cgi/Cgi.s
+srcs/config/Config.s: srcs/config/Config.cc.s
+.PHONY : srcs/config/Config.s
 
 # target to generate assembly for a file
-srcs/cgi/Cgi.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.s
-.PHONY : srcs/cgi/Cgi.cc.s
+srcs/config/Config.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/Config.cc.s
+.PHONY : srcs/config/Config.cc.s
 
-srcs/http/ErrorResponse.o: srcs/http/ErrorResponse.cc.o
-.PHONY : srcs/http/ErrorResponse.o
+srcs/config/ConfigFile.o: srcs/config/ConfigFile.cc.o
+.PHONY : srcs/config/ConfigFile.o
 
 # target to build an object file
-srcs/http/ErrorResponse.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorResponse.cc.o
-.PHONY : srcs/http/ErrorResponse.cc.o
+srcs/config/ConfigFile.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigFile.cc.o
+.PHONY : srcs/config/ConfigFile.cc.o
 
-srcs/http/ErrorResponse.i: srcs/http/ErrorResponse.cc.i
-.PHONY : srcs/http/ErrorResponse.i
+srcs/config/ConfigFile.i: srcs/config/ConfigFile.cc.i
+.PHONY : srcs/config/ConfigFile.i
 
 # target to preprocess a source file
-srcs/http/ErrorResponse.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorResponse.cc.i
-.PHONY : srcs/http/ErrorResponse.cc.i
+srcs/config/ConfigFile.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigFile.cc.i
+.PHONY : srcs/config/ConfigFile.cc.i
 
-srcs/http/ErrorResponse.s: srcs/http/ErrorResponse.cc.s
-.PHONY : srcs/http/ErrorResponse.s
+srcs/config/ConfigFile.s: srcs/config/ConfigFile.cc.s
+.PHONY : srcs/config/ConfigFile.s
 
 # target to generate assembly for a file
-srcs/http/ErrorResponse.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorResponse.cc.s
-.PHONY : srcs/http/ErrorResponse.cc.s
+srcs/config/ConfigFile.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigFile.cc.s
+.PHONY : srcs/config/ConfigFile.cc.s
+
+srcs/config/ConfigParse.o: srcs/config/ConfigParse.cc.o
+.PHONY : srcs/config/ConfigParse.o
+
+# target to build an object file
+srcs/config/ConfigParse.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigParse.cc.o
+.PHONY : srcs/config/ConfigParse.cc.o
+
+srcs/config/ConfigParse.i: srcs/config/ConfigParse.cc.i
+.PHONY : srcs/config/ConfigParse.i
+
+# target to preprocess a source file
+srcs/config/ConfigParse.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigParse.cc.i
+.PHONY : srcs/config/ConfigParse.cc.i
+
+srcs/config/ConfigParse.s: srcs/config/ConfigParse.cc.s
+.PHONY : srcs/config/ConfigParse.s
+
+# target to generate assembly for a file
+srcs/config/ConfigParse.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigParse.cc.s
+.PHONY : srcs/config/ConfigParse.cc.s
+
+srcs/config/ConfigServer.o: srcs/config/ConfigServer.cc.o
+.PHONY : srcs/config/ConfigServer.o
+
+# target to build an object file
+srcs/config/ConfigServer.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigServer.cc.o
+.PHONY : srcs/config/ConfigServer.cc.o
+
+srcs/config/ConfigServer.i: srcs/config/ConfigServer.cc.i
+.PHONY : srcs/config/ConfigServer.i
+
+# target to preprocess a source file
+srcs/config/ConfigServer.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigServer.cc.i
+.PHONY : srcs/config/ConfigServer.cc.i
+
+srcs/config/ConfigServer.s: srcs/config/ConfigServer.cc.s
+.PHONY : srcs/config/ConfigServer.s
+
+# target to generate assembly for a file
+srcs/config/ConfigServer.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigServer.cc.s
+.PHONY : srcs/config/ConfigServer.cc.s
 
 srcs/http/Message.o: srcs/http/Message.cc.o
 .PHONY : srcs/http/Message.o
@@ -477,12 +525,18 @@ help:
 	@echo "... srcs/Server.o"
 	@echo "... srcs/Server.i"
 	@echo "... srcs/Server.s"
-	@echo "... srcs/cgi/Cgi.o"
-	@echo "... srcs/cgi/Cgi.i"
-	@echo "... srcs/cgi/Cgi.s"
-	@echo "... srcs/http/ErrorResponse.o"
-	@echo "... srcs/http/ErrorResponse.i"
-	@echo "... srcs/http/ErrorResponse.s"
+	@echo "... srcs/config/Config.o"
+	@echo "... srcs/config/Config.i"
+	@echo "... srcs/config/Config.s"
+	@echo "... srcs/config/ConfigFile.o"
+	@echo "... srcs/config/ConfigFile.i"
+	@echo "... srcs/config/ConfigFile.s"
+	@echo "... srcs/config/ConfigParse.o"
+	@echo "... srcs/config/ConfigParse.i"
+	@echo "... srcs/config/ConfigParse.s"
+	@echo "... srcs/config/ConfigServer.o"
+	@echo "... srcs/config/ConfigServer.i"
+	@echo "... srcs/config/ConfigServer.s"
 	@echo "... srcs/http/Message.o"
 	@echo "... srcs/http/Message.i"
 	@echo "... srcs/http/Message.s"
