@@ -85,7 +85,7 @@ class ConnectionBuffer {
       if (bytes_rd < 0)
         throw IOException("Can't read from file :(\n");
       stretch(bytes_rd);
-      return (n -= bytes_rd) == 0;
+      return (n -= (size_t)bytes_rd) == 0;
     }
     void resize(size_t new_size) { // does not copy any data!
       size = new_size;

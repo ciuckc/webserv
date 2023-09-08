@@ -15,11 +15,15 @@ Config parseConfig(const char* file) {
 static Config fakeConfig() {
   Config cfg;
   ConfigServer srv;
+  ConfigRoute route;
+  route.setRoot("/home/mbatstra/webserv/html/");
+  route.addIndexFile("index.html");
+  route.addAcceptedMethod(HTTP::GET);
+  route.setAutoIndex(true);
   srv.setPort(6969);
+  srv.addRoute("/", std::move(route));
   srv.addServerName("localhost");
   srv.addServerName("127.0.0.1");
-  srv.addRoute("/", {});
-  srv.addRoute("/html/", {});
   srv.addRoute("/html/site/", {});
   srv.addRoute("/poop/", {});
   cfg.addServer(srv);
