@@ -248,8 +248,8 @@ bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, C
     Log::error("Unexpected end in root directive.\n");
     return false;
   }
-  std::string new_root = *curr;  // I am not sure if I need to make sure if the root is a valid path?
-  ++curr;                        // Probs it s the responsibility of the user?
+  std::string new_root = *curr;
+  ++curr;
   if (curr == end) {
     Log::error("Unexpected end in root directive.\n");
     return false;
@@ -272,8 +272,6 @@ bool ConfigParse::clientMaxBodySizeParse(TokensConstIter& curr, const TokensCons
     Log::error("Unexpected character in client_max_body_size directive argument.\n");
     return false;
   }
-  // TODO: watch how big a body size can get. If the body size is bigger then what was set 413 is set. if
-  // size is set to 0, the checking gets disabled.
   std::size_t number = std::stoull(*curr);
   if (number > 1024000000)
     return false;
