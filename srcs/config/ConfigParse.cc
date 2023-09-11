@@ -22,7 +22,7 @@ enum { EMPTY };
 
 bool addressParse(const std::string& address) {
   constexpr std::string::size_type kMaxAddressLength = 15;
-  if (address.size() > kMaxAddressLength || address.size() < 1) {
+  if (address.size() > kMaxAddressLength || address.size() < 7) {
     Log::error("Invalid address size.\n");
     return false;
   }
@@ -112,7 +112,10 @@ const char* ConfigParse::InvalidDirective::what() const throw() {
 }
 
 ConfigParse::ConfigParse(const Tokens& file_data) : tokens_(file_data), map_() {
-  this->map_ = {{"listen", &ConfigParse::listenParse}, {"server_name", &ConfigParse::serverNameParse}};
+  this->map_ = {{"listen", &ConfigParse::listenParse},
+                {"server_name", &ConfigParse::serverNameParse},
+                {"root", &ConfigParse::rootParse},
+                {"client_max_body_size", &ConfigParse::clientMaxBodySizeParse}};
 }
 
 Config ConfigParse::parse() {
@@ -259,7 +262,7 @@ bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, C
   return true;
 }
 
-bool ConfigParse::clienMaxBodySizeParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+bool ConfigParse::clientMaxBodySizeParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end in client_max_body_size directive.\n");

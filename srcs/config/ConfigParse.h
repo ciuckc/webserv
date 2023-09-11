@@ -51,7 +51,7 @@ class ConfigParse {
   bool listenParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool serverNameParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
-  bool clienMaxBodySizeParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool clientMaxBodySizeParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
 
   Tokens tokens_;
   DispatchFuncMap map_;
