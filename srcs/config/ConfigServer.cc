@@ -1,6 +1,6 @@
 #include "ConfigServer.h"
 
-ConfigServer::ConfigServer() : hostname_("localhost"), root_("html"), endpoint_(), client_max_body_size_(1024) {}
+ConfigServer::ConfigServer() : hostname_("localhost"), root_("html"), endpoint_(), client_max_body_size_(0) {}
 
 void ConfigServer::setListen(const SocketAddress& endpoint) {
   this->endpoint_ = endpoint;
