@@ -1,19 +1,14 @@
 #include "ConfigParse.h"
 
 #include <algorithm>
-#include <cstdint>
-#include <cstdlib>
 #include <exception>
-#include <iostream>
 #include <limits>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "Config.h"
-#include "ConfigFile.h"
 #include "ConfigServer.h"
 #include "util/Log.h"
 
@@ -70,39 +65,31 @@ bool portParse(const std::string& port) {
     Log::error("Port number size is invalid.\n");
     return false;
   }
-  if (port.find_first_not_of("0123456789") != std::string::npos) {
+  if (portstr.find_first_not_of("0123456789") != std::string::npos) {
     Log::error("Invalid character found in port number.\n");
     return false;
   }
-  auto num = std::stoul(port);
+  auto num = std::stoul(portstr);
   if ((num != 80 && num != 8080) && (num > std::numeric_limits<uint16_t>::max() || num < 49152)) {
     Log::error("Port must be 80 or 8080 or be in range of 49152 to 65535.\n");
     return false;
   }
+  port = (uint16_t) num;
   return true;
 }
 
-bool endpointParse(const std::string str, SocketAddress& endpoint) {
-  auto idx = str.find(":");
-  if (idx == str.npos) {
+bool endpointParse(const std::string& str, uint16_t& port) {
+  auto idx = str.find(':');
+  if (idx != 0 && idx != std::string::npos) {
     Log::error("Invalid address/port.\n");
     return false;
   }
-  std::string address;
-  std::string port;
-  try {
-    address = str.substr(0, idx);
-    port = str.substr(idx + 1);
-  } catch (const std::out_of_range& e) {
-    Log::error("Substr function in endpoint parser failed.\n");
-    return false;
-  }
-  if (!addressParse(address) || !portParse(port)) {
+
+  std::string port_str = str.substr(idx + 1);
+  if (!portParse(port_str, port)) {
     Log::error("Invalid listen argument.\n");
     return false;
   }
-  endpoint.port = port;
-  endpoint.address = address;
   return true;
 }
 }  // namespace
@@ -199,14 +186,13 @@ bool ConfigParse::dispatchDirectiveParse(TokensConstIter& curr, const TokensCons
 }
 
 bool ConfigParse::listenParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
-  (void)cfg_server;
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end of \"listen\" directive.\n");
     return false;
   }
-  SocketAddress endpoint;
-  if (!endpointParse(*curr, endpoint)) {
+  uint16_t port;
+  if (!endpointParse(*curr, port)) {
     return false;
   }
   curr++;
@@ -218,7 +204,7 @@ bool ConfigParse::listenParse(TokensConstIter& curr, const TokensConstIter& end,
     Log::error("Expected \";\" in \"listen\" directive.\n");
     return false;
   }
-  cfg_server.setListen(endpoint);
+  cfg_server.setPort(port);
   return true;
 }
 
@@ -228,21 +214,20 @@ bool ConfigParse::serverNameParse(TokensConstIter& curr, const TokensConstIter& 
     Log::error("Unexpected end in server_name directive.\n");
     return false;
   }
-  std::string name = *curr;
-  ++curr;
-  if (curr == end) {
-    Log::error("Unexpected end in server_name directive.\n");
-    return false;
-  }
-  if (*curr != ";") {
-    Log::error("Expected \";\" in \"listen\" directive.\n");
-    return false;
-  }
-  cfg_server.setServerName(name);
+  do {
+    const std::string& name = *curr;
+    ++curr;
+    if (curr == end) {
+      Log::error("Unexpected end in server_name directive.\n");
+      return false;
+    }
+    cfg_server.addServerName(name);
+  } while (*curr != ";");
   return true;
 }
 
 bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  (void) cfg_server;
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end in root directive.\n");
@@ -258,7 +243,7 @@ bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, C
     Log::error("Expected \";\" in \"root\" directive.\n");
     return false;
   }
-  cfg_server.setRoot(new_root);
+  // cfg_server.setRoot(new_root); // todo: this needs to go to
   return true;
 }
 

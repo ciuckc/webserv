@@ -1,9 +1,6 @@
 #include "ConfigFile.h"
 
-#include <exception>
 #include <string>
-
-#include "Config.h"
 
 ConfigFile::InvalidConfigFile::InvalidConfigFile(const std::string arg) throw() : reason_(arg) {}
 

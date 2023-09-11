@@ -8,8 +8,7 @@ class SendResponse : public OTask {
   enum State {
     MSG,
     HEADERS,
-    SEPARATOR,
-    BODY
+    SEPARATOR
   };
 
   typedef Message::header_t::const_iterator header_iter_t;
@@ -18,7 +17,7 @@ class SendResponse : public OTask {
   header_iter_t header_;
 
  public:
-  explicit SendResponse(const Response& response);
+  explicit SendResponse(Response&& response);
   bool operator()(Connection& connection) override;
   void onDone(Connection& connection) final;
 };

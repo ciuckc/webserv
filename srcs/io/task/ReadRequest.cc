@@ -1,37 +1,57 @@
 #include "ReadRequest.h"
-#include "SendResponse.h"
-#include "http/ErrorResponse.h"
+#include "http/RequestHandler.h"
 #include <algorithm>
 
 // =========== ReadRequest ===========
-ReadRequest::ReadRequest(Request& req) : request_(req) {}
 bool ReadRequest::operator()(Connection& connection) {
   ConnectionBuffer& buf = connection.getBuffer();
-  if (state_ != BODY) {
-    std::string line;
-    while (!buf.getline(line).readFailed()) {
-      if (use_line(connection, line)) {
-        if (error_ != 0)
-          return true;
-        break;
-      }
-    }
+  std::string line;
+  while (buf.getline(line))
+    if (use_line(connection, line))
+      return true;
+  return false;
+}
+
+bool ReadRequest::checkError(Connection& connection) {
+  if (error_ != 0) {
+    // because we errored halfway through reading request we
+    // need to reset the connection unless we want to find the next request
+    // by digging through invalid request
+    connection.setKeepAlive(false);
+    return true;
   }
-  if (buf.readFailed() || state_ != BODY)
-    return false;
-  if (request_.getBodySize() == 0)
-    if (request_.getMethod() == Request::POST)
-      error_ = 411; // Length required
-  // Todo: read body (or BodyReader task...)
+  if (cfg_ == nullptr)
+    error_ = 400;
+  else if (request_.getPath().find("..") != std::string::npos)
+    error_ = 403; // don't escape root, forbidden
+  else if (request_.getMethod() == HTTP::INVALID)
+    error_ = 405; // Method not allowed
+  else if (request_.getMethod() == HTTP::POST && request_.getContentLength() == 0)
+    error_ = 411;
+  //else if (request_.getContentLength() > cfg_->getClientMaxBodySize())
+  //  error_ = 413; todo: this should be in route. route here?
+  else if (request_.getUri().size() > WS::uri_maxlen)
+    error_ = 414;
+  else if (request_.getVersion() != Request::VER_1_1)
+    error_ = 505; // Http version not supported
+  else
+   return false;
   return true;
 }
 
 void ReadRequest::onDone(Connection& connection) {
-  connection.enqueueResponse(ErrorResponse(error_ == 0 ? 200 : error_));
-  // else do something with what we learnt from the request
-  // find correct route? read the body in a special way? That sounds mildly sexual
-  if (connection.keepAlive())
-    connection.awaitRequest();
+  RequestHandler rq(connection, *cfg_, request_);
+  if (!checkError(connection)) {
+    const auto path = request_.getPath();
+    for (const auto& route : cfg_->getRoutes()) {
+      if (!path.compare(0, route.first.length(), route.first)) {
+        Log::error(util::RED, route.first, "\n");
+        return rq.execRequest(route.second);
+      }
+    }
+    error_ = 404;
+  }
+  rq.handleError_(error_);
 }
 
 // return true if we should stop
@@ -46,42 +66,34 @@ bool ReadRequest::use_line(Connection& connection, std::string& line) {
       return handle_msg(connection, line);
     case HEADERS:
       return handle_header(connection, line);
-    case BODY:
+    case DONE:
       return true;
   }
   __builtin_unreachable();
 }
 
 bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
-  Log::info('[', connection.getSocket().get_fd(), "]\tIN:\t", line);
+  Log::info(connection, "IN: \t", util::without_crlf(line), '\n');
 
-  if (!request_.setMessage(line)) {
-    if (request_.getMethod() == Request::INVALID) {
-      error_ = 405; // Method not allowed
-    } else if (request_.getUri().empty()) {
-      error_ = 400; // Bad Request
-    }/* else if (request_.getVersion() != Request::VER_1_1) {
-      error_ = 505; // Http version not supported
-    } // We could have 414 URI too long here as well*/
+  if (request_.setMessage(line)) {
+    state_ = HEADERS;
+    return false;
+  } else {
+    error_ = 400;
     return true;
   }
-  state_ = HEADERS;
-  return false;
 }
 
-
-
 bool ReadRequest::handle_header(Connection& connection, std::string& line) {
-  Log::trace('[', connection.getSocket().get_fd(), "]\tH:\t", line);
   if (line.size() > WS::header_maxlen) {
     error_ = 431;
     return true;
   } else if (line == "\r\n" || line == "\n") {
-    state_ = BODY;
     return true;
   }
 
   auto kvpair = split_header(line);
+  Log::trace(connection, "H:\t\t", kvpair.first, ": ", kvpair.second, '\n');
   if (error_ != 0)
     return true;
   auto hooks = hhooks_.equal_range(kvpair.first);
@@ -94,36 +106,66 @@ bool ReadRequest::handle_header(Connection& connection, std::string& line) {
   return error_ != 0;
 }
 
-std::pair<std::string, std::string> ReadRequest::split_header(std::string& line) {
+std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& line) {
   const size_t sep = line.find_first_of(':');
   const size_t val_end = line.find_last_not_of(" \t\r\n");
+  // this will always work (std::string::npos + 1 == 0)
+  const size_t val_start = line.find_first_not_of(" \t", sep + 1);
 
-  if (sep == std::string::npos) {
-    size_t val_start = line.find_first_not_of(" \t");
-    if (val_start != 0 && val_start <= val_end) // Continuation needs ws in front
-      return std::make_pair(prev_key_, line.substr(val_start, val_end - val_start + 1));
-  } else {
+  if (val_start > val_end) {
+    error_ = 400;
+    return {};
+  }
+  if (sep != std::string::npos) {
     size_t key_start = line.find_first_not_of(" \t");
     size_t key_end = line.find_last_not_of(" \t", sep - 1);
-    size_t val_start = line.find_first_not_of(" \t", sep + 1);
-    if (key_start <= key_end && val_start <= val_end) {
-      std::transform(&line[key_start], &line[key_end + 1], &line[key_start], ::tolower);
-      return std::make_pair(line.substr(key_start, key_end - key_start + 1),
-                            line.substr(val_start, val_end - val_start + 1));
+    if (key_start > key_end) {
+      error_ = 400;
+      return {};
     }
+    header_key_ = line.substr(key_start, key_end - key_start + 1);
+  } else if (val_start == 0) {
+    error_ = 400;
+    return {};
   }
-  error_ = 400;
-  return {};
+  return {header_key_, {&line[val_start], val_end - val_start + 1}};
 }
 
 #define HEADER_HOOK(name, lambda) \
-{ name, [](ReadRequest& request, const std::string& value, Connection& connection)->int lambda }
-const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {
+{ name, [](ReadRequest& request, const std::string_view& value, Connection& connection)->int lambda }
+const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
     HEADER_HOOK("connection", {
       (void) request;
-      if (strncasecmp(value.c_str(), "close", strlen("close")) == 0)
+      if (strncasecmp(value.data(), "close", strlen("close")) == 0)
         connection.setKeepAlive(false);
       return 0;
     }),
-};
+    HEADER_HOOK("host", {
+      if (request.cfg_ != nullptr)
+        return 400; // duplicate host header
+
+      std::string hostname { value.substr(0, value.find(':')) };
+      auto& host_map = connection.getHostMap();
+      auto found_cfg = host_map.find(hostname);
+      if (found_cfg == host_map.end()) {
+        found_cfg = host_map.find("");
+        if (found_cfg == host_map.end())
+          return 400;
+      }
+      request.cfg_ = &found_cfg->second;
+      return 0;
+    }),
+    HEADER_HOOK("content-length", {
+      (void)connection;
+      char *pos;
+      size_t content_length = std::strtoul(value.data(), &pos, 10);
+      if (*pos)
+        return 400;
+      request.request_.setContentLength(content_length);
+      // todo: make sure this body length is not too big onDone
+      return 0;
+    })}, WS::case_cmp_less};
+
+    // if-modified-since
+    // transfer-encoding
 

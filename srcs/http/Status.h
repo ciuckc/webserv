@@ -3,7 +3,7 @@
 
 // I am not sorry for this
 namespace http {
-static std::string getStatus(int code) {
+static constexpr const char* getStatus(int code) {
   switch (code) {
     case 100:
       return "Continue";

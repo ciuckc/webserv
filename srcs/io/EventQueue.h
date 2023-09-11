@@ -58,7 +58,7 @@ class EventQueue {
       return checkFlag(ev, filter);
     }
     static inline std::ostream& printEvent(std::ostream& stream, const event_t& ev) {
-      return stream << '[' << getFileDes(ev) << "]\tEvent\tFlags: " << ev.events << '\n';
+      return stream << "Event on fd " << getFileDes(ev) << "\tFlags: " << ev.events << '\n';
     }
     static inline void wait(EventQueue& q) {
       q.event_count_ = epoll_wait(q.queue_fd_, q.events_, MAX_EVENTS, 5000);
@@ -121,6 +121,11 @@ class EventQueue {
                     << "\tData: " << ev.data << '\n';
     }
     static inline void wait(EventQueue& q) {
+      if (!q.changelist_.empty()) {
+        Log::trace("Event Changelist:\n");
+        for (auto& e : q.changelist_)
+          Log::trace("fd: ", e.ident, ", direction: ", e.filter == in ? "in, " : "out, ", "flags: ", e.flags, '\n');
+      }
       q.event_count_ = kevent(q.queue_fd_, q.changelist_.data(), (int)q.changelist_.size(),
                               q.events_, MAX_EVENTS, nullptr);
       q.changelist_.clear();

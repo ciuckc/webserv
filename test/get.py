@@ -1,6 +1,6 @@
 import requests, random
 
-host = "http://localhost:6969"
+host = "http://localhost:6969/html/index.html"
 test_idx = 0
 
 
@@ -12,7 +12,7 @@ def test(case, expected=200, headrs=None):
         headrs["connection"] = "close"
     response = requests.get(host, headers=headrs)
     if response.status_code != expected:
-        print("{}: FAIL expected={}, received={}",
+        print(f"{}: FAIL expected={}, received={}",
               ++test_idx, expected, response.status_code)
     else:
         print("SUCCESS")
