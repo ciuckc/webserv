@@ -144,9 +144,9 @@ Config ConfigParse::semanticParse(const Tokens& tokens) {
 
 bool ConfigParse::isDirective(const TokensConstIter& it) {
   std::unordered_map<std::string, bool> directives = {
-      {"listen", true},   {"hostname", true},   {"root", true},
-      {"location", true}, {"error_page", true}, {"client_max_body_size", true},
-      {"index", true},    {"autoindex", true},  {"allowed_methods", true}};
+      {"listen", true},   {"server_name", true}, {"root", true},
+      {"location", true}, {"error_page", true},  {"client_max_body_size", true},
+      {"index", true},    {"autoindex", true},   {"allowed_methods", true}};
   return directives[*it];
 }
 
