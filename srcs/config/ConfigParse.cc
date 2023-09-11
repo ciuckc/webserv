@@ -61,7 +61,7 @@ bool addressParse(const std::string& address) {
 }
 
 bool portParse(const std::string& port) {
-  if (port.size() > 5 || port.size() < 1) {
+  if (port.size() > 5 || port.empty()) {
     Log::error("Port number size is invalid.\n");
     return false;
   }
@@ -74,7 +74,7 @@ bool portParse(const std::string& port) {
     Log::error("Port must be 80 or 8080 or be in range of 49152 to 65535.\n");
     return false;
   }
-  port = (uint16_t) num;
+  port = (uint16_t)num;
   return true;
 }
 
@@ -227,7 +227,7 @@ bool ConfigParse::serverNameParse(TokensConstIter& curr, const TokensConstIter& 
 }
 
 bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
-  (void) cfg_server;
+  (void)cfg_server;
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end in root directive.\n");
