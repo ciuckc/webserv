@@ -6,6 +6,7 @@
 
 #include "Config.h"
 #include "ConfigFile.h"
+#include "config/ConfigServer.h"
 
 /**
  * @brief Parser and generator of the Config class
@@ -52,6 +53,10 @@ class ConfigParse {
   bool serverNameParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool clientMaxBodySizeParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool errorPageParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool indexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+  bool locationParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
 
   Tokens tokens_;
   DispatchFuncMap map_;

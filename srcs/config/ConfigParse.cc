@@ -15,53 +15,22 @@
 namespace {
 enum { EMPTY };
 
-bool addressParse(const std::string& address) {
-  constexpr std::string::size_type kMaxAddressLength = 15;
-  if (address.size() > kMaxAddressLength || address.size() < 7) {
-    Log::error("Invalid address size.\n");
+bool isPositiveInt(const std::string& str) {
+  if (str.find_first_not_of("0123456789") != std::string::npos) {
     return false;
   }
-  {
-    size_t dot_count = 0;
-    for (auto it = address.begin(); it != address.end(); ++it) {
-      if (*it == '.') {
-        dot_count++;
-      }
-    }
-    if (dot_count != 3) {
-      Log::error("Invalid number of address separators.\n");
-      return false;
-    }
-    if (address.find_first_not_of(".0123456789") != std::string::npos) {  // if there are any other chars then we bail
-      Log::error("Found unexpected character in address directive.\n");
-      return false;
-    }
+  if (str.size() > 10) {
+    return false;
   }
-  {
-    std::istringstream s_address(address);
-    std::string number;
-    std::vector<std::string> numbers;
-    for (; std::getline(s_address, number, '.');) {
-      if (!number.empty())
-        numbers.push_back(number);
-    }
-    if (numbers.size() != 4) {
-      Log::error("Invalid number of address fields.\n");
-      return false;
-    }
-    for (auto number : numbers) {
-      auto byte = std::stoul(number);
-      if (byte > 255) {
-        Log::error("Invalid address field. It must be in the range of 0 to 255.\n");
-        return false;
-      }
-    }
+  auto num = std::stoul(str);
+  if (num > std::numeric_limits<int>::max()) {
+    return false;
   }
   return true;
 }
 
-bool portParse(const std::string& port) {
-  if (port.size() > 5 || port.empty()) {
+bool portParse(const std::string& portstr, uint16_t& port) {
+  if (portstr.size() > 5 || portstr.empty()) {
     Log::error("Port number size is invalid.\n");
     return false;
   }
@@ -74,22 +43,7 @@ bool portParse(const std::string& port) {
     Log::error("Port must be 80 or 8080 or be in range of 49152 to 65535.\n");
     return false;
   }
-  port = (uint16_t)num;
-  return true;
-}
-
-bool endpointParse(const std::string& str, uint16_t& port) {
-  auto idx = str.find(':');
-  if (idx != 0 && idx != std::string::npos) {
-    Log::error("Invalid address/port.\n");
-    return false;
-  }
-
-  std::string port_str = str.substr(idx + 1);
-  if (!portParse(port_str, port)) {
-    Log::error("Invalid listen argument.\n");
-    return false;
-  }
+  port = num;
   return true;
 }
 }  // namespace
@@ -101,8 +55,9 @@ const char* ConfigParse::InvalidDirective::what() const throw() {
 ConfigParse::ConfigParse(const Tokens& file_data) : tokens_(file_data), map_() {
   this->map_ = {{"listen", &ConfigParse::listenParse},
                 {"server_name", &ConfigParse::serverNameParse},
-                {"root", &ConfigParse::rootParse},
-                {"client_max_body_size", &ConfigParse::clientMaxBodySizeParse}};
+                {"client_max_body_size", &ConfigParse::clientMaxBodySizeParse},
+                {"error_page", &ConfigParse::errorPageParse},
+                {"location", &ConfigParse::locationParse}};
 }
 
 Config ConfigParse::parse() {
@@ -131,9 +86,8 @@ Config ConfigParse::semanticParse(const Tokens& tokens) {
 
 bool ConfigParse::isDirective(const TokensConstIter& it) {
   std::unordered_map<std::string, bool> directives = {
-      {"listen", true},   {"server_name", true}, {"root", true},
-      {"location", true}, {"error_page", true},  {"client_max_body_size", true},
-      {"index", true},    {"autoindex", true},   {"allowed_methods", true}};
+      {"listen", true}, {"server_name", true}, {"location", true}, {"error_page", true}, {"client_max_body_size", true},
+  };
   return directives[*it];
 }
 
@@ -192,7 +146,8 @@ bool ConfigParse::listenParse(TokensConstIter& curr, const TokensConstIter& end,
     return false;
   }
   uint16_t port;
-  if (!endpointParse(*curr, port)) {
+  if (!portParse(*curr, port)) {
+    Log::error("Invalid listen argument.\n");
     return false;
   }
   curr++;
@@ -233,8 +188,8 @@ bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, C
     Log::error("Unexpected end in root directive.\n");
     return false;
   }
-  std::string new_root = *curr;
-  ++curr;
+  std::string new_root = *curr;  // I am not sure if I need to make sure if the root is a valid path?
+  ++curr;                        // Probs it s the responsibility of the user?
   if (curr == end) {
     Log::error("Unexpected end in root directive.\n");
     return false;
@@ -258,8 +213,6 @@ bool ConfigParse::clientMaxBodySizeParse(TokensConstIter& curr, const TokensCons
     return false;
   }
   std::size_t number = std::stoull(*curr);
-  if (number > 1024000000)
-    return false;
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end in client_max_body_size directive.\n");
@@ -270,6 +223,124 @@ bool ConfigParse::clientMaxBodySizeParse(TokensConstIter& curr, const TokensCons
     return false;
   }
   cfg_server.setClientBodyMaxSize(number);
+  return true;
+}
+
+bool ConfigParse::errorPageParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  ++curr;
+  if (curr == end) {
+    Log::error("Unexpected end in \"error_page\" directive.\n");
+    return false;
+  }
+  std::vector<int> error_codes{};
+  for (; curr != end && isPositiveInt(*curr); ++curr) {
+    auto number = static_cast<int>(std::stoul(*curr));
+    if (number < 300 || number > 599) {
+      Log::error("Value in \"error_page\" directive must be between 300 and 599.\n");
+      return false;
+    }
+    error_codes.emplace_back(number);
+  }
+  if (curr == end) {
+    Log::error("Unexpected end in \"error_page\" directive.\n");
+    return false;
+  }
+  if (!error_codes.size()) {
+    Log::error("No error codes provided.\n");
+    return false;
+  }
+  for (auto code : error_codes) {
+    cfg_server.addErrorPage(code, *curr);
+  }
+  curr++;
+  if (curr == end) {
+    Log::error("Unexpected end in \"error_page\" directive.\n");
+    return false;
+  }
+  if (*curr != ";") {
+    Log::error("Expected \";\" in \"error_page\" directive.\n");
+    return false;
+  }
+  return true;
+}
+
+bool ConfigParse::indexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  curr++;
+  if (curr == end) {
+    Log::error("Unexpected end in \"index\" directive.\n");
+    return false;
+  }
+  std::vector<std::string> files{};
+  for (; curr != end && *curr != ";"; ++curr) {
+    for (auto file : files) {
+      if (*curr == file) {
+        Log::error("Can not have the same index file multiple times.\n");
+        return false;
+      }
+    }
+    files.emplace_back(*curr);
+  }
+  if (curr == end) {
+    Log::error("Unexpected end in \"index\" directive.\n");
+    return false;
+  }
+  if (*curr != ";") {
+    Log::error("Expected \";\" in \"error_page\" directive.\n");
+    return false;
+  }
+  cfg_server.addIndexFiles(files);
+  return true;
+}
+
+bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
+  curr++;
+  if (curr == end) {
+    Log::error("Unexpected end in \"autoindex\" directive.\n");
+    return false;
+  }
+  if (*curr != "true" && *curr != "false") {
+    Log::error("Value of \"autoindex\" directive must be either true or false.\n");
+    return false;
+  }
+  bool autoindex{*curr == "true" ? true : false};
+  curr++;
+  if (curr == end) {
+    Log::error("Unexpected end in \"index\" directive.\n");
+    return false;
+  }
+  if (*curr != ";") {
+    Log::error("Expected \";\" in \"autoindex\" directive.\n");
+    return false;
+  }
+  cfg_server.setAutoIndex(autoindex);
+  return true;
+}
+
+bool ConfigParse::locationParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer&) {
+  curr++;
+  if (curr == end) {
+    Log::error("Unexpected end in \"location\" directive.\n");
+    return false;
+  }
+  std::string path = *curr;
+  curr++;
+  if (curr == end) {
+    Log::error("Unexpected end in \"location\" directive.\n");
+    return false;
+  }
+  if (*curr != "{") {
+    Log::error("Expected \"{\" in \"location\" directive.\n");
+    return false;
+  }
+  for (; curr != end && *curr != "}"; ++curr) {}
+  if (curr == end) {
+    Log::error("Unexpected end in \"location\" directive.\n");
+    return false;
+  }
+  if (*curr != "}") {
+    Log::error("Expected \"}\" in \"location\" directive.\n");
+    return false;
+  }
   return true;
 }
 
