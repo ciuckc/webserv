@@ -205,12 +205,16 @@ void Cgi::makeDocumentResponse_(const std::string& raw, Response& res)
 // this function has not been tested at all!!!
 void Cgi::makeLocalRedirResponse_(const std::string& raw, Response& res, Request& req)
 {
-  req.setUri(st_find_header_value(raw, "Location: "));
   (void) res;
-  // TODO: FIX PLS
-  // RequestHandler rh(req);
-  // rh.execRequest();
-  // res = rh.getResponse();
+  RequestHandler rh(rh_.getConnection(), rh_.getConfigServer(), req);
+  std::string new_uri = st_find_header_value(raw, "Location: ");
+  auto new_route = rh_.getConfigServer().matchRoute(new_uri);
+  if (new_route != rh_.getConfigServer().getRoutes().end()) {
+    req.setUri(new_uri);
+    rh.execRequest(new_route->second);
+    return;
+  }
+  rh.handleError_(500);
 }
 
 // function to process raw cgi client redirect response into http response

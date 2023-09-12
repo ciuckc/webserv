@@ -42,16 +42,14 @@ bool ReadRequest::checkError(Connection& connection) {
 void ReadRequest::onDone(Connection& connection) {
   RequestHandler rq(connection, *cfg_, request_);
   if (!checkError(connection)) {
-    const auto path = request_.getPath();
-    for (const auto& route : cfg_->getRoutes()) {
-      if (!path.compare(0, route.first.length(), route.first)) {
-        Log::error(util::RED, route.first, "\n");
-        return rq.execRequest(route.second);
-      }
+    const auto& path = request_.getPath();
+    const auto route = cfg_->matchRoute(path);
+    if (route != cfg_->getRoutes().end()) {
+      return rq.execRequest(route->second);
     }
     error_ = 404;
+    rq.handleError_(error_);
   }
-  rq.handleError_(error_);
 }
 
 // return true if we should stop

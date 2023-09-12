@@ -11,10 +11,11 @@ class RequestHandler {
   ~RequestHandler() = default;
   RequestHandler(const RequestHandler& that) = delete;
   RequestHandler& operator=(const RequestHandler& that) = delete;
-  void       execRequest(const ConfigRoute& route);
+  void execRequest(const ConfigRoute& route);
   void handleError_(int err); // public so we can send errors more easily
   Request& getRequest() {return request_;}
-  Connection& getConnection() {return connection_;}
+  Connection& getConnection() const {return connection_;}
+  const ConfigServer& getConfigServer() const {return cfg_;}
 
  private:
   using FileInfo = util::FileInfo;

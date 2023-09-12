@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "ConfigServer.h"
 
 ConfigServer::ConfigServer()
@@ -26,4 +27,11 @@ std::size_t ConfigServer::getClientMaxBodySize() const {
 }
 const ConfigServer::routes_t& ConfigServer::getRoutes() const {
   return routes_;
+}
+
+ConfigServer::routes_t::const_iterator ConfigServer::matchRoute(const std::string& path) const {
+  const auto routeMatches = [&path](const std::pair<std::string, ConfigRoute>& route)->bool {
+    return (!path.compare(0, route.first.length(), route.first));
+  };
+  return (std::find_if(routes_.begin(), routes_.end(), routeMatches));
 }

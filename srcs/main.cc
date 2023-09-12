@@ -17,7 +17,7 @@ static Config fakeConfig() {
   ConfigServer srv;
   ConfigRoute route;
   route.setRoot("/home/mbatstra/webserv/html/");
-  route.addIndexFile("index.html");
+  // route.addIndexFile("index.html");
   route.addAcceptedMethod(HTTP::GET);
   route.setAutoIndex(true);
   srv.setPort(6969);

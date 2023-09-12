@@ -34,6 +34,7 @@ class ConfigServer {
   [[nodiscard]] uint16_t getPort() const;
   [[nodiscard]] std::size_t getClientMaxBodySize() const;
   [[nodiscard]] const routes_t& getRoutes() const;
+  [[nodiscard]] routes_t::const_iterator matchRoute(const std::string& path) const;
   [[nodiscard]] const std::map<int, std::string>& getErrorPages() const {
     return error_pages_;
   }
