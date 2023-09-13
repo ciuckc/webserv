@@ -3,63 +3,51 @@
 #include "io/task/IOTask.h"
 #include "io/task/ReadRequest.h"
 #include "io/task/SendResponse.h"
-#include "http/ErrorResponse.h"
 
-Connection::Connection(int fd, EventQueue& event_queue, BufferPool<>& buf_mgr)
-    : socket_(fd), buffer_(buf_mgr), event_queue_(event_queue) {
-  awaitRequest();
-  event_queue_.add(fd);
+Connection::Connection(Socket&& socket, EventQueue& event_queue, const host_map_t& host_map)
+    : host_map_(host_map),
+      socket_(std::forward<Socket>(socket)),
+      buffer_(),
+      event_queue_(event_queue) {
+  event_queue_.add(socket_.get_fd());
   last_event_ = std::time(nullptr);
 }
 
-Connection::~Connection() {
-  // Destructing the socket removes the connection from the eventqueue
-  iqueue_.clear();
-  oqueue_.clear();
-}
+Connection::~Connection() = default;
 
 bool Connection::handle(EventQueue::event_t& event) {
   if (EventQueue::isWrHangup(event)) {
-    Log::info('[', socket_.get_fd(), "]\tClient dropped connection\n");
+    Log::info(*this, "Client closed connection\n");
     return true;
   }
-  if (EventQueue::isRead(event)) {
-    WS::IOStatus in_status = handleIn();
-    if (in_status == WS::IO_FAIL)
+  if (EventQueue::isRead(event))
+    if (handleIn() == WS::IO_FAIL)
       return true;
-  }
-  if (EventQueue::isWrite(event)) {
-    WS::IOStatus out_status = handleOut();
-    if (out_status == WS::IO_FAIL)
+  if (EventQueue::isWrite(event))
+    if (handleOut() == WS::IO_FAIL)
       return true;
-    if (out_status == WS::IO_GOOD && oqueue_.empty()) {
-      if (!keep_alive_)
-        shutdown();
-      event_queue_.mod(socket_.get_fd(), EventQueue::in);
-    }
-  }
+
   if (EventQueue::isRdHangup(event)) {
-    Log::debug('[', socket_.get_fd(), "]\tClient done transmitting\n");
+    Log::debug(*this, "Client done transmitting\n");
     client_fin_ = true;
+    if (oqueue_.empty() && buffer_.outEmpty())
+      return true;
   }
-  socket_.flush();
-  if (client_fin_ && oqueue_.empty() && !buffer_.needWrite()) {
-    return true;
-  }
+
   last_event_ = std::time(nullptr);
   return false;
 }
 
 WS::IOStatus Connection::handleIn() {
+  if (reset_)
+    return WS::IO_WAIT;
+
   WS::IOStatus status = WS::IO_GOOD;
-  while (!iqueue_.empty()) {
-    if (buffer_.readFailed()) {
-      if (status == WS::IO_WAIT)
-        return status; // We've already read all we can
-      status = buffer_.readIn(socket_);
-      if (status == WS::IO_FAIL)
+  while (status == WS::IO_GOOD) {
+    if (buffer_.needRead() && !buffer_.readIn(socket_, status))
         return status;
-    }
+    if (iqueue_.empty() && !awaitRequest())
+        return WS::IO_WAIT;
     ITask& task = *iqueue_.front();
     if (task(*this)) {
       task.onDone(*this);
@@ -72,12 +60,9 @@ WS::IOStatus Connection::handleIn() {
 WS::IOStatus Connection::handleOut() {
   WS::IOStatus status = WS::IO_GOOD;
 
-  while (!oqueue_.empty() || buffer_.needWrite()) {
+  while (buffer_.needWrite() || !oqueue_.empty()) {
     if (buffer_.needWrite()) {
-      if (status == WS::IO_WAIT)
-        return status;
-      status = buffer_.writeOut(socket_);
-      if (status == WS::IO_FAIL)
+      if (!buffer_.writeOut(socket_, status))
         return status;
       continue;
     }
@@ -87,59 +72,81 @@ WS::IOStatus Connection::handleOut() {
       oqueue_.pop_front();
     }
   }
-  if (status == WS::IO_GOOD)  // We can't let this sit in the buffer
-    status = buffer_.writeOut(socket_);
-  return status;
+  if (!buffer_.outEmpty() && !buffer_.writeOut(socket_, status))
+      return status;
+  if (!keep_alive_)
+    shutdown();
+  if (client_fin_ || reset_)
+    return WS::IO_FAIL; // This destructs the connection
+  event_queue_.mod(socket_.get_fd(), EventQueue::in);
+  return WS::IO_GOOD;
 }
 
-void Connection::addTask(ITask* task) {
-  iqueue_.push_back(std::unique_ptr<ITask>(task));
+void Connection::addTask(ITask::ptr_type&& task) {
+  iqueue_.push_back(std::forward<ITask::ptr_type>(task));
 }
 
-void Connection::addTask(OTask* task) {
-  oqueue_.push_back(std::unique_ptr<OTask>(task));
-}
-Socket& Connection::getSocket() {
-  return socket_;
+void Connection::addTask(OTask::ptr_type&& task) {
+  oqueue_.push_back(std::forward<OTask::ptr_type>(task));
 }
 
 ConnectionBuffer& Connection::getBuffer() {
   return buffer_;
 }
 
+const Connection::host_map_t& Connection::getHostMap() const {
+  return host_map_;
+}
+
 void Connection::shutdown() {
-  Log::debug('[', socket_.get_fd(), "]\tServer done transmitting\n");
+  Log::debug(*this, "Server done transmitting\n");
   socket_.shutdown(SHUT_WR);
 }
 
-void Connection::awaitRequest() {
-  //todo: rename ReadRequest RequestReader and make class var instead of the request itself?
-  //  will we still need the RequestReader while writing output?
-  addTask(new ReadRequest(request_));
+bool Connection::awaitRequest() {
+  if (!keep_alive_)
+    return false;
+  if (++request_count_ > WS::max_requests) {
+    // Don't read more, do not pass start, do not get 200
+    Log::warn(*this, "Max requests exceeded\n");
+    enqueueResponse(std::forward<Response>(Response::builder().message(429).build()));
+    reset_ = true;
+    return false;
+  } else if (request_count_ == WS::max_requests) {
+    Log::debug(*this, "Max requests reached\n");
+    keep_alive_ = false;
+  }
+  addTask(std::make_unique<ReadRequest>());
+  return true;
 }
 
 void Connection::enqueueResponse(Response&& response) {
-  if (++request_count_ > WS::max_requests) {
-    keep_alive_ = false;
-    Log::debug('[', socket_.get_fd(), "] Max requests reached\n");
-  }
-  if (oqueue_.empty()) {
-    auto dir = keep_alive_ ? EventQueue::both : EventQueue::out;
-    event_queue_.mod(socket_.get_fd(), dir);
-  }
+  if (oqueue_.empty())
+    event_queue_.mod(socket_.get_fd(), EventQueue::both);
   if (!keep_alive_)
     response.addHeader("connection: close\r\n");
   response.setKeepAlive(WS::timeout, WS::max_requests);
-  addTask(new SendResponse(response));
+  addTask(std::make_unique<SendResponse>(std::forward<Response>(response)));
 }
 
 void Connection::timeout() {
-  Log::debug('[', socket_.get_fd(), "] Timed out\n");
+  Log::debug(*this, "Timed out\n");
   keep_alive_ = false;
+  reset_ = true;
   request_count_ = 0; // so we don't get 2 log messages
-  enqueueResponse(ErrorResponse(408));
+  Response response;
+  response.setMessage(408);
+  enqueueResponse(std::move(response));
 }
 
 bool Connection::stale(time_t now) const {
   return now - last_event_ > WS::timeout;
+}
+
+bool Connection::idle() const {
+  return oqueue_.empty();
+}
+
+const std::string& Connection::getName() const {
+  return socket_.getName();
 }

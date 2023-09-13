@@ -6,7 +6,6 @@
 
 #include "IOException.h"
 #include "Server.h"
-#include "util/Log.h"
 
 EventQueue::EventQueue() : events_(), event_count_(), event_index_() {
   queue_fd_ = Platform::create_queue();
@@ -38,6 +37,5 @@ EventQueue::event_t& EventQueue::getNext(Server& server) {
     if (event_count_ == -1)
       throw IOException("EventQueue", errno);
   }
-  Log::debug(events_[event_index_]);
   return events_[event_index_++];
 }

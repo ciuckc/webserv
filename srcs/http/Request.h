@@ -3,21 +3,17 @@
 #include <string>
 
 #include "Message.h"
+#include "Method.h"
 
 class Request : public Message {
  public:
-  enum Method {
-    INVALID = 0,
-    GET = 1,
-    POST = 2,
-  };
   enum HttpVersion {
     VER_INVALID,
     VER_1_1
   };
 
  private:
-  Method method_ = INVALID;
+  HTTP::Method method_ = HTTP::INVALID;
   std::string uri_;
   HttpVersion version_ = VER_INVALID;
 
@@ -28,8 +24,11 @@ class Request : public Message {
   Request& operator=(const Request& rhs);
 
   bool setMessage(const std::string& msg);
-  Method getMethod() const;
+  HTTP::Method getMethod() const;
   const std::string& getUri() const;
+  void setUri(const std::string&);
+  const std::string getPath() const;
+  const char* getHeader(const std::string& key) const;
   HttpVersion getVersion() const;
   // todo: getVersion()? Are we ?
 

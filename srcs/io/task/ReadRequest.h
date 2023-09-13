@@ -7,28 +7,31 @@ class ReadRequest : public ITask {
   enum State {
     MSG,
     HEADERS,
-    BODY,
+    DONE,
   };
 
-  Request& request_;
+  Request request_;
   State state_ = MSG;
   int error_ = 0;
   size_t req_len_ = 0;
-  std::string prev_key_;
+  std::string header_key_;
+  ConfigServer* cfg_ = nullptr;
 
   bool use_line(Connection& connection, std::string& line);
   bool handle_msg(Connection&, std::string& line);
   bool handle_header(Connection& connection, std::string& line);
-  std::pair<std::string, std::string> split_header(std::string& line);
+  std::pair<std::string, std::string_view> split_header(std::string& line);
+
+  bool checkError(Connection&);
 
  public:
-  explicit ReadRequest(Request& req);
-  bool operator()(Connection& connection) final;
-  void onDone(Connection& connection) final;
+  explicit ReadRequest() = default;
+  bool operator()(Connection& connection) override;
+  void onDone(Connection& connection) override;
 
  private:
 
-  using header_lambda = int(*)(ReadRequest&, const std::string&, Connection&);
-  using header_lambda_map = std::multimap<std::string, header_lambda> ;
+  using header_lambda = int(*)(ReadRequest&, const std::string_view&, Connection&);
+  using header_lambda_map = std::multimap<std::string, header_lambda, WS::CaseCmpL> ;
   static const header_lambda_map hhooks_;
 };
