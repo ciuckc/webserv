@@ -33,16 +33,18 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
     // get location from config and add header
   } else {
     // in case above functions get called without rooting the path, do it here
-    // also, either update getPath to trim the pathinfo in case of cgi or just yeet it
-    // because subject doesn't care about it anyways
     std::string path = request_.getPath();
     util::prepend_cwd(path);
     auto s = util::FileInfo();
-    if (!s.open(path.c_str())) {
+    std::string cgi_no_pathinfo;
+    if (path.find(".cgi") != std::string::npos) { // get ext from config instead
+      cgi_no_pathinfo = path.substr(0, path.find(".cgi") + 4);
+    }
+    if (!s.open(path.c_str()) && cgi_no_pathinfo.empty()) {
       handleError_(404);
     } else if (s.isDir()) {
       handleDir_(path, route, s);
-    } else if (s.isFile()) {
+    } else if (s.isFile() || !cgi_no_pathinfo.empty()) {
       handleFile_(s, path);
     }
   }
