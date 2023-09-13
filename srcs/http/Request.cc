@@ -36,6 +36,8 @@ bool Request::setMessage(const std::string& msg) {
     method_ = HTTP::GET;
   else if (word == "POST")
     method_ = HTTP::POST;
+  else if (word == "DELETE")
+    method_ = HTTP::DELETE;
 
   if (!next_word(view, word))
     return false;

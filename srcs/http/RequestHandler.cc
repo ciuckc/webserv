@@ -25,7 +25,6 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
   // add DiscardBody OTask to eat body
   // add SendFile task for error page
 
-  // find correct configserver or return 400
   if (!legalMethod_(route)) {
     handleError_(405);
   } else if (route.getRedir().length() != 0) {
@@ -60,6 +59,9 @@ bool RequestHandler::legalMethod_(const ConfigRoute& route) const
 
 void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, FileInfo& file_info)
 {
+  if (request_.getMethod() == HTTP::DELETE) {
+    return handleError_(400);
+  }
   for (const auto& file : route.getIndexFiles()) {
     std::string actual_file = path + file;
     if (!access(actual_file.c_str(), R_OK)) {
@@ -68,7 +70,6 @@ void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, Fil
       return;
     }
   }
-  // if we get here it's autoindex or error
   if (route.isAutoIndex()){
     autoIndex_(path);
   }
@@ -110,8 +111,21 @@ void RequestHandler::autoIndex_(std::string& path)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }
 
+void RequestHandler::deleteFile_(const std::string& path)
+{
+  if (unlink(path.c_str())) {
+    return (handleError_(500));
+  }
+  auto builder = Response::builder();
+  builder.message(204);
+  connection_.enqueueResponse(std::forward<Response>(builder.build()));
+}
+
 void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, int status, std::string type)
 {
+  if (request_.getMethod() == HTTP::DELETE) {
+    return (deleteFile_(path));
+  }
   const std::string cgi_ext = ".cgi"; // fetch this from config instead
   if (path.find(cgi_ext) != std::string::npos) {
     Cgi cgi(*this, path);

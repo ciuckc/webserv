@@ -19,6 +19,7 @@ static Config fakeConfig() {
   route.setRoot("/home/mbatstra/webserv/html/");
   // route.addIndexFile("index.html");
   route.addAcceptedMethod(HTTP::GET);
+  route.addAcceptedMethod(HTTP::DELETE);
   route.setAutoIndex(true);
   srv.setPort(6969);
   srv.addRoute("/", std::move(route));
