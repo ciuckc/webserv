@@ -1,107 +1,134 @@
-#include <algorithm>
 #include "Server.h"
 
+#include "config/Config.h"
+#include "io/ListenSocket.h"
 #include "io/IOException.h"
 #include "util/Log.h"
+#include "io/Signal.h"
+#include "io/Handler.h"
 
 Server::Server(Config& config) {
-  std::map<uint16_t, int> port_to_fd;
+  std::map<uint16_t, ListenSocket*> ports;
 
   for (auto& srvcfg : config.getServers()) {
-    int fd;
-    const uint16_t port = srvcfg.getPort();
-    auto it = port_to_fd.find(port);
-    if (it == port_to_fd.end())
-      port_to_fd[port] = fd = create_listen_sock(port);
-    else
-      fd = it->second;
-
-    host_map_t& host_map = socket_map_[fd];
-    auto& hostnames = srvcfg.getHostnames();
-    if (hostnames.empty()) {
-      if (!host_map.try_emplace("", srvcfg).second)
-        Log::warn("Trying to add duplicate host:port config :", port, " to map!\n");
-      continue;
+    uint16_t port = srvcfg.getPort();
+    auto it = ports.find(port);
+    ListenSocket* sock;
+    if (it != ports.end()) {
+      sock = it->second;
+    } else {
+      try {
+        auto sub = std::make_unique<ListenSocket>(*this, port);
+        ports[port] = sock = sub.get();
+        add_sub(std::move(sub));
+      } catch (const IOException& ex) {
+        Log::error("Error creating listen socket: ", ex.what());
+        continue;
+      }
     }
-    for (auto& name : hostnames) {
-      auto pos = host_map.find(name);
-      if (pos == host_map.end())
-        host_map.insert({name, srvcfg});
-      else
-        Log::warn("Trying to add duplicate host:port config ", name, ':', port, " to map!\n");
-    }
+    sock->addConfig(srvcfg);
   }
+  Sig::setup_signals();
 }
 
+// This needs to be in here, otherwise everything magically breaks
 Server::~Server() = default;
-
-int Server::create_listen_sock(uint16_t port) {
-  Socket& sock = listen_sockets_.emplace_back();
-  sock.bind(port);
-  sock.listen(SOMAXCONN);
-  int fd = sock.get_fd();
-  evqueue_.add(fd);
-  if (listen_start_ == -1)
-    listen_start_ = fd;
-  return fd;
-}
-
-void Server::accept_connection(const EventQueue::event_t& event) {
-  if (EventQueue::isWrHangup(event) || EventQueue::isError(event) || EventQueue::isWrite(event))
-    throw IOException("Hangup/err/write on listen socket?! The world has gone mad..\n");
-  const Socket& socket = listen_sockets_[EventQueue::getFileDes(event) - listen_start_];
-  Log::debug(socket.getName(), "\t", event);
-  Socket new_sock = socket.accept();
-  const int fd = new_sock.get_fd();
-  connections_.emplace(std::piecewise_construct,
-                       std::forward_as_tuple(fd),
-                       std::forward_as_tuple(std::move(new_sock), evqueue_, socket_map_[socket.get_fd()]));
-}
-
-void Server::purge_connections() {
-  timep_t now = std::chrono::system_clock::now();
-  if (now - last_purge_ < std::chrono::milliseconds(5000))
-    return;
-  last_purge_ = now;
-  const time_t now_secs = std::time(nullptr);
-  for (auto& connection : connections_) {
-    if (connection.second.stale(now_secs)) {
-      if (!connection.second.idle())
-        connection.second.timeout();
-      else // We're already sending another response but client doesn't want em
-        connection.second.shutdown();
-    }
-  }
-}
-
-
-void Server::handle_connection(EventQueue::event_t& event) {
-  const int fd = EventQueue::getFileDes(event);
-  auto found_connection = connections_.find(fd);
-  if (found_connection == connections_.end()) {
-    Log::warn("Got event on nonexistent connection? fd: ", fd, '\n');
-    return;
-  }
-  Log::debug(found_connection->second, event);
-  if (EventQueue::isError(event)) {
-    Log::warn(found_connection->second, "Error event?!?!\n");
-    connections_.erase(found_connection);
-  } else if (found_connection->second.handle(event)) {
-    connections_.erase(found_connection);
-  }
-}
 
 void Server::loop() {
   Log::info("[Server] Entering main loop!\n");
   while (true) {
     try {
-      EventQueue::event_t& ev = evqueue_.getNext(*this);
-      if (EventQueue::getFileDes(ev) < listen_start_ + (int)listen_sockets_.size())
-        accept_connection(ev);
-      else
-        handle_connection(ev);
+      handle_event(evqueue_.getNext(*this));
     } catch (const IOException& err) {
       Log::warn("IOException: ", err.what());
     }
+    if (Log::log_level >= Log::DEBUG)
+      std::cout << '\n';
   }
+}
+void Server::handle_event(EventQueue::event_t& event) {
+  const uint32_t idx = EventQueue::getIndex(event);
+
+  if (idx >= handlers_.size() || !handlers_[idx]) {
+    Log::error("Got event without subscriber? ", event, '\n');
+    abort();
+  }
+  auto& handler = *handlers_[idx];
+  handler.updateTimeout(evqueue_.lastWait());
+  if (handler.handle(event)) {
+    del_sub(idx);
+    return;
+  }
+  handler.updateFilter(evqueue_);
+}
+
+
+void Server::add_sub(std::unique_ptr<Handler>&& h) {
+  h->updateTimeout(evqueue_.lastWait());
+  if (handler_idxs_.empty()) {
+    h->setIndex(handlers_.size());
+    evqueue_.add(h->getFD(), h->getIndex(), h->getfilter());
+    handler_timeouts_.push_back(h->getIndex());
+    handlers_.push_back(std::forward<std::unique_ptr<Handler>>(h));
+  } else {
+    h->setIndex(handler_idxs_.front());
+    evqueue_.add(h->getFD(), h->getIndex(), h->getfilter());
+    handler_timeouts_.push_back(h->getIndex());
+    handler_idxs_.pop_front();
+    handlers_[h->getIndex()] = std::forward<std::unique_ptr<Handler>>(h);
+  }
+}
+
+void Server::del_sub(size_t idx) {
+  if (!handlers_[idx])
+    return;
+  handlers_[idx].reset();
+  handler_idxs_.push_back(idx);
+}
+
+void Server::purge_connections() {
+  using namespace std::chrono;
+  static system_clock::time_point prev;
+  system_clock::time_point now = system_clock::now();
+  if (now - prev < 5000ms)
+    return;
+  prev = now;
+  auto timeout_cmp = [this](uint32_t a, uint32_t b){
+    if (handlers_[a] && handlers_[b])
+      return handlers_[a]->getExpiry() < handlers_[b]->getExpiry();
+    if (handlers_[a])
+      return false;
+    if (handlers_[b])
+      return true;
+    return false;
+  };
+  auto tp_cmp = [this](uint32_t idx, const EventQueue::timep_t& v) {
+    return !handlers_[idx] || handlers_[idx]->getExpiry() < v;
+  };
+
+  std::sort(handler_timeouts_.begin(), handler_timeouts_.end(), timeout_cmp);
+  auto end = std::lower_bound(handler_timeouts_.begin(), handler_timeouts_.end(), now, tp_cmp);
+  std::for_each(handler_timeouts_.begin(), end, [this](auto idx){
+    auto& hp = handlers_[idx];
+    if (hp) {
+      if (!hp->handleTimeout(*this, true))
+        return
+      del_sub(idx);
+    }
+    handler_timeouts_.pop_front();
+  });
+}
+
+void Server::run_later(std::function<void()>&& runnable) {
+  task_queue_.emplace_back(std::move(runnable));
+}
+
+void Server::run_tasks() {
+  while (!task_queue_.empty()) {
+    task_queue_.front()();
+    task_queue_.pop_front();
+  }
+}
+EventQueue& Server::getEventQueue() {
+  return evqueue_;
 }

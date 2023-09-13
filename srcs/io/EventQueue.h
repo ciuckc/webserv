@@ -2,10 +2,8 @@
 
 #include <sys/epoll.h>
 
-#include <vector>
 #include <ostream>
-
-#include "Socket.h"
+#include <chrono>
 
 class Server;
 
@@ -17,6 +15,7 @@ class EventQueue {
   EventQueue& operator=(const EventQueue& rhs) = delete;
 
   using event_t = struct epoll_event;
+  using timep_t = std::chrono::system_clock::time_point;
   using filt_t = uint32_t;
   using flag_t = uint32_t;
 
@@ -32,13 +31,13 @@ class EventQueue {
    * @param fd The file descriptor
    * @param direction The direction we want events for
    */
-  void add(int fd, filt_t direction = in) const;
+  void add(int fd, uint32_t idx, filt_t direction = in) const;
   /**
    * Change the direction we want events for
    * @param fd The file descriptor we want to modify
    * @param new_direction The new direction we want events for
    */
-  void mod(int fd, filt_t new_direction = both) const;
+  void mod(int fd, uint32_t idx, filt_t new_direction = both) const;
   /**
    * Remove a certain file descriptor
    * @param fd
@@ -47,8 +46,8 @@ class EventQueue {
 
   event_t& getNext(Server& server);
 
-  static inline int getFileDes(const event_t& ev) {
-    return ev.data.fd;
+  static inline uint32_t getIndex(const event_t& ev) {
+    return ev.data.u32;
   };
   static inline bool isRead(const event_t& ev) {
     return (ev.events & in) != 0;
@@ -65,6 +64,9 @@ class EventQueue {
   static inline bool isWrHangup(const event_t& ev) {
     return (ev.events & w_hup) != 0;
   };
+  inline const timep_t& lastWait() const {
+    return last_wait_;
+  }
 
  private:
   static constexpr auto max_events = 64;
@@ -74,12 +76,13 @@ class EventQueue {
   event_t events_[max_events];
   int event_count_;
   int event_index_;
+  timep_t last_wait_;
 
-  static event_t create_event(int fd, filt_t direction);
+  static event_t create_event(uint32_t idx, filt_t direction);
 };
 
 inline std::ostream& operator<<(std::ostream& out, const EventQueue::event_t& ev) {
-  out << "Event on fd " << ev.data.fd << "\tEvents: " << ev.events << "\t(";
+  out << "EVENT:\t";
 
   static constexpr auto filt_n = 5;
   static constexpr std::pair<EventQueue::filt_t, const char*> filters[filt_n] = {
@@ -87,7 +90,7 @@ inline std::ostream& operator<<(std::ostream& out, const EventQueue::event_t& ev
       {EventQueue::w_hup, "HUP"}, {EventQueue::r_hup, "RDHUP"}
   };
   bool first = true;
-  for (const auto & filter : filters) {
+  for (const auto& filter : filters) {
     if (ev.events & filter.first) {
       if (first)
         first = false;
@@ -96,5 +99,5 @@ inline std::ostream& operator<<(std::ostream& out, const EventQueue::event_t& ev
       out << filter.second;
     }
   }
-  return out << ")\n";
+  return out << " (" << ev.events << ")\tfd: " << ev.data.fd;
 }

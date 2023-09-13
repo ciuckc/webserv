@@ -1,34 +1,25 @@
 #pragma once
-#include <set>
-#include <chrono>
-#include <unordered_map>
 
-#include "config/Config.h"
-#include "io/Connection.h"
+#include <deque>
+#include <functional>
+#include <list>
+#include <memory>
+#include <vector>
+
 #include "io/EventQueue.h"
-#include "io/Socket.h"
 
+class Handler;
+class Config;
+class Subscriber;
 class Server {
  private:
-  using host_map_t = std::map<std::string, ConfigServer&>;
-
   EventQueue evqueue_;
-  // All the sockets we are listening on
-  // These sockets may be shared between multiple ConfigServers
-  std::vector<Socket> listen_sockets_;
-  // This map maps listen socket fd to server config directives (mapped to hostname)
-  std::map<int, host_map_t> socket_map_;
-  // This map maps connection fd to Connection object
-  std::unordered_map<int, Connection> connections_;
-  // The lowest file descriptor that's a listening port
-  int listen_start_ = -1;
+  std::vector<std::unique_ptr<Handler>> handlers_;
+  std::list<size_t> handler_idxs_;
+  std::deque<size_t> handler_timeouts_;
+  std::deque<std::function<void()>> task_queue_;
 
-  using timep_t =  std::chrono::time_point<std::chrono::system_clock>;
-  timep_t last_purge_;
-
-  int create_listen_sock(uint16_t port);
-  void accept_connection(const EventQueue::event_t& event);
-  void handle_connection(EventQueue::event_t& event);
+  void handle_event(EventQueue::event_t& event);
 
  public:
   explicit Server(Config& config);
@@ -36,4 +27,12 @@ class Server {
 
   void loop();
   void purge_connections();
+
+  void add_sub(std::unique_ptr<Handler>&& h);
+  void del_sub(size_t idx);
+
+  void run_later(std::function<void()>&&);
+  void run_tasks();
+
+  EventQueue& getEventQueue();
 };

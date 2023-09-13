@@ -1,7 +1,8 @@
-#ifndef REQUESTHANDLER_H
-#define REQUESTHANDLER_H
+#pragma once
+
 #include "Request.h"
 #include "Response.h"
+#include "config/ConfigRoute.h"
 #include "io/Connection.h"
 
 class RequestHandler {
@@ -31,5 +32,3 @@ class RequestHandler {
   void handleFile_(FileInfo& file_info, const std::string& path, int status = 200, std::string type = "");
   void autoIndex_(std::string& path);
 };
-
-#endif
