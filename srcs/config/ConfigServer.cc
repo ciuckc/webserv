@@ -1,9 +1,11 @@
 #include "ConfigServer.h"
 
+#include <limits>
+
 ConfigServer::ConfigServer()
     : server_name_{"localhost"},
       port_(8080),
-      client_max_body_size_(0),
+      client_max_body_size_(std::numeric_limits<size_t>::max()),
       routes_(),
       error_pages_(),
       files_{},
@@ -30,14 +32,6 @@ void ConfigServer::addErrorPage(int error, const std::string& path) {
     Log::warn("Duplicate error page for error ", error, ": ", path, '\n');
 }
 
-void ConfigServer::setAutoIndex(bool value) {
-  this->auto_index_ = value;
-}
-
-void ConfigServer::addIndexFiles(const std::vector<std::string>& files) {
-  this->files_ = files;
-}
-
 const std::vector<std::string>& ConfigServer::getHostnames() const {
   return server_name_;
 }
@@ -53,12 +47,4 @@ const ConfigServer::routes_t& ConfigServer::getRoutes() const {
 
 const std::map<int, std::string>& ConfigServer::getErrorPages() const {
   return error_pages_;
-}
-
-const std::vector<std::string>& ConfigServer::getIndexFiles() const {
-  return files_;
-}
-
-bool ConfigServer::getAutoIndex() const {
-  return this->auto_index_;
 }

@@ -6,6 +6,7 @@
 
 #include "Config.h"
 #include "ConfigFile.h"
+#include "config/ConfigRoute.h"
 #include "config/ConfigServer.h"
 
 /**
@@ -19,8 +20,10 @@ class ConfigParse {
   using Tokens = std::vector<std::string>;
   using TokensConstIter = Tokens::const_iterator;
   using TokensIter = Tokens::iterator;
-  using FunctionPointer = bool (ConfigParse::*)(TokensConstIter&, const TokensConstIter&, ConfigServer&);
-  using DispatchFuncMap = std::map<std::string, FunctionPointer>;
+  using DirectiveFuncPtr = bool (ConfigParse::*)(TokensConstIter&, const TokensConstIter&, ConfigServer&);
+  using DirectiveFuncMap = std::map<std::string, DirectiveFuncPtr>;
+  using LocDirectiveFuncPtr = bool (ConfigParse::*)(TokensConstIter&, const TokensConstIter&, ConfigRoute&);
+  using LocDirectiveMap = std::map<std::string, LocDirectiveFuncPtr>;
 
  public:
   class InvalidDirective : public std::exception {
@@ -44,20 +47,33 @@ class ConfigParse {
   Tokens splitOnWhiteSpace(const Tokens& tokens);
   Tokens splitOnSymbols(const Tokens& tokens);
   Config semanticParse(const Tokens& tokens);
+
   bool isDirective(const TokensConstIter& curr);
+  bool isLocationDirective(const TokensConstIter& curr);
+
+  template <typename T, typename Map>
+  bool dispatchFunc(TokensConstIter& curr, const TokensConstIter&, T& cfg, const Map& map);
+
   // aCtUaL pArSiNg
   bool serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg);
   bool directivesParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
-  bool dispatchDirectiveParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+
+  // Server parser
+  bool locationParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool listenParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool serverNameParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
-  bool rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool clientMaxBodySizeParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
   bool errorPageParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
-  bool indexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
-  bool autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
-  bool locationParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
+
+  // Location parser
+  bool indexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
+  bool autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
+  bool rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
+  bool allowedMethodsParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
+  bool redirectParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
+  bool uploadDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
 
   Tokens tokens_;
-  DispatchFuncMap map_;
+  DirectiveFuncMap map_;
+  LocDirectiveMap loc_map_;
 };

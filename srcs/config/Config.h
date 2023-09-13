@@ -14,6 +14,7 @@ class Config {
   ~Config() = default;
 
   void addServer(const ConfigServer& server);
+  void addServer(ConfigServer&& server);
   [[nodiscard]] std::vector<ConfigServer>& getServers() {
     return servers_;
   }
