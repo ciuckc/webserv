@@ -66,22 +66,20 @@ ConfigParse::ConfigParse(const Tokens& file_data) : tokens_(file_data), map_(), 
                     {"redirect", &ConfigParse::redirectParse}, {"cgi_upload_dir", &ConfigParse::uploadDirParse}};
 }
 
-Config ConfigParse::parse() {
+Config& ConfigParse::parse(Config& cfg) {
   this->tokens_ = splitOnWhiteSpace(this->tokens_);
   this->tokens_ = splitOnSymbols(this->tokens_);
   if (this->tokens_.empty())
     throw std::invalid_argument("Configuration file is empty");
   try {
-    return semanticParse(this->tokens_);
+    return semanticParse(this->tokens_, cfg);
   } catch (const InvalidDirective& e) {
     Log::error("Exception caught: ", e.what(), "\n");
     std::exit(1);
   }
 }
 
-Config ConfigParse::semanticParse(const Tokens& tokens) {
-  Config cfg;
-
+Config& ConfigParse::semanticParse(const Tokens& tokens, Config& cfg) {
   for (auto it = tokens.begin(); it != tokens.end(); ++it) {
     if (!serverParse(it, tokens.end(), cfg)) {
       throw ConfigParse::InvalidDirective("Invalid config");

@@ -41,12 +41,12 @@ class ConfigParse {
   ConfigParse& operator=(const ConfigParse&) = default;
   ~ConfigParse() = default;
 
-  Config parse();
+  Config& parse(Config& cfg);
 
  private:
   Tokens splitOnWhiteSpace(const Tokens& tokens);
   Tokens splitOnSymbols(const Tokens& tokens);
-  Config semanticParse(const Tokens& tokens);
+  Config& semanticParse(const Tokens& tokens, Config& cfg);
 
   bool isDirective(const TokensConstIter& curr);
   bool isLocationDirective(const TokensConstIter& curr);

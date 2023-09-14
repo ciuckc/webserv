@@ -8,7 +8,7 @@
 
 class Config {
  public:
-  Config() = default;
+  Config(const char* file_name = "./webserv.conf");
   Config(const Config& rhs) = default;
   Config& operator=(const Config& rhs) = default;
   ~Config() = default;
