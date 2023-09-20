@@ -26,7 +26,6 @@ bool ListenSocket::handleTimeout(Server&, bool) {
 bool ListenSocket::handleRead() {
   server_.add_sub(
       std::make_unique<Connection>(server_, std::forward<Socket>(socket_.accept()), configs_));
-  Log::warn(*this, "Unhandled event on listen socket\n");
   return false;
 }
 
