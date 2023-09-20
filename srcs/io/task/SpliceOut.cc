@@ -28,7 +28,7 @@ WS::IOStatus SpliceOut::operator()(Connection& connection) {
 
 void SpliceOut::onDone(Connection& connection) {
   Log::debug(connection, "Done reading body from pipe\n");
-  connection.getOutBuffer().resize();
+  connection.setOutSize();
 }
 void SpliceOut::setDone() {
   done_ = true;
@@ -57,7 +57,7 @@ bool SpliceOut::IHandler::handleTimeout(Server& server, bool) {
 
 bool SpliceOut::IHandler::handleRead() {
   if (buffer_.capacity() != RingBuffer::file_buf_size_) // first run
-    buffer_.resize(RingBuffer::file_buf_size_);
+    connection_.setOutSize(RingBuffer::file_buf_size_);
   if (buffer_.full()) {
     delFilter(EventQueue::in);
     // we're blocked!

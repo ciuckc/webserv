@@ -26,8 +26,15 @@ bool Connection::handleRead() {
     delFilter(EventQueue::in);
     return false;
   }
+  if (in_buffer_size_ != in_buffer_.capacity()) {
+    if (in_buffer_.dataLen() < in_buffer_size_)
+      in_buffer_.resize(in_buffer_size_);
+    else goto tasks;
+  }
   if (in_buffer_.read_sock(socket_) != WS::IO_GOOD)
     return handleError();
+
+  tasks:
   do {
     if (iqueue_.empty() && !awaitRequest())
       return false;
@@ -46,6 +53,11 @@ bool Connection::handleRead() {
 
 bool Connection::handleWrite() {
   WS::IOStatus status;
+  if (out_buffer_size_ != out_buffer_.capacity()) {
+    if (out_buffer_.dataLen() < out_buffer_size_)
+      out_buffer_.resize(out_buffer_size_);
+    else goto io;
+  }
   while (!out_buffer_.full() && !oqueue_.empty()) {
     status = runOTask();
     if (status != WS::IO_GOOD)
@@ -55,6 +67,8 @@ bool Connection::handleWrite() {
     delFilter(EventQueue::out);
   else if (status == WS::IO_FAIL) // yeah.. what do we do now? close the connection?
     return true;
+
+  io:
   if (out_buffer_.write_sock(socket_) != WS::IO_GOOD) // if write on a socket returns 0 something is wrong as well
     return true;
   if (!oqueue_.empty() || !out_buffer_.empty())
@@ -169,9 +183,18 @@ void Connection::shutdown() {
 RingBuffer& Connection::getInBuffer() {
   return in_buffer_;
 }
-
 RingBuffer& Connection::getOutBuffer() {
   return out_buffer_;
+}
+void Connection::setInSize(size_t size) {
+  in_buffer_size_ = size;
+  if (in_buffer_.dataLen() <= size)
+    in_buffer_.resize(size);
+}
+void Connection::setOutSize(size_t size) {
+  out_buffer_size_ = size;
+  if (out_buffer_.dataLen() <= size)
+    out_buffer_.resize(size);
 }
 
 const std::map<std::string, ConfigServer &>& Connection::getHostMap() const {

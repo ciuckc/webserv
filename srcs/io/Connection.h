@@ -19,6 +19,8 @@ class Connection : public Handler {
   Socket socket_;
   RingBuffer in_buffer_;
   RingBuffer out_buffer_;
+  size_t in_buffer_size_ = RingBuffer::buf_size_;
+  size_t out_buffer_size_ = RingBuffer::buf_size_;
 
   const std::map<std::string, ConfigServer&>& host_map_;
 
@@ -51,17 +53,26 @@ class Connection : public Handler {
   // also send one, we can then close the socket!
   void shutdown();
 
-  [[nodiscard]] RingBuffer& getInBuffer();
-  [[nodiscard]] RingBuffer& getOutBuffer();
   [[nodiscard]] const std::map<std::string, ConfigServer&>& getHostMap() const;
   [[nodiscard]] const std::string& getName() const override;
+
+  [[nodiscard]] RingBuffer& getInBuffer();
+  [[nodiscard]] RingBuffer& getOutBuffer();
+
+  void setInSize(size_t size = RingBuffer::buf_size_);
+  void setOutSize(size_t size = RingBuffer::buf_size_);
 
   void setKeepAlive(bool keepAlive);
   void closeRead();
 
+  WS::IOStatus runITasks();
+  WS::IOStatus runOTasks();
+
   // Run the first I/OTask, does not actually write/read more
   WS::IOStatus runITask();
   WS::IOStatus runOTask();
+
   bool handleTimeout(Server& server, bool src) override;
+
   void notifyInDone(bool error);
 };

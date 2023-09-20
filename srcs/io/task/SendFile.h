@@ -12,7 +12,10 @@ class SendFile : public OTask {
   }
 
   WS::IOStatus operator()(Connection& connection) override {
-    if (connection.getOutBuffer().read(fd_, size_) != WS::IO_GOOD) {
+    auto& buffer = connection.getOutBuffer();
+    if (buffer.capacity() != RingBuffer::file_buf_size_)
+      connection.setOutSize(RingBuffer::file_buf_size_);
+    if (buffer.read(fd_, size_) != WS::IO_GOOD) {
       Log::error(connection, "SendFile failed\n");
       return WS::IO_FAIL;
     }
@@ -21,6 +24,7 @@ class SendFile : public OTask {
 
   void onDone(Connection& connection) override {
     Log::trace(connection, "Sendfile done\n");
+    connection.setOutSize();
   };
 
  private:

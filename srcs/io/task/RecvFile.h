@@ -9,6 +9,9 @@ class RecvFile : public ITask {
   explicit RecvFile(int fd, size_t size) : fd_(fd), remaining_(size) {};
 
   WS::IOStatus operator()(Connection& connection) override {
+    auto& buffer = connection.getInBuffer();
+    if (buffer.capacity() != RingBuffer::file_buf_size_)
+      connection.setInSize(RingBuffer::file_buf_size_);
     if (connection.getInBuffer().write(fd_, remaining_) != WS::IO_GOOD) {
       Log::error(connection, "RecvFile failed\n");
       return WS::IO_FAIL;
@@ -18,6 +21,7 @@ class RecvFile : public ITask {
 
   void onDone(Connection& connection) override {
     Log::trace(connection, "RecvFile done\n");
+    connection.setInSize();
   };
 
  protected:

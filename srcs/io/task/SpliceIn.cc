@@ -28,7 +28,7 @@ void SpliceIn::onDone(Connection& connection) {
   if (fail_) // don't need to log this
     return;
   Log::debug(connection, "Done reading body into pipe\n");
-  connection.getInBuffer().resize(); // reset to default
+  connection.setInSize(); // reset to default
 }
 void SpliceIn::setDone() {
   done_ = true;
@@ -55,7 +55,7 @@ bool SpliceIn::OHandler::handleTimeout(Server& server, bool) {
 }
 bool SpliceIn::OHandler::handleWrite() {
   if (buffer_.capacity() != RingBuffer::file_buf_size_) // first run
-    buffer_.resize(RingBuffer::file_buf_size_);
+    connection_.setInSize(RingBuffer::file_buf_size_);
   if (buffer_.empty()) {
     delFilter(EventQueue::out);
     return false;
