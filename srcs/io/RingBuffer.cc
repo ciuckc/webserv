@@ -189,7 +189,7 @@ void RingBuffer::grow(size_t by) {
 
 
 bool RingBuffer::dataSplit() const {
-  return !empty() && start_ > end_ && end_ != 0;
+  return !empty() && end_ < start_ && end_ != 0;
 }
 bool RingBuffer::freeSplit() const {
   return !full() && end_ > start_ && start_ != 0;

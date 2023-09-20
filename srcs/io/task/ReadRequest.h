@@ -9,7 +9,7 @@ class ConfigServer;
 
 class ReadRequest : public ITask {
  private:
-  enum State { ABORT = -1, DONE = 0, MSG, HEADERS };
+  enum State {DONE, MSG, HEADERS};
 
   Request request_;
   State state_ = MSG;

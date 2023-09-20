@@ -10,7 +10,6 @@
 
 class Handler;
 class Config;
-class Subscriber;
 class Server {
  private:
   EventQueue evqueue_;

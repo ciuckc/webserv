@@ -129,6 +129,7 @@ void Server::run_tasks() {
     task_queue_.pop_front();
   }
 }
+
 EventQueue& Server::getEventQueue() {
   return evqueue_;
 }
