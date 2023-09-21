@@ -15,19 +15,19 @@ void ConfigServer::setPort(uint16_t port) {
   this->port_ = port;
 }
 
-void ConfigServer::addServerName(const std::string& server_name) {
-  this->server_name_.push_back(server_name);
+void ConfigServer::addServerName(std::string&& server_name) {
+  this->server_name_.push_back(std::forward<std::string>(server_name));
 }
 
-void ConfigServer::setClientBodyMaxSize(const std::size_t& size) {
+void ConfigServer::setClientBodyMaxSize(std::size_t size) {
   this->client_max_body_size_ = size;
 }
 
-void ConfigServer::addRoute(const std::string& loc, ConfigRoute&& route) {
-  routes_.emplace(loc, std::forward<ConfigRoute>(route));
+void ConfigServer::addRoute(std::string&& loc, ConfigRoute&& route) {
+  routes_.emplace(std::forward<std::string>(loc), std::forward<ConfigRoute>(route));
 }
 
-void ConfigServer::addErrorPage(int error, const std::string& path) {
+void ConfigServer::addErrorPage(int error, std::string&& path) {
   if (!error_pages_.emplace(error, path).second)
     Log::warn("Duplicate error page for error ", error, ": ", path, '\n');
 }
