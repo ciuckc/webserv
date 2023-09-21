@@ -1,15 +1,26 @@
 #include "ReadRequest.h"
-#include "http/RequestHandler.h"
+
 #include <algorithm>
 
+#include "config/ConfigServer.h"
+#include "http/RequestHandler.h"
+
 // =========== ReadRequest ===========
-bool ReadRequest::operator()(Connection& connection) {
-  ConnectionBuffer& buf = connection.getBuffer();
+WS::IOStatus ReadRequest::operator()(Connection& connection) {
+  RingBuffer& buf = connection.getInBuffer();
   std::string line;
-  while (buf.getline(line))
-    if (use_line(connection, line))
-      return true;
-  return false;
+
+  while(buf.getline(line) && error_ == 0) {
+    error_ = use_line(connection, line);
+    if (state_ == DONE)
+      return WS::IO_GOOD;
+  }
+  if (buf.full() && error_ == 0)
+    error_ = (state_ == HEADERS ? 431 : 414);
+  if (error_ == 0)
+    return WS::IO_AGAIN;
+  error(connection);
+  return WS::IO_FAIL;
 }
 
 bool ReadRequest::checkError(Connection& connection) {
@@ -52,56 +63,47 @@ void ReadRequest::onDone(Connection& connection) {
   }
 }
 
-// return true if we should stop
-bool ReadRequest::use_line(Connection& connection, std::string& line) {
-  if ((req_len_ += line.size()) > WS::request_maxlen) {
-    error_ = 413;
-    return true;
-  }
+int ReadRequest::use_line(Connection& connection, std::string& line) {
+  if ((req_len_ += line.size()) > WS::request_maxlen)
+    return 413;
 
-  switch (state_) {
-    case MSG:
-      return handle_msg(connection, line);
-    case HEADERS:
-      return handle_header(connection, line);
-    case DONE:
-      return true;
-  }
-  __builtin_unreachable();
+  if (state_ == MSG)
+    return handle_msg(connection, line);
+  else
+    return handle_header(connection, line);
 }
 
-bool ReadRequest::handle_msg(Connection& connection, std::string& line) {
+int ReadRequest::handle_msg(Connection& connection, std::string& line) {
   Log::info(connection, "IN: \t", util::without_crlf(line), '\n');
 
   if (request_.setMessage(line)) {
     state_ = HEADERS;
-    return false;
+    return 0;
   } else {
-    error_ = 400;
-    return true;
+    return 400;
   }
 }
 
-bool ReadRequest::handle_header(Connection& connection, std::string& line) {
+int ReadRequest::handle_header(Connection& connection, std::string& line) {
   if (line.size() > WS::header_maxlen) {
-    error_ = 431;
-    return true;
+    return 431;
   } else if (line == "\r\n" || line == "\n") {
-    return true;
+    state_ = DONE;
+    return 0;
   }
 
+  Log::trace(connection, "H:  \t", util::without_crlf(line), '\n');
   auto kvpair = split_header(line);
-  Log::trace(connection, "H:\t\t", kvpair.first, ": ", kvpair.second, '\n');
-  if (error_ != 0)
-    return true;
-  auto hooks = hhooks_.equal_range(kvpair.first);
-  std::for_each(hooks.first, hooks.second,
-                [&](const header_lambda_map::value_type& v) {
-                  int err = v.second(*this, kvpair.second, connection);
-                  if (err != 0) error_ = err;
-                });
-  request_.addHeader(line);
-  return error_ != 0;
+  if (error_ == 0) {
+    auto hooks = hhooks_.equal_range(kvpair.first);
+    std::for_each(hooks.first, hooks.second,
+                  [&](const header_lambda_map::value_type& v) {
+                    int err = v.second(*this, kvpair.second, connection);
+                    if (err != 0) error_ = err;
+                  });
+    request_.addHeader(line);
+  }
+  return error_;
 }
 
 std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& line) {
@@ -127,6 +129,17 @@ std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& 
     return {};
   }
   return {header_key_, {&line[val_start], val_end - val_start + 1}};
+}
+
+void ReadRequest::error(Connection& connection) {
+  if (cfg_) {
+    RequestHandler rh(connection, *cfg_, request_);
+    rh.handleError_(error_);
+  } else {
+    connection.enqueueResponse(
+        std::forward<Response>(
+            Response::builder().message(error_).build()));
+  }
 }
 
 #define HEADER_HOOK(name, lambda) \
@@ -157,13 +170,13 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
       (void)connection;
       char *pos;
       size_t content_length = std::strtoul(value.data(), &pos, 10);
-      if (*pos)
+      if ((size_t)(pos - value.data()) != value.size())
         return 400;
       request.request_.setContentLength(content_length);
       // todo: make sure this body length is not too big onDone
       return 0;
     })}, WS::case_cmp_less};
 
-    // if-modified-since
+// if-modified-since
     // transfer-encoding
 

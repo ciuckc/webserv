@@ -1,7 +1,8 @@
-#ifndef REQUESTHANDLER_H
-#define REQUESTHANDLER_H
+#pragma once
+
 #include "Request.h"
 #include "Response.h"
+#include "config/ConfigRoute.h"
 #include "io/Connection.h"
 
 class RequestHandler {
@@ -32,5 +33,3 @@ class RequestHandler {
   void deleteFile_(const std::string& path);
   void autoIndex_(std::string& path);
 };
-
-#endif

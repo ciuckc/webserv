@@ -1,8 +1,8 @@
-#include <csignal>
+#include <sys/wait.h>
 
+#include "Server.h"
 #include "config/ConfigFile.h"
 #include "config/ConfigParse.h"
-#include "Server.h"
 
 #define DEFAULT_CONFIG_FILE "./webserv.conf"
 
@@ -25,7 +25,6 @@ static Config fakeConfig() {
   srv.addRoute("/", std::move(route));
   srv.addServerName("localhost");
   srv.addServerName("127.0.0.1");
-  srv.addRoute("/html/site/", {});
   srv.addRoute("/poop/", {});
   cfg.addServer(srv);
   srv.setPort(8080);
@@ -39,7 +38,7 @@ static Config fakeConfig() {
 int main(int argc, char* argv[]) {
   (void) argc, (void)argv;
   // constexpr const char* default_cfg_file = "./webserv.conf";
-  signal(SIGPIPE, SIG_IGN);
+  //signal(SIGPIPE, SIG_IGN);
   try {
     Config cfg = fakeConfig();//parseConfig(argc == 2 ? argv[1] : default_cfg_file);
     Server server(cfg);

@@ -1,16 +1,16 @@
 #pragma once
 
 #include "IOTask.h"
+#include "io/Connection.h"
 
 class DiscardBody : public ITask {
  public:
   explicit DiscardBody(size_t n) : remaining_(n) {};
 
-  bool operator()(Connection& connection) override {
-    remaining_ -= connection.getBuffer().discard(remaining_);
-    return remaining_ == 0;
+  WS::IOStatus operator()(Connection& connection) override {
+    connection.getInBuffer().discard(remaining_);
+    return remaining_ == 0 ? WS::IO_GOOD : WS::IO_AGAIN;
   }
-  void onDone(Connection&) override {}
 
  private:
   size_t remaining_;
