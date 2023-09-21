@@ -7,14 +7,14 @@
 
 Config::Config(const char* file_name) : servers_() {
   ConfigFile config_file(file_name);
-  ConfigParse parser(config_file.getFileData());
+  ConfigParse parser(std::forward<ConfigFile::tokens_t >(config_file.getFileData()));
   parser.parse(*this);
-}
-
-void Config::addServer(const ConfigServer& server) {
-  this->servers_.push_back(server);
 }
 
 void Config::addServer(ConfigServer&& server) {
   this->servers_.emplace_back(std::forward<ConfigServer>(server));
+}
+
+std::vector<ConfigServer>& Config::getServers() {
+  return servers_;
 }

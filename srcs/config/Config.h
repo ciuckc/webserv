@@ -13,11 +13,8 @@ class Config {
   Config& operator=(const Config& rhs) = default;
   ~Config() = default;
 
-  void addServer(const ConfigServer& server);
   void addServer(ConfigServer&& server);
-  [[nodiscard]] std::vector<ConfigServer>& getServers() {
-    return servers_;
-  }
+  [[nodiscard]] std::vector<ConfigServer>& getServers();
 
  private:
   std::vector<ConfigServer> servers_;

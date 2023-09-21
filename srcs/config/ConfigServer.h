@@ -22,10 +22,10 @@ class ConfigServer {
   using index_files_t = std::vector<std::string>;
 
   void setPort(uint16_t port);
-  void addServerName(const std::string& server_name);
-  void setClientBodyMaxSize(const std::size_t& size);
-  void addRoute(const std::string& loc, ConfigRoute&& route);
-  void addErrorPage(int error, const std::string& path);
+  void addServerName(std::string&& server_name);
+  void setClientBodyMaxSize(size_t size);
+  void addRoute(std::string&& loc, ConfigRoute&& route);
+  void addErrorPage(int error, std::string&& path);
   void addIndexFiles(const std::vector<std::string>& files);
   void setAutoIndex(bool value);
 

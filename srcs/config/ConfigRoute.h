@@ -28,7 +28,7 @@ class ConfigRoute {
     }
     accepted_methods_.set(method);
   }
-  void addIndexFile(const std::string& file) {
+  void addIndexFile(std::string&& file) {
     index_files_.push_back(file);
   }
   void setAutoIndex(bool val) {
