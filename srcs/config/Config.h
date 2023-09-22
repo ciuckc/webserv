@@ -6,15 +6,13 @@
 
 class Config {
  public:
-  Config() = default;
+  Config(const char* file_name = "./webserv.conf");
   Config(const Config& rhs) = default;
   Config& operator=(const Config& rhs) = default;
   ~Config() = default;
 
-  void addServer(const ConfigServer& server);
-  [[nodiscard]] std::vector<ConfigServer>& getServers() {
-    return servers_;
-  }
+  void addServer(ConfigServer&& server);
+  [[nodiscard]] std::vector<ConfigServer>& getServers();
 
  private:
   std::vector<ConfigServer> servers_;
