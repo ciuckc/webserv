@@ -32,7 +32,7 @@ void Cgi::delArr_(char** arr)
 
 // make environment variables as specified in CGI RFC
 // some of them are missing due to not being required by subject
-char** Cgi::makeEnv_(const Request& req)
+char** Cgi::makeEnv(const Request& req)
 {
   static struct header_null_helper {
     std::string operator()(const Request& req, const std::string& key) {
@@ -77,12 +77,12 @@ char** Cgi::makeEnv_(const Request& req)
   return (env);
 }
 
-std::string Cgi::getScriptName_(const std::string& path)
+std::string Cgi::getScriptName(const std::string& path)
 {
   return (path.substr(0, path.find(".cgi") + 4));
 }
 
-Cgi::Cgi(RequestHandler& rh, const std::string& path) : rh_(rh), path_(path), script_(getScriptName_(path)) {}
+Cgi::Cgi(RequestHandler& rh, const std::string& path) : rh_(rh), path_(path), script_(getScriptName(path)) {}
 
 Cgi::~Cgi()
 {
@@ -91,7 +91,7 @@ Cgi::~Cgi()
 
 void Cgi::act()
 {
-  envp_ = makeEnv_(rh_.getRequest());
+  envp_ = makeEnv(rh_.getRequest());
   Response res;
   std::string result = execute_();
   std::string headers = result.substr(0, util::find_header_end(result));
@@ -135,9 +135,9 @@ void Cgi::exec_child_()
 }
 
 // write request body to child's stdin
-// wait for child then read child's stdout
+// then read child's stdout
 // these read/write ops should go through epoll?!
-std::string Cgi::exec_parent_(int pid)
+std::string Cgi::exec_parent_()
 {
   // if (rh_.getRequest().getContentLength() > 0) {
   //   close(this->pipe_in_[0]);
@@ -147,8 +147,6 @@ std::string Cgi::exec_parent_(int pid)
   //   close(this->pipe_in_[1]);
   // }
   close(this->pipe_out_[1]);
-  waitpid(pid, nullptr, 0);
-
   std::stringstream body;
   const ssize_t buf_size = 4096; // what would be optimal here?
   char buf[buf_size];
@@ -185,7 +183,7 @@ std::string Cgi::execute_()
   if (pid == 0) {
     exec_child_();
   }
-  std::string result = exec_parent_(pid);
+  std::string result = exec_parent_();
   return (result);
 }
 

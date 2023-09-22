@@ -153,7 +153,7 @@ template<class str> void RingBuffer::put(const str& s) {
   size_t available_space = freeLen();
   if (sv.size() > available_space) {
     put(sv.substr(0, available_space));
-    overflow_ = sv.substr(available_space);
+    overflow_ += sv.substr(available_space);
     return;
   }
   iovec vecs[2];

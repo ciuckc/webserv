@@ -13,4 +13,4 @@ clean:
 re: clean
 	$(MAKE)
 
-.PHONY: re clean uild
+.PHONY: re clean build

@@ -59,6 +59,8 @@ class Connection : public Handler {
   [[nodiscard]] RingBuffer& getInBuffer();
   [[nodiscard]] RingBuffer& getOutBuffer();
 
+  [[nodiscard]] Server& getServer();
+
   void setInSize(size_t size = RingBuffer::buf_size_);
   void setOutSize(size_t size = RingBuffer::buf_size_);
 

@@ -196,6 +196,10 @@ void Connection::shutdown() {
   socket_.shutdown(SHUT_WR);
 }
 
+Server& Connection::getServer() {
+  return server_;
+}
+
 RingBuffer& Connection::getInBuffer() {
   return in_buffer_;
 }

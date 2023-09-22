@@ -4,8 +4,8 @@
 #include "io/Connection.h"
 #include "util/Log.h"
 
-SpliceOut::SpliceOut(Server& server, Connection& conn, int pipe_fd) : server_(server) {
-  auto handler = std::make_unique<IHandler>(server, *this, conn, pipe_fd);
+SpliceOut::SpliceOut(Server& server, CgiSpliceVars& vars, Connection& conn, int pipe_fd) : server_(server), vars_(vars) {
+  auto handler = std::make_unique<IHandler>(server, vars, *this, conn, pipe_fd);
   handler_ = handler.operator->();
   server.add_sub(std::move(handler));
 }
@@ -37,9 +37,9 @@ void SpliceOut::setFail() {
   fail_ = true;
 }
 
-SpliceOut::IHandler::IHandler(Server& server, SpliceOut& parent, Connection& connection, int pipe_fd)
-    : Handler(pipe_fd, 0, 1000), server_(server), parent_(parent),
-      connection_(connection), buffer_(connection.getOutBuffer()),
+SpliceOut::IHandler::IHandler(Server& server, CgiSpliceVars& vars, SpliceOut& parent, Connection& connection, int pipe_fd)
+    : Handler(pipe_fd, 0, 1000), server_(server), vars_(vars),
+      parent_(parent), connection_(connection), buffer_(connection.getOutBuffer()),
       name_(Str::join("SpliceOut::IHandler(", std::to_string(pipe_fd), ")")) {}
 
 SpliceOut::IHandler::~IHandler() {
@@ -71,6 +71,19 @@ bool SpliceOut::IHandler::handleRead() {
   } else if (status == WS::IO_FAIL) {
     parent_.setFail();
     return true;
+  }
+  if (vars_.state_header) {
+    std::string tmp;
+    while (buffer_.getline(tmp)) {
+      if (!tmp.compare("\n") || !tmp.compare("\r\n")) {
+        vars_.state_header = false;
+        return false;
+      }
+      vars_.headers.append(tmp);
+    }
+  }
+  else if (vars_.chunked) { // if body is not chunked it gets handled automatically
+
   }
   return false;
 }

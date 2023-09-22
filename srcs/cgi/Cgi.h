@@ -10,19 +10,19 @@ class Cgi {
     Cgi(RequestHandler&, const std::string&);
     ~Cgi();
     void act();
+    std::string getScriptName(const std::string&);
+    char** makeEnv(const Request&);
 
   private:
     std::string execute_();
-    std::string exec_parent_(int pid);
+    std::string exec_parent_();
     void exec_child_();
     void makeDocumentResponse_(const std::string&, Response&);
     void makeLocalRedirResponse_(const std::string&, Response&, Request&);
     void makeClientRedirResponse_(const std::string&, Response&);
     // helper functions
     std::string findHeaderValue_(const std::string&, const std::string&);
-    std::string getScriptName_(const std::string&);
     void delArr_(char**);
-    char** makeEnv_(const Request&);
 
     RequestHandler& rh_;
     const std::string& path_;
