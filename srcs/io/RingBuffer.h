@@ -90,8 +90,8 @@ class RingBuffer {
 
  private:
   /**
- * Mark `by' bytes of the buffer as empty
- */
+   * Mark `by' bytes of the buffer as empty
+   */
   void shrink(size_t by);
   /**
    * Mark `by' bytes of the buffer as full
@@ -125,12 +125,12 @@ class RingBuffer {
    */
   template<class vec> vec dataTail();
   /**
- * Get a {ptr, len} representation of the first part of free space available
- */
+   * Get a {ptr, len} representation of the first part of free space available
+   */
   template<class vec> vec freeHead();
   /**
- * Get a {ptr, len} representation of the last part of free space available
- */
+   * Get a {ptr, len} representation of the last part of free space available
+   */
   template<class vec> vec freeTail();
   template<class vec> int getInVecs(vec vecs[2]);
   template<class vec> int getOutVecs(vec vecs[3]);
