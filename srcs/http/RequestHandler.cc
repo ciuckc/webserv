@@ -78,7 +78,7 @@ void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, Fil
     autoIndex_(path);
   }
   else {
-    handleError_(405);
+    handleError_(403);
   }
 }
 
