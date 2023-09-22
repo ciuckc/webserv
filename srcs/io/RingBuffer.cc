@@ -187,3 +187,25 @@ void RingBuffer::limitVecs(iovec* vecs, int& vec_n, size_t max) {
     max -= vecs[i].iov_len;
   }
 }
+
+void RingBuffer::toOverflow(size_t n) {
+  const size_t moved = n;
+
+  if (dataSplit()) {
+    auto tail = dataTail<std::string_view>();
+    if (n < tail.size())
+      tail.remove_prefix(tail.size() - n);
+    overflow_.insert(overflow_.begin(), tail.begin(), tail.end());
+    n -= tail.size();
+  }
+  if (n > 0) {
+    auto head = dataHead<std::string_view>();
+    head.remove_prefix(head.size() - std::min(size_, n));
+    overflow_.insert(overflow_.begin(), head.begin(), head.end());
+    n -= head.size();
+  }
+  if (n > 0)
+    abort(); // the string itself was bigger than the buffer, let's just fail
+  end_ = (end_ + size_ - moved) % size_;
+  empty_ = (end_ == start_);
+}

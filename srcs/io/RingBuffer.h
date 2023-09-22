@@ -64,6 +64,11 @@ class RingBuffer {
   void put(std::string&& s);
   void put(const char* str);
 
+  /**
+   * Insert a string (convertible to string_view) at the front of the buffer
+   */
+  template<class str> void prepend(const str& s);
+
   // --------- functions in this section remove data from the buffer ---------
   /**
    * Write as many bytes as possible to socket
@@ -138,6 +143,10 @@ class RingBuffer {
    * Limit the size of all vecs (combined) to max
    */
   static void limitVecs(iovec vecs[], int& vec_n, size_t max);
+  /**
+   * Move the last n available bytes to overflow, creating space for inserting
+   */
+  void toOverflow(size_t n);
 };
 
 template<class str> void RingBuffer::put(const str& s) {
@@ -156,6 +165,24 @@ template<class str> void RingBuffer::put(const str& s) {
     grow(len);
     sv.remove_prefix(len);
   }
+}
+
+template<class str> void RingBuffer::prepend(const str& s) {
+  std::string_view sv = s;
+  const size_t total_len = sv.size();
+  size_t available_space = freeLen();
+  if (total_len > available_space) // move data to overflow, then prepend
+    toOverflow(total_len - available_space); // this also moves end pointer back
+
+  iovec dst[2];
+  for (auto i = getInVecs(dst); i-- > 0 && !sv.empty();) {
+    size_t copy_len = std::min(dst[i].iov_len, sv.size());
+    size_t offset = dst[i].iov_len - copy_len;
+    std::copy(sv.end() - copy_len, sv.end(), (char*)dst[i].iov_base + offset);
+    sv.remove_suffix(copy_len);
+  }
+  start_ = (start_ + size_ - total_len) % size_;
+  empty_ = false;
 }
 
 template<class vec> vec RingBuffer::dataHead() {
