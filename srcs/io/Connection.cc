@@ -31,8 +31,9 @@ bool Connection::handleRead() {
       in_buffer_.resize(in_buffer_size_);
     else goto tasks;
   }
-  if (in_buffer_.read_sock(socket_) != WS::IO_GOOD)
+  if (in_buffer_.read_sock(socket_) != WS::IO_GOOD) { //todo: not this, check eof and remove filter, otherwise error
     return handleError();
+  }
 
   tasks:
   do {
@@ -42,12 +43,15 @@ bool Connection::handleRead() {
   } while (status == WS::IO_GOOD && !in_buffer_.empty());
 
   if (status == WS::IO_FAIL) {
+    Log::debug(*this, " closing read, task failed\n");
     // so a read task failed halfway through, don't read anymore
     closeRead();
     return out_queue_.empty() && out_buffer_.empty();
   }
-  if (status == WS::IO_BLOCKED)
+  if (status == WS::IO_BLOCKED) {
+    Log::debug(*this, " removing read filter, task returned blocked\n");
     delFilter(EventQueue::in);
+  }
   return false;
 }
 
@@ -63,16 +67,19 @@ bool Connection::handleWrite() {
     if (status != WS::IO_GOOD)
       break;
   }
-  if (status == WS::IO_BLOCKED)
+  if (status == WS::IO_BLOCKED) {
+    Log::debug(*this, "Write task blocked, removing write filter\n");
     delFilter(EventQueue::out);
-  else if (status == WS::IO_FAIL) // yeah.. what do we do now? close the connection?
+  } else if (status == WS::IO_FAIL) { // yeah.. what do we do now? close the connection?
+    Log::debug(*this, "Write task failed, resetting connection\n");
     return true;
-
+  }
   io:
   if (out_buffer_.write_sock(socket_) != WS::IO_GOOD) // if write on a socket returns 0 something is wrong as well
     return true;
   if (!out_queue_.empty() || !out_buffer_.empty())
     return false;
+  Log::trace(*this, "All out tasks done\n");
   // All tasks done and all data written
   if (read_closed_)
     return true;
@@ -159,6 +166,7 @@ void Connection::enqueueResponse(Response&& response) {
 bool Connection::handleTimeout(Server& server, bool src) {
   // does this timeout come from socket or pipe?
   if (src) {
+    Log::debug(*this, "Timed out\n");
     if (!out_queue_.empty() || !out_buffer_.empty()) {
       // Timed out while writing response
       shutdown();
@@ -169,6 +177,7 @@ bool Connection::handleTimeout(Server& server, bool src) {
     }
     delFilter(EventQueue::in);
   } else {
+    Log::debug(*this, "Task failed asynchronously, queueing deletion\n");
     // task timed out :( cgi hung, what do? Let's just close lmao
     server.run_later([&server, id = getIndex()](){server.del_sub(id);});
   }
