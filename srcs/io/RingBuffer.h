@@ -139,3 +139,59 @@ class RingBuffer {
    */
   static void limitVecs(iovec vecs[], int& vec_n, size_t max);
 };
+
+template<class str> void RingBuffer::put(const str& s) {
+  std::string_view sv = s;
+  size_t available_space = freeLen();
+  if (sv.size() > available_space) {
+    put(sv.substr(0, available_space));
+    overflow_ = sv.substr(available_space);
+    return;
+  }
+  iovec vecs[2];
+  auto chunk_n = getInVecs(vecs);
+  for (auto i = 0; i < chunk_n; i++) {
+    size_t len = std::min(vecs[i].iov_len, sv.size());
+    std::copy(sv.begin(), sv.begin() + len, (char*)vecs[i].iov_base);
+    grow(len);
+    sv.remove_prefix(len);
+  }
+}
+
+template<class vec> vec RingBuffer::dataHead() {
+  if (empty_)
+    return {nullptr, 0};
+  return {data_.get() + start_, (start_ < end_ ? end_ : size_) - start_};
+}
+
+template<class vec> vec RingBuffer::dataTail() {
+  return {data_.get(), end_};
+}
+
+template<class vec> vec RingBuffer::freeHead() {
+  if (empty_)
+    return {data_.get(), size_};
+  return {data_.get() + end_, (start_ < end_ ? size_ : start_) - end_};
+}
+
+template<class vec> vec RingBuffer::freeTail() {
+  return {data_.get(), start_};
+}
+
+template<class vec> int RingBuffer::getInVecs(vec vecs[2]) {
+  auto vec_n = 0;
+  vecs[vec_n++] = freeHead<vec>();
+  if (freeSplit())
+    vecs[vec_n++] = freeTail<vec>();
+  return vec_n;
+}
+
+template<class vec> int RingBuffer::getOutVecs(vec vecs[3]) {
+  auto vec_n = 0;
+  vecs[vec_n++] = dataHead<vec>();
+  if (dataSplit())
+    vecs[vec_n++] = dataTail<vec>();
+  if (!overflow_.empty())
+    vecs[vec_n++] = {overflow_.data(), overflow_.size()};
+  return vec_n;
+}
