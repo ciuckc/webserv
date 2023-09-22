@@ -9,7 +9,7 @@
 class ConfigRoute {
  private:
   std::string root_;
-  std::bitset<HTTP::TOTAL_METHODS> accepted_methods_{};
+  std::bitset<HTTP::TOTAL_METHODS> accepted_methods_;
   std::vector<std::string> index_files_;
   bool auto_index_{false};
   std::string redirect_;
@@ -45,7 +45,7 @@ class ConfigRoute {
     return root_;
   }
   [[nodiscard]] bool isMethodAllowed(HTTP::Method method) const {
-    return accepted_methods_.test(method);
+    return accepted_methods_.none() || accepted_methods_.test(method);
   }
   [[nodiscard]] const std::vector<std::string>& getIndexFiles() const {
     return index_files_;
