@@ -76,10 +76,6 @@ void RingBuffer::put(std::string&& s) {
   put(s);
 }
 
-void RingBuffer::put(const char* str) {
-  put(std::string_view(str, strlen(str)));
-}
-
 WS::IOStatus RingBuffer::write_sock(Socket& sock) {
   return write(sock.get_fd());
 }

@@ -62,7 +62,6 @@ class RingBuffer {
    */
   template<class str> void put(const str& s);
   void put(std::string&& s);
-  void put(const char* str);
 
   /**
    * Insert a string (convertible to string_view) at the front of the buffer

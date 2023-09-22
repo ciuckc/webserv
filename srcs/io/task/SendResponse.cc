@@ -22,7 +22,8 @@ WS::IOStatus SendResponse::operator()(Connection& connection) {
           state_ = SEPARATOR;
         break;
       case SEPARATOR:
-        buffer.put("\r\n");
+        using namespace std::string_view_literals;
+        buffer.put("\r\n"sv);
         return WS::IO_GOOD;
     }
   }
