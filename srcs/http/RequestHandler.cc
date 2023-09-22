@@ -15,7 +15,7 @@
 #include "io/task/SimpleBody.h"
 #include "io/task/DiscardBody.h"
 
-void  RequestHandler::execRequest(const ConfigRoute& route)
+void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
 {
   // for route in cfg_.routes
   //   if route matches (location, method, all that)
@@ -36,8 +36,6 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
     // get location from config and add header
   } else {
     // in case above functions get called without rooting the path, do it here
-    std::string path = request_.getPath();
-    util::prepend_cwd(path);
     auto s = util::FileInfo();
     std::string cgi_no_pathinfo;
     if (path.find(".cgi") != std::string::npos) { // get ext from config instead
@@ -61,7 +59,7 @@ bool RequestHandler::legalMethod_(const ConfigRoute& route) const
   return (route.isMethodAllowed(request_.getMethod()));
 }
 
-void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, FileInfo& file_info)
+void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& route, FileInfo& file_info)
 {
   if (request_.getMethod() == HTTP::DELETE) {
     return handleError_(400);
@@ -82,7 +80,7 @@ void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, Fil
   }
 }
 
-void RequestHandler::autoIndex_(std::string& path)
+void RequestHandler::autoIndex_(const std::string& path)
 {
   std::ostringstream body;
   std::string name;

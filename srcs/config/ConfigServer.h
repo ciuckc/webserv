@@ -36,7 +36,7 @@ class ConfigServer {
   [[nodiscard]] const std::map<int, std::string>& getErrorPages() const;
   [[nodiscard]] const std::vector<std::string>& getIndexFiles() const;
   [[nodiscard]] bool getAutoIndex() const;
-  [[nodiscard]] routes_t::const_iterator matchRoute(const std::string& path) const;
+  [[nodiscard]] routes_t::const_iterator matchRoute(std::string& path) const;
 
  private:
   std::vector<std::string> server_name_;

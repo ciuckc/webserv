@@ -223,7 +223,7 @@ void Cgi::makeLocalRedirResponse_(const std::string& raw, Response& res, Request
   auto new_route = rh_.getConfigServer().matchRoute(new_uri);
   if (new_route != rh_.getConfigServer().getRoutes().end()) {
     req.setUri(new_uri);
-    rh.execRequest(new_route->second);
+    rh.execRequest(new_uri, new_route->second);
     return;
   }
   rh.handleError_(500);

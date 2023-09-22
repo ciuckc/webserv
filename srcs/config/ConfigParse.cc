@@ -293,13 +293,13 @@ bool ConfigParse::locationParse(TokensConstIter& curr, const TokensConstIter& en
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;
   }
+  ConfigRoute new_route;
   for (; curr != end && isLocationDirective(curr); ++curr) {
-    ConfigRoute new_route{};
     if (!dispatchFunc<ConfigRoute, LocDirectiveMap>(curr, end, new_route, loc_map_)) {
       return false;
     }
-    cfg_server.addRoute(std::string(path), std::move(new_route));
   }
+  cfg_server.addRoute(std::string(path), std::move(new_route));
   if (curr == end) {
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;

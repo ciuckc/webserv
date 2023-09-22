@@ -53,10 +53,10 @@ bool ReadRequest::checkError(Connection& connection) {
 void ReadRequest::onDone(Connection& connection) {
   RequestHandler rq(connection, *cfg_, request_);
   if (!checkError(connection)) {
-    const auto& path = request_.getPath();
+    auto path = request_.getPath();
     const auto route = cfg_->matchRoute(path);
     if (route != cfg_->getRoutes().end()) {
-      return rq.execRequest(route->second);
+      return rq.execRequest(path, route->second);
     }
     error_ = 404;
     rq.handleError_(error_);

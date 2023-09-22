@@ -8,8 +8,8 @@ ConfigServer::ConfigServer()
       client_max_body_size_(std::numeric_limits<size_t>::max()),
       routes_(),
       error_pages_(),
-      files_{},
-      auto_index_(false) {}
+      files_(),
+      auto_index_() {}
 
 void ConfigServer::setPort(uint16_t port) {
   this->port_ = port;
@@ -49,9 +49,13 @@ const std::map<int, std::string>& ConfigServer::getErrorPages() const {
   return error_pages_;
 }
 
-ConfigServer::routes_t::const_iterator ConfigServer::matchRoute(const std::string& path) const {
-  const auto routeMatches = [&path](const std::pair<std::string, ConfigRoute>& route)->bool {
+ConfigServer::routes_t::const_iterator ConfigServer::matchRoute(std::string& path) const {
+  const auto routeMatches = [&path](auto& route)->bool {
     return (!path.compare(0, route.first.length(), route.first));
   };
-  return (std::find_if(routes_.begin(), routes_.end(), routeMatches));
+  auto found = std::find_if(routes_.begin(), routes_.end(), routeMatches);
+  if (found != routes_.end())
+    path.replace(0, found->first.size(), found->second.getRoot());
+  std::cout << path << '\n';
+  return found;
 }

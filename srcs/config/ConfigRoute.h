@@ -8,7 +8,7 @@
 
 class ConfigRoute {
  private:
-  std::string root_;
+  std::string root_ = "./";
   std::bitset<HTTP::TOTAL_METHODS> accepted_methods_;
   std::vector<std::string> index_files_;
   bool auto_index_{false};
