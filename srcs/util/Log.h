@@ -63,7 +63,7 @@ class Log {
   static void print_time(std::ostream& to) {
     using namespace std::chrono;
     using i_millis = duration<int, std::milli>;
-    static constexpr auto timestamp_frequency = 100us;
+    static constexpr auto timestamp_frequency = 750us;
     static constexpr auto timestamp_len = (int) sizeof "69/69 69:69:69.069 ";
     static constexpr auto timestamp_format = "%.2d/%.2d %.2d:%.2d:%.2d.%.3d ";
     static char timestamp_buf[timestamp_len];

@@ -65,9 +65,6 @@ class Connection : public Handler {
   void setKeepAlive(bool keepAlive);
   void closeRead();
 
-  WS::IOStatus runITasks();
-  WS::IOStatus runOTasks();
-
   // Run the first I/OTask, does not actually write/read more
   WS::IOStatus runITask();
   WS::IOStatus runOTask();
