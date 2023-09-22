@@ -12,7 +12,7 @@ const char* ConfigFile::InvalidConfigFile::what() const noexcept {
 ConfigFile::ConfigFile(const char* file_name) : config_file_(file_name, std::ios_base::in) {
   constexpr int equal = 0;
   if (!this->config_file_.is_open()) {
-    throw ConfigFile::InvalidConfigFile("Ccouldn't open file");
+    throw ConfigFile::InvalidConfigFile("Couldn't open file");
   }
   std::string_view file = file_name;
   if (file.length() <= 5 || file.compare(file.size() - 5, 5, ".conf") != equal) {

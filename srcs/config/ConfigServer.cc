@@ -4,8 +4,7 @@
 #include <limits>
 
 ConfigServer::ConfigServer()
-    : server_name_{"localhost"},
-      port_(8080),
+    : port_(),
       client_max_body_size_(std::numeric_limits<size_t>::max()),
       routes_(),
       error_pages_(),

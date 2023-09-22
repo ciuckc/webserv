@@ -39,8 +39,8 @@ bool portParse(const std::string& portstr, uint16_t& port) {
     return false;
   }
   auto num = std::stoul(portstr);
-  if ((num != 80 && num != 8080) && (num > std::numeric_limits<uint16_t>::max() || num < 49152)) {
-    Log::error("Port must be 80 or 8080 or be in range of 49152 to 65535.\n");
+  if (num == 0 || num > std::numeric_limits<uint16_t>::max()) {
+    Log::error("Port must be in range of 1 to 65535.\n");
     return false;
   }
   port = num;
@@ -140,6 +140,10 @@ bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, 
   }
   if (*curr != "}") {
     Log::error("Expecting \"}\" in server block.\n");
+    return false;
+  }
+  if (cfg_server.getPort() == 0) {
+    Log::error("Missing \"listen\" field in server block.\n");
     return false;
   }
   cfg.addServer(std::move(cfg_server));
@@ -345,7 +349,7 @@ bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Value of \"autoindex\" directive must be either true or false.\n");
     return false;
   }
-  bool autoindex{*curr == "true" ? true : false};
+  bool autoindex = *curr == "true";
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"autoindex\" directive.\n");
