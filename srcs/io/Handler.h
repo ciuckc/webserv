@@ -23,7 +23,7 @@ class Handler {
   [[nodiscard]] virtual const std::string& getName() const = 0;
   [[nodiscard]] int getFD() const;
   [[nodiscard]] uint32_t getIndex() const;
-  [[nodiscard]] filt_t getfilter() const;
+  [[nodiscard]] filt_t getFilter() const;
   [[nodiscard]] virtual const timep_t& getExpiry() const;
   void setIndex(uint32_t idx);
 

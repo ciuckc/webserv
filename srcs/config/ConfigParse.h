@@ -56,7 +56,7 @@ class ConfigParse {
   bool dispatchFunc(TokensConstIter& curr, const TokensConstIter&, T& cfg, const Map& map);
 
   // aCtUaL pArSiNg
-  bool serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg);
+  bool serverParse(TokensConstIter& curr, const TokensConstIter& end, Config& cfg);
   bool directivesParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
 
   // Server parser

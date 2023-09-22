@@ -72,17 +72,6 @@ namespace util {
     return (std::min(nn, rn));
   }
 
-  static inline void prepend_cwd(std::string& str)
-  {
-    char* cwd;
-    cwd = getcwd(nullptr, 0);
-    if (cwd == nullptr) {
-      throw (IOException("getcwd returned null")); // maybe returning null would be a bit less agressive?
-    }
-    str.insert(0, cwd);
-    free(cwd);
-  }
-
   static inline std::string_view without_crlf(std::string_view sv) {
     sv.remove_suffix(1 + (sv[sv.size() - 2] == '\r'));
     return sv;

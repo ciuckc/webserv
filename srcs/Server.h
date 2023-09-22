@@ -12,7 +12,7 @@ class Handler;
 class Config;
 class Server {
  private:
-  EventQueue evqueue_;
+  EventQueue event_queue_;
   std::vector<std::unique_ptr<Handler>> handlers_;
   std::list<size_t> handler_idxs_;
   std::deque<size_t> handler_timeouts_;

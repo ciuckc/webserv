@@ -49,21 +49,6 @@ class EventQueue {
   static inline uint32_t getIndex(const event_t& ev) {
     return ev.data.u32;
   };
-  static inline bool isRead(const event_t& ev) {
-    return (ev.events & in) != 0;
-  };
-  static inline bool isWrite(const event_t& ev) {
-    return (ev.events & out) != 0;
-  };
-  static inline bool isError(const event_t& ev) {
-    return (ev.events & err) != 0;
-  };
-  static inline bool isRdHangup(const event_t& ev) {
-    return (ev.events & r_hup) != 0;
-  }
-  static inline bool isWrHangup(const event_t& ev) {
-    return (ev.events & w_hup) != 0;
-  };
   inline const timep_t& lastWait() const {
     return last_wait_;
   }

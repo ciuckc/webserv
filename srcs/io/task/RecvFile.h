@@ -6,7 +6,7 @@
 
 class RecvFile : public ITask {
  public:
-  explicit RecvFile(int fd, size_t size) : fd_(fd), remaining_(size) {};
+  RecvFile(int fd, size_t size) : fd_(fd), remaining_(size) {};
 
   WS::IOStatus operator()(Connection& connection) override {
     auto& buffer = connection.getInBuffer();

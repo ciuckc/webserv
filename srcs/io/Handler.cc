@@ -54,7 +54,7 @@ uint32_t Handler::getIndex() const {
   return index_;
 }
 
-Handler::filt_t Handler::getfilter() const {
+Handler::filt_t Handler::getFilter() const {
   return filter_;
 }
 

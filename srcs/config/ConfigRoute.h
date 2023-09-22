@@ -11,9 +11,9 @@ class ConfigRoute {
   std::string root_ = "./";
   std::bitset<HTTP::TOTAL_METHODS> accepted_methods_;
   std::vector<std::string> index_files_;
-  bool auto_index_{false};
+  bool auto_index_ = false;
   std::string redirect_;
-  std::string updload_dir_;
+  std::string upload_dir_;
 
  public:
   ConfigRoute() = default;
@@ -38,7 +38,7 @@ class ConfigRoute {
     redirect_ = url;
   }
   void setUploadDir(const std::string& path) {
-    updload_dir_ = path;
+    upload_dir_ = path;
   }
 
   [[nodiscard]] const std::string& getRoot() const {
@@ -57,6 +57,6 @@ class ConfigRoute {
     return redirect_;
   }
   [[nodiscard]] const std::string& getUploadDirPath() const {
-    return updload_dir_;
+    return upload_dir_;
   }
 };

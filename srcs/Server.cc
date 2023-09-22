@@ -38,7 +38,7 @@ void Server::loop() {
   Log::info("[Server] Entering main loop!\n");
   while (true) {
     try {
-      handle_event(evqueue_.getNext(*this));
+      handle_event(event_queue_.getNext(*this));
     } catch (const IOException& err) {
       Log::warn("IOException: ", err.what());
     }
@@ -54,25 +54,25 @@ void Server::handle_event(EventQueue::event_t& event) {
     abort();
   }
   auto& handler = *handlers_[idx];
-  handler.updateTimeout(evqueue_.lastWait());
+  handler.updateTimeout(event_queue_.lastWait());
   if (handler.handle(event)) {
     del_sub(idx);
     return;
   }
-  handler.updateFilter(evqueue_);
+  handler.updateFilter(event_queue_);
 }
 
 
 void Server::add_sub(std::unique_ptr<Handler>&& h) {
-  h->updateTimeout(evqueue_.lastWait());
+  h->updateTimeout(event_queue_.lastWait());
   if (handler_idxs_.empty()) {
     h->setIndex(handlers_.size());
-    evqueue_.add(h->getFD(), h->getIndex(), h->getfilter());
+    event_queue_.add(h->getFD(), h->getIndex(), h->getFilter());
     handler_timeouts_.push_back(h->getIndex());
     handlers_.push_back(std::forward<std::unique_ptr<Handler>>(h));
   } else {
     h->setIndex(handler_idxs_.front());
-    evqueue_.add(h->getFD(), h->getIndex(), h->getfilter());
+    event_queue_.add(h->getFD(), h->getIndex(), h->getFilter());
     handler_timeouts_.push_back(h->getIndex());
     handler_idxs_.pop_front();
     handlers_[h->getIndex()] = std::forward<std::unique_ptr<Handler>>(h);
@@ -131,5 +131,5 @@ void Server::run_tasks() {
 }
 
 EventQueue& Server::getEventQueue() {
-  return evqueue_;
+  return event_queue_;
 }

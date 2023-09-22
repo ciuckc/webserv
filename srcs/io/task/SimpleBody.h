@@ -5,7 +5,7 @@
 class SimpleBody : public OTask {
  public:
   SimpleBody(std::unique_ptr<char[]>&& data, size_t len)
-    : data_(std::forward<std::unique_ptr<char[]> >(data)), len_(len), ofs_() {}
+    : data_(std::forward<std::unique_ptr<char[]>>(data)), len_(len), ofs_() {}
 
   WS::IOStatus operator()(Connection& connection) override {
     auto& buf = connection.getOutBuffer();

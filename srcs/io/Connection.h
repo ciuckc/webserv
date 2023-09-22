@@ -24,8 +24,8 @@ class Connection : public Handler {
 
   const std::map<std::string, ConfigServer&>& host_map_;
 
-  std::list<std::unique_ptr<ITask>> iqueue_;
-  std::list<std::unique_ptr<OTask>> oqueue_;
+  std::list<std::unique_ptr<ITask>> in_queue_;
+  std::list<std::unique_ptr<OTask>> out_queue_;
 
   bool keep_alive_ = true;
   bool read_closed_ = false;

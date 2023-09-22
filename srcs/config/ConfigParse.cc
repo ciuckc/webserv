@@ -110,7 +110,7 @@ bool ConfigParse::dispatchFunc(TokensConstIter& curr, const TokensConstIter& end
   return (this->*function_pointer)(curr, end, cfg);
 }
 
-bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg) {
+bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter& end, Config& cfg) {
   if (*curr != "server") {
     Log::error("Expecting \"server\" directive.\n");
     return false;
@@ -339,7 +339,7 @@ bool ConfigParse::indexParse(TokensConstIter& curr, const TokensConstIter& end, 
   return true;
 }
 
-bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& lcoation) {
+bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location) {
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"autoindex\" directive.\n");
@@ -359,7 +359,7 @@ bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Expected \";\" in \"autoindex\" directive.\n");
     return false;
   }
-  lcoation.setAutoIndex(autoindex);
+  location.setAutoIndex(autoindex);
   return true;
 }
 

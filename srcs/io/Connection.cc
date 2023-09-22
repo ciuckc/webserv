@@ -36,7 +36,7 @@ bool Connection::handleRead() {
 
   tasks:
   do {
-    if (iqueue_.empty() && !awaitRequest())
+    if (in_queue_.empty() && !awaitRequest())
       return false;
     status = runITask();
   } while (status == WS::IO_GOOD && !in_buffer_.empty());
@@ -44,7 +44,7 @@ bool Connection::handleRead() {
   if (status == WS::IO_FAIL) {
     // so a read task failed halfway through, don't read anymore
     closeRead();
-    return oqueue_.empty() && out_buffer_.empty();
+    return out_queue_.empty() && out_buffer_.empty();
   }
   if (status == WS::IO_BLOCKED)
     delFilter(EventQueue::in);
@@ -58,7 +58,7 @@ bool Connection::handleWrite() {
       out_buffer_.resize(out_buffer_size_);
     else goto io;
   }
-  while (!out_buffer_.full() && !oqueue_.empty()) {
+  while (!out_buffer_.full() && !out_queue_.empty()) {
     status = runOTask();
     if (status != WS::IO_GOOD)
       break;
@@ -71,7 +71,7 @@ bool Connection::handleWrite() {
   io:
   if (out_buffer_.write_sock(socket_) != WS::IO_GOOD) // if write on a socket returns 0 something is wrong as well
     return true;
-  if (!oqueue_.empty() || !out_buffer_.empty())
+  if (!out_queue_.empty() || !out_buffer_.empty())
     return false;
   // All tasks done and all data written
   if (read_closed_)
@@ -86,7 +86,7 @@ bool Connection::handleRHup() {
   Log::debug(*this, "Client done transmitting\n");
   delFilter(EventQueue::in);
   read_closed_ = true;
-  return oqueue_.empty() && out_buffer_.empty();
+  return out_queue_.empty() && out_buffer_.empty();
 }
 
 bool Connection::handleError() {
@@ -94,31 +94,31 @@ bool Connection::handleError() {
 }
 
 WS::IOStatus Connection::runITask() {
-  auto& task = *iqueue_.front();
+  auto& task = *in_queue_.front();
   WS::IOStatus result = task(*this);
   if (result == WS::IO_GOOD) {
     task.onDone(*this);
-    iqueue_.pop_front();
+    in_queue_.pop_front();
   }
   return result;
 }
 
 WS::IOStatus Connection::runOTask() {
-  auto& task = *oqueue_.front();
+  auto& task = *out_queue_.front();
   WS::IOStatus result = task(*this);
   if (result == WS::IO_GOOD) {
     task.onDone(*this);
-    oqueue_.pop_front();
+    out_queue_.pop_front();
   }
   return result;
 }
 
 void Connection::addTask(std::unique_ptr<ITask>&& task) {
-  iqueue_.push_back(std::forward<std::unique_ptr<ITask>>(task));
+  in_queue_.push_back(std::forward<std::unique_ptr<ITask>>(task));
 }
 
 void Connection::addTask(std::unique_ptr<OTask>&& task) {
-  oqueue_.push_back(std::forward<std::unique_ptr<OTask>>(task));
+  out_queue_.push_back(std::forward<std::unique_ptr<OTask>>(task));
 }
 
 static inline void errorResponse(Connection& c, int err) {
@@ -148,7 +148,7 @@ bool Connection::awaitRequest() {
 }
 
 void Connection::enqueueResponse(Response&& response) {
-  if (oqueue_.empty())
+  if (out_queue_.empty())
     addFilter(EventQueue::out);
   if (!keep_alive_)
     response.addHeader("connection: close\r\n");
@@ -159,7 +159,7 @@ void Connection::enqueueResponse(Response&& response) {
 bool Connection::handleTimeout(Server& server, bool src) {
   // does this timeout come from socket or pipe?
   if (src) {
-    if (!oqueue_.empty() || !out_buffer_.empty()) {
+    if (!out_queue_.empty() || !out_buffer_.empty()) {
       // Timed out while writing response
       shutdown();
       delFilter(EventQueue::out);
@@ -217,6 +217,6 @@ void Connection::closeRead() {
 void Connection::notifyInDone(bool error) {
   if (error)
     handleTimeout(server_, false); // this queues our destruction
-  iqueue_.front()->onDone(*this);
-  iqueue_.pop_front();
+  in_queue_.front()->onDone(*this);
+  in_queue_.pop_front();
 }
