@@ -32,7 +32,13 @@ void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& ro
   if (!legalMethod_(route)) {
     handleError_(405);
   } else if (route.getRedir().length() != 0) {
-    handleError_(302); // not an actual error but hey
+    auto perr = http::defaultErrPage(302);
+    perr.first.addHeader("Location", route.getRedir());
+    auto len = perr.first.getContentLength();
+    connection_.enqueueResponse(std::move(perr.first));
+    connection_.addTask(std::make_unique<SimpleBody>(std::move(perr.second), len));
+    if (request_.getContentLength() != 0)
+      connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
     // get location from config and add header
   } else {
     // in case above functions get called without rooting the path, do it here
@@ -166,6 +172,8 @@ void RequestHandler::handleError_(int error) {
       if (request_.getContentLength() != 0)
         connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
       return;
+    } else {
+      Log::warn("Invalid error page for code ", error, '\n');
     }
   }
 
