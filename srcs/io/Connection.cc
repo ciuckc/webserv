@@ -7,7 +7,7 @@
 #include "util/Log.h"
 
 Connection::Connection(Server& srv, Socket&& sock, const std::map<std::string, ConfigServer&>& hosts)
-    : Handler(sock.get_fd(), EventQueue::in, WS::timeout * 1000),
+    : Handler(sock.get_fd(), EventQueue::in | EventQueue::r_hup, WS::timeout * 1000),
     server_(srv), socket_(std::forward<Socket>(sock)),
     in_buffer_(), out_buffer_(), host_map_(hosts) {}
 
@@ -33,7 +33,7 @@ bool Connection::handleRead() {
   }
   status = in_buffer_.read_sock(socket_);
   if (status == WS::IO_EOF) {
-    // We read 0 bytes, remove read filter
+    // This only happens when we also get a read hangup
     Log::debug(*this, " removing read filter, read 0 bytes from socket\n");
     delFilter(EventQueue::in);
     if (in_buffer_.empty())
