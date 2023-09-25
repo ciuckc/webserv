@@ -1,25 +1,18 @@
 #pragma once
 
+#include <memory>
+
 #include "IOTask.h"
 
 class SimpleBody : public OTask {
- public:
-  SimpleBody(std::unique_ptr<char[]>&& data, size_t len)
-    : data_(std::forward<std::unique_ptr<char[]>>(data)), len_(len), ofs_() {}
-
-  WS::IOStatus operator()(Connection& connection) override {
-    auto& buf = connection.getOutBuffer();
-    size_t to_write = std::min(len_ - ofs_, buf.freeLen());
-    buf.put(std::string_view(data_.get() + ofs_, to_write));
-    ofs_ += to_write;
-    return ofs_ == len_ ? WS::IO_GOOD : WS::IO_AGAIN;
-  }
-  void onDone(Connection& connection) override {
-    Log::trace(connection, "Sent simple body\n");
-  }
-
  private:
   std::unique_ptr<char[]> data_;
   size_t len_;
   size_t ofs_;
+
+ public:
+  SimpleBody(std::unique_ptr<char[]>&& data, size_t len);
+
+  WS::IOStatus operator()(Connection& connection) override;
+  void onDone(Connection& connection) override;
 };

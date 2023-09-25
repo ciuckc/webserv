@@ -29,7 +29,8 @@ class RequestHandler {
   // and returns the one with the server_name specified in the HOST header
   bool legalMethod_(const ConfigRoute& route) const;
   void handleDir_(const std::string& path, const ConfigRoute& route, FileInfo& file_info);
-  void handleFile_(FileInfo& file_info, const std::string& path, int status = 200, std::string type = "");
+  void handleFile_(FileInfo& file_info, const std::string& path);
+  void handleRedir_(const ConfigRoute& route);
   void deleteFile_(const std::string& path);
   void autoIndex_(const std::string& path);
 };

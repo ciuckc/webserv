@@ -58,9 +58,10 @@ add_executable(webserv
         srcs/http/Request.cc
         srcs/http/Response.h
         srcs/http/Response.cc
-        srcs/http/RequestHandler.cc
         srcs/http/RequestHandler.h
+        srcs/http/RequestHandler.cc
         srcs/http/ErrorPage.h
+        srcs/http/ErrorPage.cc
         srcs/http/MIME.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
@@ -85,6 +86,7 @@ add_executable(webserv
         srcs/io/task/RecvFile.h
         srcs/io/task/SendFile.h
         srcs/io/task/SimpleBody.h
+        srcs/io/task/SimpleBody.cc
         srcs/io/task/SpliceIn.h
         srcs/io/task/SpliceIn.cc
         srcs/io/task/SpliceOut.h

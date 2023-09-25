@@ -32,14 +32,7 @@ void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& ro
   if (!legalMethod_(route)) {
     handleError_(405);
   } else if (route.getRedir().length() != 0) {
-    auto perr = http::defaultErrPage(302);
-    perr.first.addHeader("Location", route.getRedir());
-    auto len = perr.first.getContentLength();
-    connection_.enqueueResponse(std::move(perr.first));
-    connection_.addTask(std::make_unique<SimpleBody>(std::move(perr.second), len));
-    if (request_.getContentLength() != 0)
-      connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
-    // get location from config and add header
+    handleRedir_(route);
   } else {
     // in case above functions get called without rooting the path, do it here
     auto s = util::FileInfo();
@@ -129,7 +122,7 @@ void RequestHandler::deleteFile_(const std::string& path)
   connection_.enqueueResponse(std::forward<Response>(builder.build()));
 }
 
-void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, int status, std::string type)
+void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
 {
   if (request_.getMethod() == HTTP::DELETE) {
     return (deleteFile_(path));
@@ -141,11 +134,10 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, i
     return;
   }
   bool addType = true;
-  if (type.empty()) {
-    std::string extension = util::getExtension(path);
-    if (extension.empty() || (type = MIME.getType(extension)).empty())
-      addType = false;
-  }
+  std::string extension = util::getExtension(path);
+  std::string type;
+  if (extension.empty() || (type = MIME.getType(extension)).empty())
+    addType = false;
 
   int fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) { // todo: handle as error response
@@ -153,7 +145,7 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, i
   }
 
   auto builder = Response::builder();
-  builder.message(status)
+  builder.message(200)
          .content_length(file_info.size());
   if (addType)
     builder.header("Content-Type", type);
@@ -163,24 +155,18 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, i
 }
 
 void RequestHandler::handleError_(int error) {
-  auto& error_pages = cfg_.getErrorPages();
-  auto it = error_pages.find(error);
-  if (it != error_pages.end()) {
-    FileInfo s;
-    if (s.open(it->second.c_str()) && s.isFile()) {
-      handleFile_(s, it->second, error, "text/html");
-      if (request_.getContentLength() != 0)
-        connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
-      return;
-    } else {
-      Log::warn("Invalid error page for code ", error, '\n');
-    }
-  }
-
-  auto perr = http::defaultErrPage(error);
-  size_t content_len = perr.first.getContentLength();
+  auto perr = http::createError(cfg_, error);
   connection_.enqueueResponse(std::move(perr.first));
-  connection_.addTask(std::make_unique<SimpleBody>(std::move(perr.second), content_len));
+  connection_.addTask(std::move(perr.second));
+  if (request_.getContentLength() != 0)
+    connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
+}
+
+void RequestHandler::handleRedir_(const ConfigRoute& route) {
+  auto perr = http::createError(cfg_, 302);
+  perr.first.addHeader("Location", route.getRedir());
+  connection_.enqueueResponse(std::move(perr.first));
+  connection_.addTask(std::move(perr.second));
   if (request_.getContentLength() != 0)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }

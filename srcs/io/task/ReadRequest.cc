@@ -4,6 +4,7 @@
 
 #include "config/ConfigServer.h"
 #include "http/RequestHandler.h"
+#include "http/ErrorPage.h"
 
 // =========== ReadRequest ===========
 WS::IOStatus ReadRequest::operator()(Connection& connection) {
@@ -132,14 +133,13 @@ std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& 
 }
 
 void ReadRequest::error(Connection& connection) {
-  if (cfg_) {
-    RequestHandler rh(connection, *cfg_, request_);
-    rh.handleError_(error_);
-  } else {
-    connection.enqueueResponse(
-        std::forward<Response>(
-            Response::builder().message(error_).build()));
-  }
+  std::pair<Response, std::unique_ptr<OTask>> perr;
+  if (cfg_)
+    perr = http::createError(*cfg_, error_);
+  else
+    perr = http::defaultErrPage(error_);
+  connection.enqueueResponse(std::move(perr.first));
+  connection.addTask(std::move(perr.second));
 }
 
 #define HEADER_HOOK(name, lambda) \
