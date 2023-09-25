@@ -2,29 +2,22 @@
 
 #include <fcntl.h>
 #include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
 
-#include <cerrno>
 #include <arpa/inet.h>
 
-#include "IOException.h"
 #include "util/Log.h"
 #include "util/WebServ.h"
 #include "util/String.h"
 
 Socket::Socket() {
-  fd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  fd_ = socket(AF_INET, SOCK_STREAM | O_NONBLOCK | O_CLOEXEC, IPPROTO_TCP);
   if (fd_ == -1)
     throw IOException("Opening socket failed", errno);
-  if (fcntl(fd_, F_SETFL, O_NONBLOCK) == -1)
-    throw IOException("Failed to set fd to NONBLOCK", errno);
 }
 
 Socket::~Socket() {
-  if (fd_ != -1) {
+  if (fd_ != -1)
     close();
-  }
 }
 
 Socket::Socket(int fd) : fd_(fd) {}
@@ -44,7 +37,7 @@ Socket& Socket::operator=(Socket&& other) noexcept {
   return *this;
 }
 
-void Socket::bind(uint16_t port) {
+void Socket::bind(std::uint16_t port) {
   addrinfo* bind_info;
 
   int yes = 1;
@@ -52,7 +45,7 @@ void Socket::bind(uint16_t port) {
   setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   {
     std::string port_str = std::to_string(port);
-    name_ = '[' + port_str + ']';
+    name_ = Str::join(util::terminal_colours[fd_ % 8], "[", port_str, "]", util::RESET);
     addrinfo hints = {};
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
@@ -60,12 +53,8 @@ void Socket::bind(uint16_t port) {
     hints.ai_flags = AI_PASSIVE;
 
     int status = getaddrinfo(nullptr, port_str.c_str(), &hints, &bind_info);
-    if (status != 0) {
-      std::string str = "getaddrinfo: ";
-      str += gai_strerror(status);
-      str += '\n';
-      throw IOException(str);
-    }
+    if (status != 0)
+      throw IOException(Str::join("getaddrinfo: ", gai_strerror(status), "\n"));
   }
 
   bool bound = false;
@@ -89,16 +78,14 @@ void Socket::listen(int backlog) const {
 Socket Socket::accept() const {
   sockaddr_in addr = {};
   socklen_t len = sizeof(sockaddr_in);
-  int fd = ::accept(fd_, reinterpret_cast<sockaddr*>(&addr), &len);
+  int fd =   accept4(fd_, reinterpret_cast<sockaddr*>(&addr), &len, SOCK_NONBLOCK);
   if (fd < 0)
     throw IOException("Failed to handle request", errno);
-  if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-    throw IOException("Failed to set fd to NONBLOCK", errno);
 
-  std::string addrstr = Str::join(inet_ntoa(addr.sin_addr), ":", std::to_string(ntohs(addr.sin_port)));
-  std::string name = Str::join(util::terminal_colours[fd % 8], name_, "->[", addrstr, "]", util::RESET);
-  Log::info(name_, "==[Listening]\t\t\t\tAccept ", addrstr, "-> fd ", fd, '\n');
-  return {fd, std::move(name)};
+  std::string addrstr = Str::join(util::terminal_colours[fd % 8], "[", inet_ntoa(addr.sin_addr), ":",
+                                  std::to_string(ntohs(addr.sin_port)), "]", util::RESET);
+  Log::info(name_, "\tAccepting incoming\t", addrstr, "->[fd ", fd, "]\n");
+  return {fd, Str::join(name_, "->", std::move(addrstr))};
 }
 
 int Socket::get_fd() const {
@@ -109,18 +96,12 @@ const std::string& Socket::getName() const {
   return name_;
 }
 
-ssize_t Socket::write(char* buf, ssize_t len, size_t offs) const {
-  return ::write(fd_, buf + offs, len);
-}
-
-ssize_t Socket::write(const std::string& str, size_t offs) const {
-  return ::write(fd_, str.c_str() + offs, str.length() - offs);
-}
-
-ssize_t Socket::read(char* buf, ssize_t len, size_t offs) const {
-  return ::read(fd_, buf + offs, len - offs);
-}
-
-void Socket::shutdown(int channel) {
+void Socket::shutdown(int channel) const {
   ::shutdown(fd_, channel);
+}
+
+void Socket::close() {
+  Log::debug(name_, "\tSocket destroyed\n");
+  ::close(fd_);
+  fd_ = -1;
 }

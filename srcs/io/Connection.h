@@ -1,73 +1,75 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <memory>
-#include <stack>
 
-#include "ConnectionBuffer.h"
-#include "EventQueue.h"
 #include "Socket.h"
-#include "config/ConfigServer.h"
-#include "http/Request.h"
-#include "http/Response.h"
+#include "io/task/IOTask.h"
+#include "Handler.h"
+#include "Server.h"
+#include "RingBuffer.h"
 
-class ITask;
-class OTask;
+class ConfigServer;
+class Response;
 
-class Connection {
+class Connection : public Handler {
  private:
-  using host_map_t = std::map<std::string, ConfigServer&>;
-  const host_map_t& host_map_;
-
+  Server& server_;
   Socket socket_;
-  ConnectionBuffer buffer_;
-  EventQueue& event_queue_;
-  std::list<std::unique_ptr<ITask>> iqueue_;
-  std::list<std::unique_ptr<OTask>> oqueue_;
-  Request request_;
+  RingBuffer in_buffer_;
+  RingBuffer out_buffer_;
+  size_t in_buffer_size_ = RingBuffer::buf_size_;
+  size_t out_buffer_size_ = RingBuffer::buf_size_;
+
+  const std::map<std::string, ConfigServer&>& host_map_;
+
+  std::list<std::unique_ptr<ITask>> in_queue_;
+  std::list<std::unique_ptr<OTask>> out_queue_;
 
   bool keep_alive_ = true;
-  bool client_fin_ = false;
-  // If client is misbehaving, set to true to reset connection after
-  // response is sent
-  bool reset_ = false;
-
-  time_t last_event_;
+  bool read_closed_ = false;
   uint32_t request_count_ = 0;
 
   bool awaitRequest();
 
+ protected:
+  bool handleRead() override;
+  bool handleWrite() override;
+  bool handleWHup() override;
+  bool handleRHup() override;
+  bool handleError() override;
+
  public:
-  Connection(Socket&& socket, EventQueue& event_queue, const host_map_t& host_map);
-  ~Connection();
-
-  bool handle(EventQueue::event_t& event);
-  WS::IOStatus handleIn();
-  WS::IOStatus handleOut();
-
-  ConnectionBuffer& getBuffer();
-  const host_map_t& getHostMap() const;
+  Connection(Server&, Socket&&, const std::map<std::string, ConfigServer&>&);
+  ~Connection() override;
 
   void addTask(std::unique_ptr<ITask>&& task);
   void addTask(std::unique_ptr<OTask>&& task);
 
-  inline void setKeepAlive(bool keepAlive) { keep_alive_ = keepAlive; }
-  inline bool keepAlive() const { return keep_alive_; };
+  void enqueueResponse(Response&& response);
+
   // Send the FIN packet, signifying that we're done. After this the peer should
   // also send one, we can then close the socket!
   void shutdown();
 
-  void enqueueResponse(Response&& response);
-  // Enqueue a 408 Request Timeout response
-  void timeout();
+  [[nodiscard]] const std::map<std::string, ConfigServer&>& getHostMap() const;
+  [[nodiscard]] const std::string& getName() const override;
 
-  // Returns true, if the last event was more than WS::timeout seconds ago
-  bool stale(time_t now) const;
-  bool idle() const;
+  [[nodiscard]] RingBuffer& getInBuffer();
+  [[nodiscard]] RingBuffer& getOutBuffer();
 
-  const std::string& getName() const;
+  void setInSize(size_t size = RingBuffer::buf_size_);
+  void setOutSize(size_t size = RingBuffer::buf_size_);
+
+  void setKeepAlive(bool keepAlive);
+  void closeRead();
+
+  // Run the first I/OTask, does not actually write/read more
+  WS::IOStatus runITask();
+  WS::IOStatus runOTask();
+
+  bool handleTimeout(Server& server, bool src) override;
+
+  void notifyInDone(bool error);
 };
-
-inline std::ostream& operator<<(std::ostream& stream, const Connection& connection) {
-  return stream << connection.getName() << "\t";
-}

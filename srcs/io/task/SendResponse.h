@@ -18,6 +18,6 @@ class SendResponse : public OTask {
 
  public:
   explicit SendResponse(Response&& response);
-  bool operator()(Connection& connection) override;
+  WS::IOStatus operator()(Connection& connection) override;
   void onDone(Connection& connection) final;
 };

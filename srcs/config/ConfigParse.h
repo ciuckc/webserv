@@ -3,6 +3,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <utility>
 
 #include "Config.h"
 #include "ConfigFile.h"
@@ -17,36 +18,36 @@
  */
 class ConfigParse {
  public:
-  using Tokens = std::vector<std::string>;
+  using Lines = std::vector<std::string>;
+  using Tokens = std::vector<std::string_view>;
   using TokensConstIter = Tokens::const_iterator;
   using TokensIter = Tokens::iterator;
   using DirectiveFuncPtr = bool (ConfigParse::*)(TokensConstIter&, const TokensConstIter&, ConfigServer&);
-  using DirectiveFuncMap = std::map<std::string, DirectiveFuncPtr>;
+  using DirectiveFuncMap = std::map<std::string_view, DirectiveFuncPtr>;
   using LocDirectiveFuncPtr = bool (ConfigParse::*)(TokensConstIter&, const TokensConstIter&, ConfigRoute&);
-  using LocDirectiveMap = std::map<std::string, LocDirectiveFuncPtr>;
+  using LocDirectiveMap = std::map<std::string_view, LocDirectiveFuncPtr>;
 
  public:
   class InvalidDirective : public std::exception {
    public:
-    InvalidDirective(const std::string argument = "") throw() : reason_(argument){};
-    const char* what() const throw() override;
+    explicit InvalidDirective(std::string  argument = "") noexcept : reason_(std::move(argument)){};
+    const char* what() const noexcept override;
 
    private:
     std::string reason_;
   };
 
  public:
-  explicit ConfigParse(const Tokens& file_data);
+  explicit ConfigParse(const Lines& file_data);
   ConfigParse(const ConfigParse&) = default;
-  ConfigParse& operator=(const ConfigParse&) = default;
   ~ConfigParse() = default;
 
-  Config parse();
+  Config& parse(Config& cfg);
 
  private:
-  Tokens splitOnWhiteSpace(const Tokens& tokens);
-  Tokens splitOnSymbols(const Tokens& tokens);
-  Config semanticParse(const Tokens& tokens);
+  void splitOnWhiteSpace(const Lines& lines, Tokens& tokens);
+  void splitOnSymbols(Tokens& tokens);
+  Config& semanticParse(const Tokens& tokens, Config& cfg);
 
   bool isDirective(const TokensConstIter& curr);
   bool isLocationDirective(const TokensConstIter& curr);
@@ -55,7 +56,7 @@ class ConfigParse {
   bool dispatchFunc(TokensConstIter& curr, const TokensConstIter&, T& cfg, const Map& map);
 
   // aCtUaL pArSiNg
-  bool serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg);
+  bool serverParse(TokensConstIter& curr, const TokensConstIter& end, Config& cfg);
   bool directivesParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server);
 
   // Server parser
@@ -73,7 +74,7 @@ class ConfigParse {
   bool redirectParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
   bool uploadDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
 
-  Tokens tokens_;
+  const Lines& lines_;
   DirectiveFuncMap map_;
   LocDirectiveMap loc_map_;
 };

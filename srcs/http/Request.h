@@ -20,16 +20,14 @@ class Request : public Message {
  public:
   Request() = default;
   ~Request() override = default;
-  Request(const Request& other);
-  Request& operator=(const Request& rhs);
+  Request(const Request& other) = default;
+  Request& operator=(const Request& rhs) = default;
 
   bool setMessage(const std::string& msg);
   HTTP::Method getMethod() const;
   const std::string& getUri() const;
   void setUri(const std::string&);
-  const std::string getPath() const;
+  std::string getPath() const;
   const char* getHeader(const std::string& key) const;
   HttpVersion getVersion() const;
-  // todo: getVersion()? Are we ?
-
 };

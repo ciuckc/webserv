@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+
 class ConfigFile {
  public:
   using tokens_t = std::vector<std::string>;
@@ -11,20 +12,20 @@ class ConfigFile {
  public:
   class InvalidConfigFile : public std::exception {
    public:
-    InvalidConfigFile(const std::string arg) throw();
-    const char* what() const throw() override;
+    explicit InvalidConfigFile(std::string arg) noexcept;
+    const char* what() const noexcept override;
 
    private:
     std::string reason_;
   };
 
  public:
-  ConfigFile(const std::string file_name);
+  explicit ConfigFile(const char* file_name);
   ConfigFile(const ConfigFile&) = delete;
   ConfigFile& operator=(const ConfigFile&) = delete;
   ~ConfigFile() = default;
 
-  tokens_t getFileData() const;
+  tokens_t&& getFileData();
 
  private:
   tokens_t readFile();

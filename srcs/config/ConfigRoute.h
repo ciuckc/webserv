@@ -8,12 +8,12 @@
 
 class ConfigRoute {
  private:
-  std::string root_;
-  std::bitset<HTTP::TOTAL_METHODS> accepted_methods_{};
+  std::string root_ = "./";
+  std::bitset<HTTP::TOTAL_METHODS> accepted_methods_;
   std::vector<std::string> index_files_;
-  bool auto_index_{false};
+  bool auto_index_ = false;
   std::string redirect_;
-  std::string updload_dir_;
+  std::string upload_dir_;
 
  public:
   ConfigRoute() = default;
@@ -28,7 +28,7 @@ class ConfigRoute {
     }
     accepted_methods_.set(method);
   }
-  void addIndexFile(const std::string& file) {
+  void addIndexFile(std::string&& file) {
     index_files_.push_back(file);
   }
   void setAutoIndex(bool val) {
@@ -38,14 +38,14 @@ class ConfigRoute {
     redirect_ = url;
   }
   void setUploadDir(const std::string& path) {
-    updload_dir_ = path;
+    upload_dir_ = path;
   }
 
   [[nodiscard]] const std::string& getRoot() const {
     return root_;
   }
   [[nodiscard]] bool isMethodAllowed(HTTP::Method method) const {
-    return accepted_methods_.test(method);
+    return accepted_methods_.none() || accepted_methods_.test(method);
   }
   [[nodiscard]] const std::vector<std::string>& getIndexFiles() const {
     return index_files_;
@@ -57,6 +57,6 @@ class ConfigRoute {
     return redirect_;
   }
   [[nodiscard]] const std::string& getUploadDirPath() const {
-    return updload_dir_;
+    return upload_dir_;
   }
 };

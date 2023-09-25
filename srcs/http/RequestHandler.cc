@@ -1,17 +1,21 @@
-#include <sstream>
+#include "RequestHandler.h"
+
 #include <dirent.h>
 #include <fcntl.h>
-#include "RequestHandler.h"
+
+#include <sstream>
+
+#include "ErrorPage.h"
+#include "MIME.h"
+#include "Status.h"
 #include "cgi/Cgi.h"
+#include "config/ConfigServer.h"
 #include "util/WebServ.h"
 #include "io/task/SendFile.h"
 #include "io/task/SimpleBody.h"
-#include "Status.h"
 #include "io/task/DiscardBody.h"
-#include "ErrorPage.h"
-#include "MIME.h"
 
-void  RequestHandler::execRequest(const ConfigRoute& route)
+void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
 {
   // for route in cfg_.routes
   //   if route matches (location, method, all that)
@@ -25,24 +29,22 @@ void  RequestHandler::execRequest(const ConfigRoute& route)
   // add DiscardBody OTask to eat body
   // add SendFile task for error page
 
-  // find correct configserver or return 400
   if (!legalMethod_(route)) {
     handleError_(405);
   } else if (route.getRedir().length() != 0) {
-    handleError_(302); // not an actual error but hey
-    // get location from config and add header
+    handleRedir_(route);
   } else {
     // in case above functions get called without rooting the path, do it here
-    // also, either update getPath to trim the pathinfo in case of cgi or just yeet it
-    // because subject doesn't care about it anyways
-    std::string path = request_.getPath();
-    util::prepend_cwd(path);
     auto s = util::FileInfo();
-    if (!s.open(path.c_str())) {
+    std::string cgi_no_pathinfo;
+    if (path.find(".cgi") != std::string::npos) { // get ext from config instead
+      cgi_no_pathinfo = path.substr(0, path.find(".cgi") + 4);
+    }
+    if (!s.open(path.c_str()) && cgi_no_pathinfo.empty()) {
       handleError_(404);
     } else if (s.isDir()) {
       handleDir_(path, route, s);
-    } else if (s.isFile()) {
+    } else if (s.isFile() || !cgi_no_pathinfo.empty()) {
       handleFile_(s, path);
     }
   }
@@ -56,8 +58,11 @@ bool RequestHandler::legalMethod_(const ConfigRoute& route) const
   return (route.isMethodAllowed(request_.getMethod()));
 }
 
-void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, FileInfo& file_info)
+void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& route, FileInfo& file_info)
 {
+  if (request_.getMethod() == HTTP::DELETE) {
+    return handleError_(400);
+  }
   for (const auto& file : route.getIndexFiles()) {
     std::string actual_file = path + file;
     if (!access(actual_file.c_str(), R_OK)) {
@@ -66,16 +71,15 @@ void RequestHandler::handleDir_(std::string& path, const ConfigRoute& route, Fil
       return;
     }
   }
-  // if we get here it's autoindex or error
   if (route.isAutoIndex()){
     autoIndex_(path);
   }
   else {
-    handleError_(405);
+    handleError_(403);
   }
 }
 
-void RequestHandler::autoIndex_(std::string& path)
+void RequestHandler::autoIndex_(const std::string& path)
 {
   std::ostringstream body;
   std::string name;
@@ -108,8 +112,21 @@ void RequestHandler::autoIndex_(std::string& path)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }
 
-void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, int status, std::string type)
+void RequestHandler::deleteFile_(const std::string& path)
 {
+  if (unlink(path.c_str())) {
+    return (handleError_(500));
+  }
+  auto builder = Response::builder();
+  builder.message(204);
+  connection_.enqueueResponse(std::forward<Response>(builder.build()));
+}
+
+void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
+{
+  if (request_.getMethod() == HTTP::DELETE) {
+    return (deleteFile_(path));
+  }
   const std::string cgi_ext = ".cgi"; // fetch this from config instead
   if (path.find(cgi_ext) != std::string::npos) {
     Cgi cgi(*this, path);
@@ -117,19 +134,29 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, i
     return;
   }
   bool addType = true;
-  if (type.empty()) {
-    std::string extension = util::getExtension(path);
-    if (extension.empty() || (type = MIME.getType(extension)).empty())
-      addType = false;
-  }
+  std::string extension = util::getExtension(path);
+  std::string type;
+  if (extension.empty() || (type = MIME.getType(extension)).empty())
+    addType = false;
 
   int fd = open(path.c_str(), O_RDONLY);
-  if (fd == -1) { // todo: handle as error response
-    throw IOException("shit's fucked yo", errno);
+  if (fd == -1) {
+    switch (errno) {
+      case EACCES:
+      case EISDIR:
+        handleError_(403);
+        return;
+      case ENOENT:
+        handleError_(404);
+        return;
+      default:
+        handleError_(500);
+        return;
+    }
   }
 
   auto builder = Response::builder();
-  builder.message(status)
+  builder.message(200)
          .content_length(file_info.size());
   if (addType)
     builder.header("Content-Type", type);
@@ -139,22 +166,18 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path, i
 }
 
 void RequestHandler::handleError_(int error) {
-  auto& error_pages = cfg_.getErrorPages();
-  auto it = error_pages.find(error);
-  if (it != error_pages.end()) {
-    FileInfo s;
-    if (s.open(it->second.c_str()) && s.isFile()) {
-      handleFile_(s, it->second, error, "text/html");
-      if (request_.getContentLength() != 0)
-        connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
-      return;
-    }
-  }
-
-  auto perr = http::defaultErrPage(error);
-  size_t content_len = perr.first.getContentLength();
+  auto perr = http::createError(cfg_, error);
   connection_.enqueueResponse(std::move(perr.first));
-  connection_.addTask(std::make_unique<SimpleBody>(std::move(perr.second), content_len));
+  connection_.addTask(std::move(perr.second));
+  if (request_.getContentLength() != 0)
+    connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
+}
+
+void RequestHandler::handleRedir_(const ConfigRoute& route) {
+  auto perr = http::createError(cfg_, 302);
+  perr.first.addHeader("Location", route.getRedir());
+  connection_.enqueueResponse(std::move(perr.first));
+  connection_.addTask(std::move(perr.second));
   if (request_.getContentLength() != 0)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
 }

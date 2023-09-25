@@ -11,38 +11,17 @@
 #include "Config.h"
 #include "ConfigServer.h"
 #include "config/ConfigRoute.h"
-#include "http/Method.h"
 #include "util/Log.h"
 
 namespace {
-enum { EMPTY };
-
-bool isPositiveInt(const std::string& str) {
-  if (str.find_first_not_of("0123456789") != std::string::npos) {
-    return false;
-  }
-  if (str.size() > 10) {
-    return false;
-  }
-  auto num = std::stoul(str);
-  if (num > std::numeric_limits<int>::max()) {
-    return false;
-  }
-  return true;
-}
 
 bool portParse(const std::string& portstr, uint16_t& port) {
-  if (portstr.size() > 5 || portstr.empty()) {
-    Log::error("Port number size is invalid.\n");
+  size_t end_idx;
+  auto num = std::stoi(portstr, &end_idx);
+  if (num <= 0 || num > std::numeric_limits<uint16_t>::max()) {
+    Log::error("Port must be in range of 1 to 65535.\n");
     return false;
-  }
-  if (portstr.find_first_not_of("0123456789") != std::string::npos) {
-    Log::error("Invalid character found in port number.\n");
-    return false;
-  }
-  auto num = std::stoul(portstr);
-  if ((num != 80 && num != 8080) && (num > std::numeric_limits<uint16_t>::max() || num < 49152)) {
-    Log::error("Port must be 80 or 8080 or be in range of 49152 to 65535.\n");
+  } else if (portstr.size() != end_idx) {
     return false;
   }
   port = num;
@@ -50,11 +29,11 @@ bool portParse(const std::string& portstr, uint16_t& port) {
 }
 }  // namespace
 
-const char* ConfigParse::InvalidDirective::what() const throw() {
+const char* ConfigParse::InvalidDirective::what() const noexcept {
   return this->reason_.c_str();
 }
 
-ConfigParse::ConfigParse(const Tokens& file_data) : tokens_(file_data), map_(), loc_map_() {
+ConfigParse::ConfigParse(const Lines& file_data) : lines_(file_data), map_(), loc_map_() {
   this->map_ = {{"listen", &ConfigParse::listenParse},
                 {"server_name", &ConfigParse::serverNameParse},
                 {"client_max_body_size", &ConfigParse::clientMaxBodySizeParse},
@@ -66,22 +45,21 @@ ConfigParse::ConfigParse(const Tokens& file_data) : tokens_(file_data), map_(), 
                     {"redirect", &ConfigParse::redirectParse}, {"cgi_upload_dir", &ConfigParse::uploadDirParse}};
 }
 
-Config ConfigParse::parse() {
-  this->tokens_ = splitOnWhiteSpace(this->tokens_);
-  this->tokens_ = splitOnSymbols(this->tokens_);
-  if (this->tokens_.empty())
+Config& ConfigParse::parse(Config& cfg) {
+  Tokens tokens;
+  splitOnWhiteSpace(lines_, tokens);
+  splitOnSymbols(tokens);
+  if (lines_.empty())
     throw std::invalid_argument("Configuration file is empty");
   try {
-    return semanticParse(this->tokens_);
+    return semanticParse(tokens, cfg);
   } catch (const InvalidDirective& e) {
     Log::error("Exception caught: ", e.what(), "\n");
     std::exit(1);
   }
 }
 
-Config ConfigParse::semanticParse(const Tokens& tokens) {
-  Config cfg;
-
+Config& ConfigParse::semanticParse(const Tokens& tokens, Config& cfg) {
   for (auto it = tokens.begin(); it != tokens.end(); ++it) {
     if (!serverParse(it, tokens.end(), cfg)) {
       throw ConfigParse::InvalidDirective("Invalid config");
@@ -91,14 +69,14 @@ Config ConfigParse::semanticParse(const Tokens& tokens) {
 }
 
 bool ConfigParse::isDirective(const TokensConstIter& curr) {
-  std::unordered_map<std::string, bool> directives = {
+  std::unordered_map<std::string_view, bool> directives = {
       {"listen", true}, {"server_name", true}, {"location", true}, {"error_page", true}, {"client_max_body_size", true},
   };
   return directives[*curr];
 }
 
 bool ConfigParse::isLocationDirective(const TokensConstIter& curr) {
-  std::unordered_map<std::string, bool> location_directives = {{"index", true},    {"autoindex", true},
+  std::unordered_map<std::string_view, bool> location_directives = {{"index", true},    {"autoindex", true},
                                                                {"root", true},     {"allowed_methods", true},
                                                                {"redirect", true}, {"cgi_upload_dir", true}};
   return location_directives[*curr];
@@ -113,7 +91,7 @@ bool ConfigParse::dispatchFunc(TokensConstIter& curr, const TokensConstIter& end
   return (this->*function_pointer)(curr, end, cfg);
 }
 
-bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg) {
+bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter& end, Config& cfg) {
   if (*curr != "server") {
     Log::error("Expecting \"server\" directive.\n");
     return false;
@@ -145,6 +123,10 @@ bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, 
     Log::error("Expecting \"}\" in server block.\n");
     return false;
   }
+  if (cfg_server.getPort() == 0) {
+    Log::error("Missing \"listen\" field in server block.\n");
+    return false;
+  }
   cfg.addServer(std::move(cfg_server));
   return true;
 }
@@ -170,7 +152,7 @@ bool ConfigParse::listenParse(TokensConstIter& curr, const TokensConstIter& end,
     return false;
   }
   uint16_t port;
-  if (!portParse(*curr, port)) {
+  if (!portParse(std::string(*curr), port)) {
     Log::error("Invalid listen argument.\n");
     return false;
   }
@@ -194,13 +176,13 @@ bool ConfigParse::serverNameParse(TokensConstIter& curr, const TokensConstIter& 
     return false;
   }
   do {
-    const std::string& name = *curr;
+    std::string name = std::string(*curr);
     ++curr;
     if (curr == end) {
       Log::error("Unexpected end in server_name directive.\n");
       return false;
     }
-    cfg_server.addServerName(name);
+    cfg_server.addServerName(std::move(name));
   } while (*curr != ";");
   return true;
 }
@@ -215,7 +197,7 @@ bool ConfigParse::clientMaxBodySizeParse(TokensConstIter& curr, const TokensCons
     Log::error("Unexpected value [", *curr, "] in \"client_max_body_size\" directive.\n");
     return false;
   }
-  std::size_t number = std::stoull(*curr);
+  std::size_t number = std::stoull(std::string(*curr));
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end in \"client_max_body_size\" directive.\n");
@@ -236,13 +218,18 @@ bool ConfigParse::errorPageParse(TokensConstIter& curr, const TokensConstIter& e
     return false;
   }
   std::vector<int> error_codes{};
-  for (; curr != end && isPositiveInt(*curr); ++curr) {
-    auto number = static_cast<int>(std::stoul(*curr));
-    if (number < 300 || number > 599) {
+  for (; curr != end && curr->size() == 3; ++curr) {
+    size_t end_idx;
+    auto num = std::stoi(std::string(*curr), &end_idx);
+    if (num < 300 || num >= 600) {
       Log::error("Value in \"error_page\" directive must be between 300 and 599.\n");
       return false;
     }
-    error_codes.emplace_back(std::move(number));
+    if (curr->size() != end_idx) {
+      Log::error("Value in \"error_page\" is invalid\n");
+      return false;
+    }
+    error_codes.push_back(num);
   }
   if (curr == end) {
     Log::error("Unexpected end in \"error_page\" directive.\n");
@@ -252,12 +239,12 @@ bool ConfigParse::errorPageParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Expected path to error_page in \"error_page\" directive.\n");
     return false;
   }
-  if (!error_codes.size()) {
+  if (error_codes.empty()) {
     Log::error("No error codes provided in \"error_page\" directive.\n");
     return false;
   }
   for (auto code : error_codes) {
-    cfg_server.addErrorPage(code, *curr);
+    cfg_server.addErrorPage(code, std::string(*curr));
   }
   curr++;
   if (curr == end) {
@@ -277,7 +264,7 @@ bool ConfigParse::locationParse(TokensConstIter& curr, const TokensConstIter& en
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;
   }
-  std::string path = *curr;
+  auto path = *curr;
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"location\" directive.\n");
@@ -292,13 +279,13 @@ bool ConfigParse::locationParse(TokensConstIter& curr, const TokensConstIter& en
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;
   }
+  ConfigRoute new_route;
   for (; curr != end && isLocationDirective(curr); ++curr) {
-    ConfigRoute new_route{};
     if (!dispatchFunc<ConfigRoute, LocDirectiveMap>(curr, end, new_route, loc_map_)) {
       return false;
     }
-    cfg_server.addRoute(path, std::move(new_route));
   }
+  cfg_server.addRoute(std::string(path), std::move(new_route));
   if (curr == end) {
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;
@@ -316,16 +303,16 @@ bool ConfigParse::indexParse(TokensConstIter& curr, const TokensConstIter& end, 
     Log::error("Unexpected end in \"index\" directive.\n");
     return false;
   }
-  std::vector<std::string> files{};
+  std::vector<std::string_view> files;
   for (; curr != end && *curr != ";"; ++curr) {
-    for (auto file : files) {
+    for (auto& file : files) {
       if (*curr == file) {
         Log::error("Can not have the same index file multiple times.\n");
         return false;
       }
     }
     files.emplace_back(*curr);
-    location.addIndexFile(*curr);
+    location.addIndexFile(std::string(*curr));
   }
   if (curr == end) {
     Log::error("Unexpected end in \"index\" directive.\n");
@@ -338,7 +325,7 @@ bool ConfigParse::indexParse(TokensConstIter& curr, const TokensConstIter& end, 
   return true;
 }
 
-bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& lcoation) {
+bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location) {
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"autoindex\" directive.\n");
@@ -348,7 +335,7 @@ bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Value of \"autoindex\" directive must be either true or false.\n");
     return false;
   }
-  bool autoindex{*curr == "true" ? true : false};
+  bool autoindex = *curr == "true";
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"autoindex\" directive.\n");
@@ -358,7 +345,7 @@ bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Expected \";\" in \"autoindex\" directive.\n");
     return false;
   }
-  lcoation.setAutoIndex(autoindex);
+  location.setAutoIndex(autoindex);
   return true;
 }
 
@@ -368,7 +355,7 @@ bool ConfigParse::rootParse(TokensConstIter& curr, const TokensConstIter& end, C
     Log::error("Unexpected end in \"root\" directive.\n");
     return false;
   }
-  location.setRoot(*curr);
+  location.setRoot(std::string(*curr));
   ++curr;
   if (curr == end) {
     Log::error("Unexpected end in \"root\" directive.\n");
@@ -416,7 +403,7 @@ bool ConfigParse::redirectParse(TokensConstIter& curr, const TokensConstIter& en
     Log::error("Unexpected end in \"redirect\" directive.\n");
     return false;
   }
-  location.setRedirect(*curr);
+  location.setRedirect(std::string(*curr));
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"redirect\" directive.\n");
@@ -435,7 +422,7 @@ bool ConfigParse::uploadDirParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Unexpected end in \"upload_dir\" directive.\n");
     return false;
   }
-  location.setUploadDir(*curr);
+  location.setUploadDir(std::string(*curr));
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"upload_dir\" directive.\n");
@@ -448,52 +435,39 @@ bool ConfigParse::uploadDirParse(TokensConstIter& curr, const TokensConstIter& e
   return true;
 }
 
-ConfigParse::Tokens ConfigParse::splitOnWhiteSpace(const Tokens& tokens) {
-  struct StrPos {
-    size_t start;
-    size_t end;
-  } str = {.start = 0, .end = 0};
+void ConfigParse::splitOnWhiteSpace(const Lines& lines, Tokens& tokens) {
   constexpr const char* white_space = "\t ";
-  Tokens new_tokens;
-
-  for (auto it = tokens.begin(); it != tokens.end(); ++it) {
-    std::string buffer = it->substr(0, it->find_first_of("#"));
-    if (buffer.empty()) {
-      continue;
-    }
-    str.start = 0;
-    str.end = buffer.find_first_not_of(white_space, str.start);
-    while (str.end != buffer.npos) {
-      str.start = buffer.find_first_not_of(white_space, str.end);
-      str.end = buffer.find_first_of(white_space, str.start);
-      new_tokens.emplace_back(buffer.substr(str.start, str.end - str.start));
+  std::string_view cur;
+  for (auto& line : lines) {
+    cur = line;
+    cur = cur.substr(0, cur.find_first_of('#'));
+    size_t idx;
+    while ((idx = cur.find_first_not_of(white_space)) != std::string::npos) {
+      cur.remove_prefix(idx);
+      size_t length = cur.find_first_of(white_space);
+      tokens.push_back(cur.substr(0, length));
+      if (length == std::string::npos)
+        break;
+      cur.remove_prefix(length);
     }
   }
-  return new_tokens;
 }
 
-ConfigParse::Tokens ConfigParse::splitOnSymbols(const Tokens& tokens) {
+void ConfigParse::splitOnSymbols(Tokens& tokens) {
   Tokens lexemes;
   constexpr const char* delimiters = "{};";
 
   for (auto it = tokens.begin(); it != tokens.end(); ++it) {
-    std::size_t symbol_idx = it->find_first_of(delimiters);
-    if (symbol_idx == it->npos) {
-      lexemes.push_back(*it);
-      continue;
-    }
-    std::size_t start_idx = 0;
-    while (symbol_idx != it->npos) {
-      if (start_idx < symbol_idx) {
-        lexemes.push_back(it->substr(start_idx, symbol_idx - start_idx));
+    size_t symbol_idx;
+    while (it->size() > 1 && (symbol_idx = it->find_first_of(delimiters)) != std::string::npos) {
+      if (symbol_idx != 0) {
+        it = tokens.insert(it, it->substr(0, symbol_idx)) + 1;
+        it->remove_prefix(symbol_idx);
       }
-      lexemes.push_back(it->substr(symbol_idx, 1));
-      start_idx = symbol_idx + 1;
-      symbol_idx = it->find_first_of(delimiters, start_idx);
-    }
-    if (start_idx < it->length()) {
-      lexemes.push_back(it->substr(start_idx));
+      if (it->size() > 1) {
+        it = tokens.insert(it, it->substr(0, 1)) + 1;
+        it->remove_prefix(1);
+      }
     }
   }
-  return lexemes;
 }

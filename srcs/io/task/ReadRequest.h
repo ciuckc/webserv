@@ -1,14 +1,15 @@
 #pragma once
-#include "IOTask.h"
+
 #include <map>
+
+#include "IOTask.h"
+#include "http/Request.h"
+
+class ConfigServer;
 
 class ReadRequest : public ITask {
  private:
-  enum State {
-    MSG,
-    HEADERS,
-    DONE,
-  };
+  enum State {DONE, MSG, HEADERS};
 
   Request request_;
   State state_ = MSG;
@@ -17,16 +18,18 @@ class ReadRequest : public ITask {
   std::string header_key_;
   ConfigServer* cfg_ = nullptr;
 
-  bool use_line(Connection& connection, std::string& line);
-  bool handle_msg(Connection&, std::string& line);
-  bool handle_header(Connection& connection, std::string& line);
+  // return error code, or 0 if no error
+  int use_line(Connection& connection, std::string& line);
+  int handle_msg(Connection&, std::string& line);
+  int handle_header(Connection& connection, std::string& line);
   std::pair<std::string, std::string_view> split_header(std::string& line);
+  void error(Connection& connection);
 
   bool checkError(Connection&);
 
  public:
   explicit ReadRequest() = default;
-  bool operator()(Connection& connection) override;
+  WS::IOStatus operator()(Connection& connection) override;
   void onDone(Connection& connection) override;
 
  private:

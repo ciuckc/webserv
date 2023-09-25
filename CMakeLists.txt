@@ -58,18 +58,25 @@ add_executable(webserv
         srcs/http/Request.cc
         srcs/http/Response.h
         srcs/http/Response.cc
-        srcs/http/RequestHandler.cc
         srcs/http/RequestHandler.h
+        srcs/http/RequestHandler.cc
         srcs/http/ErrorPage.h
+        srcs/http/ErrorPage.cc
         srcs/http/MIME.h
         srcs/io/Socket.h
         srcs/io/Socket.cc
         srcs/io/EventQueue.h
         srcs/io/EventQueue.cc
+        srcs/io/Handler.h
+        srcs/io/Handler.cc
+        srcs/io/Signal.h
+        srcs/io/Signal.cc
+        srcs/io/ListenSocket.h
+        srcs/io/ListenSocket.cc
         srcs/io/Connection.h
         srcs/io/Connection.cc
-        srcs/io/ConnectionBuffer.h
-        srcs/io/ConnectionBuffer.cc
+        srcs/io/RingBuffer.h
+        srcs/io/RingBuffer.cc
         srcs/io/IOException.h
         srcs/io/task/IOTask.h
         srcs/io/task/ReadRequest.h
@@ -79,6 +86,11 @@ add_executable(webserv
         srcs/io/task/RecvFile.h
         srcs/io/task/SendFile.h
         srcs/io/task/SimpleBody.h
+        srcs/io/task/SimpleBody.cc
+        srcs/io/task/SpliceIn.h
+        srcs/io/task/SpliceIn.cc
+        srcs/io/task/SpliceOut.h
+        srcs/io/task/SpliceOut.cc
         srcs/util/WebServ.h
         srcs/util/Log.h
         srcs/util/String.h)

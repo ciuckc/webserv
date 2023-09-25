@@ -1,33 +1,32 @@
 #include "ConfigServer.h"
 
+#include <algorithm>
 #include <limits>
 
 ConfigServer::ConfigServer()
-    : server_name_{"localhost"},
-      port_(8080),
+    : port_(),
       client_max_body_size_(std::numeric_limits<size_t>::max()),
       routes_(),
       error_pages_(),
-      files_{},
-      auto_index_(false) {}
+      files_() {}
 
 void ConfigServer::setPort(uint16_t port) {
   this->port_ = port;
 }
 
-void ConfigServer::addServerName(const std::string& server_name) {
-  this->server_name_.push_back(server_name);
+void ConfigServer::addServerName(std::string&& server_name) {
+  this->server_name_.push_back(std::forward<std::string>(server_name));
 }
 
-void ConfigServer::setClientBodyMaxSize(const std::size_t& size) {
+void ConfigServer::setClientBodyMaxSize(std::size_t size) {
   this->client_max_body_size_ = size;
 }
 
-void ConfigServer::addRoute(const std::string& loc, ConfigRoute&& route) {
-  routes_.emplace(loc, std::forward<ConfigRoute>(route));
+void ConfigServer::addRoute(std::string&& loc, ConfigRoute&& route) {
+  routes_.emplace(std::forward<std::string>(loc), std::forward<ConfigRoute>(route));
 }
 
-void ConfigServer::addErrorPage(int error, const std::string& path) {
+void ConfigServer::addErrorPage(int error, std::string&& path) {
   if (!error_pages_.emplace(error, path).second)
     Log::warn("Duplicate error page for error ", error, ": ", path, '\n');
 }
@@ -47,4 +46,14 @@ const ConfigServer::routes_t& ConfigServer::getRoutes() const {
 
 const std::map<int, std::string>& ConfigServer::getErrorPages() const {
   return error_pages_;
+}
+
+ConfigServer::routes_t::const_iterator ConfigServer::matchRoute(std::string& path) const {
+  const auto routeMatches = [&path](auto& route)->bool {
+    return (!path.compare(0, route.first.length(), route.first));
+  };
+  auto found = std::find_if(routes_.begin(), routes_.end(), routeMatches);
+  if (found != routes_.end())
+    path.replace(0, found->first.size(), found->second.getRoot());
+  return found;
 }

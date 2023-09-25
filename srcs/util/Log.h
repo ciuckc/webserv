@@ -62,9 +62,27 @@ class Log {
  private:
   static void print_time(std::ostream& to) {
     using namespace std::chrono;
-    auto now = system_clock::now();
-    int ms = (int)(duration_cast<milliseconds>(now.time_since_epoch()) % 1000).count();
-    time_t timer = system_clock::to_time_t(now);
-    to << std::put_time(std::localtime(&timer), "%d/%m %T.") << std::setw(3) << std::setfill('0') << ms << std::setw(0) << " ";
+    using i_millis = duration<int, std::milli>;
+    static constexpr auto timestamp_frequency = 750us;
+    static constexpr auto timestamp_len = (int) sizeof "69/69 69:69:69.069 ";
+    static constexpr auto timestamp_format = "%.2d/%.2d %.2d:%.2d:%.2d.%.3d ";
+    static char timestamp_buf[timestamp_len];
+    static tm t;
+
+    static system_clock::time_point last;
+    system_clock::time_point now = system_clock::now();
+    if (now - last < timestamp_frequency) {
+      to.write(timestamp_buf, timestamp_len - 1);
+      return;
+    }
+    last = now;
+    time_t epoch_secs = system_clock::to_time_t(now);
+    localtime_r(&epoch_secs, &t);
+
+    if (snprintf(timestamp_buf, timestamp_len, timestamp_format,
+                 t.tm_mday, t.tm_mon + 1, t.tm_hour, t.tm_min, t.tm_sec,
+                 duration_cast<i_millis>(now.time_since_epoch() % 1s).count()) < timestamp_len)
+      __builtin_unreachable();
+    to.write(timestamp_buf, timestamp_len - 1);
   }
 };

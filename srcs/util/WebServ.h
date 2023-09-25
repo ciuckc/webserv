@@ -1,35 +1,36 @@
 #pragma once
 
+#include <sys/stat.h>
+#include <unistd.h>
+
 // often used stuff
 #include <ctime>
-#include <sys/stat.h>
+
+#include "io/IOException.h"
 
 namespace WS {
-enum Dir {
-  IN = 1,
-  OUT = 2,
-  BOTH = 3
-};
 enum IOStatus {
-  IO_GOOD,
-  IO_WAIT,
-  IO_FAIL
+  IO_EOF = -3,
+  IO_FAIL = -2, // IO error
+  IO_BLOCKED = -1, // Something is not ready
+  IO_AGAIN = 0, // Everything went ok, not done yet
+  IO_GOOD = 1, // Everything went ok, done
 };
 
 // Maximum length of a http request (message and headers)
-static constexpr size_t request_maxlen = 32768;
+static constexpr auto request_maxlen = 32768;
 
 // Max http header length (max length of a single line)
 // this limit is not set by the rfc, 8k is the most common value I see
-static constexpr size_t header_maxlen = 8192;
+static constexpr auto header_maxlen = 8192;
 
-static constexpr size_t uri_maxlen = 8192;
+static constexpr auto uri_maxlen = 8192;
 
 // How many seconds will we keep idle connections alive for?
-static constexpr uint32_t timeout = 30;
+static constexpr auto timeout = 30;
 
 // How many requests do we want to handle per connection?
-static constexpr uint32_t max_requests = 100;
+static constexpr auto max_requests = 100;
 
 // File containing mime types
 static constexpr const char* mimes_file = "./mime.types";
@@ -69,17 +70,6 @@ namespace util {
     size_t nn = str.find("\n\n");
     size_t rn = str.find("\r\n\r\n");
     return (std::min(nn, rn));
-  }
-
-  static inline void prepend_cwd(std::string& str)
-  {
-    char* cwd;
-    cwd = getcwd(nullptr, 0);
-    if (cwd == nullptr) {
-      throw (IOException("getcwd returned null")); // maybe returning null would be a bit less agressive?
-    }
-    str.insert(0, cwd);
-    free(cwd);
   }
 
   static inline std::string_view without_crlf(std::string_view sv) {
