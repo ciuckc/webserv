@@ -15,32 +15,13 @@
 
 namespace {
 
-bool isPositiveInt(const std::string& str) {
-  if (str.find_first_not_of("0123456789") != std::string::npos) {
-    return false;
-  }
-  if (str.size() > 10) {
-    return false;
-  }
-  auto num = std::stoul(str);
-  if (num > std::numeric_limits<int>::max()) {
-    return false;
-  }
-  return true;
-}
-
 bool portParse(const std::string& portstr, uint16_t& port) {
-  if (portstr.size() > 5 || portstr.empty()) {
-    Log::error("Port number size is invalid.\n");
-    return false;
-  }
-  if (portstr.find_first_not_of("0123456789") != std::string::npos) {
-    Log::error("Invalid character found in port number.\n");
-    return false;
-  }
-  auto num = std::stoul(portstr);
-  if (num == 0 || num > std::numeric_limits<uint16_t>::max()) {
+  size_t end_idx;
+  auto num = std::stoi(portstr, &end_idx);
+  if (num <= 0 || num > std::numeric_limits<uint16_t>::max()) {
     Log::error("Port must be in range of 1 to 65535.\n");
+    return false;
+  } else if (portstr.size() != end_idx) {
     return false;
   }
   port = num;
@@ -237,13 +218,18 @@ bool ConfigParse::errorPageParse(TokensConstIter& curr, const TokensConstIter& e
     return false;
   }
   std::vector<int> error_codes{};
-  for (; curr != end && isPositiveInt(std::string(*curr)); ++curr) {
-    auto number = static_cast<int>(std::stoul(std::string(*curr))); // todo: don't parse value multiple times
-    if (number < 300 || number > 599) {
+  for (; curr != end && curr->size() == 3; ++curr) {
+    size_t end_idx;
+    auto num = std::stoi(std::string(*curr), &end_idx);
+    if (num < 300 || num >= 600) {
       Log::error("Value in \"error_page\" directive must be between 300 and 599.\n");
       return false;
     }
-    error_codes.emplace_back(number);
+    if (curr->size() != end_idx) {
+      Log::error("Value in \"error_page\" is invalid\n");
+      return false;
+    }
+    error_codes.push_back(num);
   }
   if (curr == end) {
     Log::error("Unexpected end in \"error_page\" directive.\n");
