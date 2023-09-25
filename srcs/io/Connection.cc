@@ -82,7 +82,7 @@ bool Connection::handleWrite() {
     return true;
   }
   io:
-  if (out_buffer_.write_sock(socket_) != WS::IO_GOOD) // if write on a socket returns 0 something is wrong as well
+  if (out_buffer_.write_sock(socket_) == WS::IO_FAIL) // if write on a socket returns 0 something is wrong as well
     return true;
   if (!out_queue_.empty() || !out_buffer_.empty())
     return false;

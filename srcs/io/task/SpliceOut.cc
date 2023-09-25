@@ -40,7 +40,7 @@ void SpliceOut::setFail() {
 
 SpliceOut::IHandler::IHandler(Server& server, SpliceOut& parent, Connection& connection,
                               const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd)
-    : Handler(pipe_fd, 0, 1000), server_(server),
+    : Handler(pipe_fd, EventQueue::in, 1000), server_(server),
       parent_(parent), connection_(connection), cgi_path_(cgi_path),
       cfg_(cfg), buffer_(connection.getOutBuffer()),
       name_(Str::join("SpliceOut::IHandler(", std::to_string(pipe_fd), ")")),
@@ -102,7 +102,13 @@ bool SpliceOut::IHandler::handleRead() {
 }
 
 bool SpliceOut::IHandler::handleWHup() {
-  return false;
+  parent_.setDone();
+  if (chunked_) {
+    buffer_.put("0x0\r\n");
+  }
+  //delFilter(EventQueue::in);
+  connection_.enableFilter(server_.getEventQueue(), EventQueue::out);
+  return true;
 }
 bool SpliceOut::IHandler::handleError() {
   parent_.setFail();
