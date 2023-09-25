@@ -16,14 +16,11 @@ class Cgi {
     static void delEnv(char** arr);
 
   private:
-    std::string execute_();
-    std::string exec_parent_();
-    void exec_child_();
     void makeDocumentResponse_(const std::string& headers);
     void makeLocalRedirResponse_(const std::string& headers);
     void makeClientRedirResponse_(const std::string& headers);
-    // helper functions
     std::string findHeaderValue_(const std::string& headers, const std::string& key);
+    void bufferResponse_(const Response& res);
 
     const ConfigServer& cfg_;
     Connection& conn_;

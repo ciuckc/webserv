@@ -172,8 +172,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     return (handleError_(500));
   }
   connection_.addTask(std::make_unique<SpliceOut>(connection_.getServer(), connection_, path, cfg_, pipe_out[0]));
-  Cgi cgi(cfg_, connection_, path);
-  char** envp = cgi.makeEnv(request_, path, cfg_);
+  char** envp = Cgi::makeEnv(request_, path, cfg_);
   int pid = fork();
   if (pid < 0) {
     return (handleError_(500));
@@ -183,7 +182,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     close(pipe_out[0]);
     close(pipe_out[1]);
     char** argv = {nullptr};
-    execve(cgi.getScriptName(path).c_str(), argv, envp);
+    execve(Cgi::getScriptName(path).c_str(), argv, envp);
     // if we get here execve failed
     Log::error("executing CGI failed: ", strerror(errno), '\n');
     exit(1);

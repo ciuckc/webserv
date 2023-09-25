@@ -24,6 +24,8 @@ class Request : public Message {
   Request& operator=(const Request& rhs) = default;
 
   bool setMessage(const std::string& msg);
+  void setMethod(HTTP::Method method);
+  void setVersion(HttpVersion version);
   HTTP::Method getMethod() const;
   const std::string& getUri() const;
   void setUri(const std::string&);

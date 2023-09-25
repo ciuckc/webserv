@@ -38,6 +38,16 @@ bool Request::setMessage(const std::string& msg) {
   return true;
 }
 
+void Request::setMethod(HTTP::Method method)
+{
+  method_ = method;
+}
+
+void Request::setVersion(HttpVersion version)
+{
+  version_ = version;
+}
+
 HTTP::Method Request::getMethod() const {
   return method_;
 }

@@ -116,13 +116,16 @@ void Cgi::makeDocumentResponse_(const std::string& headers)
   res.addHeader("Transfer-Encoding", "Chunked");
   res.addHeader("Content-Type", findHeaderValue_(headers, "Content-Type: "));
   res.setMessage(200);
-  conn_.enqueueResponse(std::move(res));
+  // conn_.enqueueResponse(std::move(res));
+  bufferResponse_(res);
 }
 
 // cgi local redirect response into http response
 void Cgi::makeLocalRedirResponse_(const std::string& headers)
 {
   Request req;
+  req.setMethod(HTTP::GET);
+  req.setVersion(Request::VER_1_1);
   RequestHandler rh(conn_, cfg_, req);
   std::string new_uri = findHeaderValue_(headers, "Location: ");
   auto new_route = cfg_.matchRoute(new_uri);
@@ -141,4 +144,14 @@ void Cgi::makeClientRedirResponse_(const std::string& headers)
   res.setMessage(302);
   res.addHeader("Location", findHeaderValue_(headers, "Location: "));
   conn_.enqueueResponse(std::move(res));
+}
+
+void Cgi::bufferResponse_(const Response& res)
+{
+  (void) res;
+  conn_.getOutBuffer().prepend("\r\n");
+  for (const auto& header : res.getHeaders()) {
+    conn_.getOutBuffer().prepend(header);
+  }
+  conn_.getOutBuffer().prepend(res.getMessage());
 }
