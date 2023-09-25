@@ -42,7 +42,7 @@ void Handler::enableFilter(EventQueue& evq, Handler::filt_t f) {
 void Handler::updateFilter(EventQueue& evq) {
   if (filter_ == prev_filter_)
     return;
-  evq.mod(fd_, index_, filter_); // todo
+  evq.mod(fd_, index_, filter_);
   prev_filter_ = filter_;
 }
 

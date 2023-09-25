@@ -24,7 +24,7 @@ size_t RingBuffer::freeLen() const {
 void RingBuffer::resize(size_t new_size) {
   if (new_size < dataLen()) {
     Log::warn("Possibly losing data from resize\n");
-    return; // todo
+    return;
   }
   auto new_data = std::make_unique<char[]>(new_size);
   if (!empty_) {

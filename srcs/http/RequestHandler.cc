@@ -140,8 +140,19 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
     addType = false;
 
   int fd = open(path.c_str(), O_RDONLY);
-  if (fd == -1) { // todo: handle as error response
-    throw IOException("shit's fucked yo", errno);
+  if (fd == -1) {
+    switch (errno) {
+      case EACCES:
+      case EISDIR:
+        handleError_(403);
+        return;
+      case ENOENT:
+        handleError_(404);
+        return;
+      default:
+        handleError_(500);
+        return;
+    }
   }
 
   auto builder = Response::builder();

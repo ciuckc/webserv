@@ -10,7 +10,6 @@
 #include "util/String.h"
 
 Socket::Socket() {
-  // todo: maybe O_NOATIME?
   fd_ = socket(AF_INET, SOCK_STREAM | O_NONBLOCK | O_CLOEXEC, IPPROTO_TCP);
   if (fd_ == -1)
     throw IOException("Opening socket failed", errno);

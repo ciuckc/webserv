@@ -30,6 +30,4 @@ class Request : public Message {
   std::string getPath() const;
   const char* getHeader(const std::string& key) const;
   HttpVersion getVersion() const;
-  // todo: getVersion()? Are we ?
-
 };

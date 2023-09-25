@@ -173,10 +173,6 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
       if ((size_t)(pos - value.data()) != value.size())
         return 400;
       request.request_.setContentLength(content_length);
-      // todo: make sure this body length is not too big onDone
       return 0;
     })}, WS::case_cmp_less};
-
-// if-modified-since
-    // transfer-encoding
 
