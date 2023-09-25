@@ -130,10 +130,7 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
   }
   const std::string cgi_ext = ".cgi"; // fetch this from config instead
   if (path.find(cgi_ext) != std::string::npos) {
-    // splice here
-    Cgi cgi(*this, path);
-    cgi.act();
-    return;
+    return (handleCgi_(path));
   }
   bool addType = true;
   std::string extension = util::getExtension(path);
@@ -174,10 +171,9 @@ void RequestHandler::handleCgi_(const std::string& path)
   if (pipe(pipe_out) == -1) {
     return (handleError_(500));
   }
-  CgiSpliceVars cgi_vars = {true, false, ""};
-  SpliceOut splice_out(connection_.getServer(), cgi_vars, connection_, pipe_out[0]);
-  Cgi cgi(*this, path);
-  char** envp = cgi.makeEnv(request_);
+  connection_.addTask(std::make_unique<SpliceOut>(connection_.getServer(), connection_, path, cfg_, pipe_out[0]));
+  Cgi cgi(cfg_, connection_, path);
+  char** envp = cgi.makeEnv(request_, path, cfg_);
   int pid = fork();
   if (pid < 0) {
     return (handleError_(500));
@@ -186,7 +182,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     dup2(pipe_out[1], STDOUT_FILENO);
     close(pipe_out[0]);
     close(pipe_out[1]);
-    char** argv = nullptr;
+    char** argv = {nullptr};
     execve(cgi.getScriptName(path).c_str(), argv, envp);
     // if we get here execve failed
     Log::error("executing CGI failed: ", strerror(errno), '\n');
@@ -194,13 +190,8 @@ void RequestHandler::handleCgi_(const std::string& path)
   }
   // parent
   close(pipe_out[1]);
-  while (cgi_vars.state_header) {/* wait for eventqueue to read headers */}
-  if (cgi_vars.headers.find("Content-Length") == std::string::npos) {
-    cgi_vars.chunked = true;
-  }
-  // let cgi make the appropriate response
-  close(pipe_out[0]);
-
+  Cgi::delEnv(envp);
+  Log::trace("Cgi setup done\n");
 }
 
 void RequestHandler::handleError_(int error) {

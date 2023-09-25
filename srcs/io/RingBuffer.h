@@ -37,6 +37,10 @@ class RingBuffer {
    * The amount of bytes that can still be stored in this buffer
    */
   [[nodiscard]] size_t freeLen() const;
+  /**
+   * Total size of buffer and overflow contents
+   */
+  [[nodiscard]] size_t totalSize() const;
 
   /**
    * Change the size of the buffer (moves data to front for good measure)

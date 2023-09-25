@@ -1,35 +1,33 @@
 #ifndef CGI_H
 #define CGI_H
 #include <string>
-#include "http/RequestHandler.h"
+#include "config/ConfigServer.h"
+#include "io/Connection.h"
 #include "http/Request.h"
 #include "http/Response.h"
 
 class Cgi {
   public:
-    Cgi(RequestHandler&, const std::string&);
-    ~Cgi();
-    void act();
-    std::string getScriptName(const std::string&);
-    char** makeEnv(const Request&);
+    Cgi(const ConfigServer& config_server, Connection& conn, const std::string& path);
+    ~Cgi() = default;
+    void act(const std::string& headers);
+    static std::string getScriptName(const std::string& path);
+    static char** makeEnv(const Request& req, const std::string& path, const ConfigServer& cfg);
+    static void delEnv(char** arr);
 
   private:
     std::string execute_();
     std::string exec_parent_();
     void exec_child_();
-    void makeDocumentResponse_(const std::string&, Response&);
-    void makeLocalRedirResponse_(const std::string&, Response&, Request&);
-    void makeClientRedirResponse_(const std::string&, Response&);
+    void makeDocumentResponse_(const std::string& headers);
+    void makeLocalRedirResponse_(const std::string& headers);
+    void makeClientRedirResponse_(const std::string& headers);
     // helper functions
-    std::string findHeaderValue_(const std::string&, const std::string&);
-    void delArr_(char**);
+    std::string findHeaderValue_(const std::string& headers, const std::string& key);
 
-    RequestHandler& rh_;
+    const ConfigServer& cfg_;
+    Connection& conn_;
     const std::string& path_;
-    const std::string script_;
-    char** envp_;
-    int    pipe_in_[2];
-    int    pipe_out_[2];
 };
 
 #endif

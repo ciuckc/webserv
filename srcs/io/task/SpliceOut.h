@@ -3,7 +3,7 @@
 #include "IOTask.h"
 #include "io/Connection.h"
 #include "io/Handler.h"
-#include "http/RequestHandler.h"
+#include "cgi/Cgi.h"
 
 // Write from pipe into socket
 class SpliceOut : public OTask {
@@ -11,13 +11,17 @@ class SpliceOut : public OTask {
   class IHandler : public Handler {
    private:
     Server& server_;
-    CgiSpliceVars& vars_;
     SpliceOut& parent_;
     Connection& connection_;
+    const std::string& cgi_path_;
+    const ConfigServer& cfg_;
     RingBuffer& buffer_;
     std::string name_;
+    bool state_headers_, chunked_;
+    std::string headers_;
    public:
-    IHandler(Server& server, CgiSpliceVars& vars_, SpliceOut& parent, Connection& connection, int pipe_fd);
+    IHandler(Server& server, SpliceOut& parent, Connection& connection,
+             const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd);
     ~IHandler() override;
 
     [[nodiscard]] const std::string& getName() const override;
@@ -32,13 +36,12 @@ class SpliceOut : public OTask {
   };
 
   Server& server_;
-  CgiSpliceVars& vars_;
   IHandler* handler_ = nullptr;
   bool done_ = false;
   bool fail_ = false;
 
  public:
-  SpliceOut(Server& server, CgiSpliceVars& vars, Connection& conn, int pipe_fd);
+  SpliceOut(Server& server, Connection& conn, const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd);
   ~SpliceOut() override;
 
   WS::IOStatus operator()(Connection& connection) override;

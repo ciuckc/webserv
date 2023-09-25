@@ -20,6 +20,9 @@ size_t RingBuffer::dataLen() const {
 size_t RingBuffer::freeLen() const {
   return size_ - dataLen();
 }
+size_t RingBuffer::totalSize() const {
+  return (dataLen() + overflow_.size());
+}
 
 void RingBuffer::resize(size_t new_size) {
   if (new_size < dataLen()) {
