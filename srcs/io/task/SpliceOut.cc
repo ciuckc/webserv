@@ -59,6 +59,15 @@ bool SpliceOut::IHandler::handleTimeout(Server& server, bool) {
   return false;
 }
 
+static void stChunkBuffer(RingBuffer& buf)
+{
+  std::ostringstream stream;
+  stream << std::hex << buf.totalSize();
+  buf.prepend("\r\n");
+  buf.prepend(stream.str());
+  buf.put("\r\n");
+}
+
 bool SpliceOut::IHandler::handleRead() {
   if (buffer_.capacity() != RingBuffer::file_buf_size_) // first run
     connection_.setOutSize(RingBuffer::file_buf_size_);
@@ -72,18 +81,21 @@ bool SpliceOut::IHandler::handleRead() {
   if (status == WS::IO_EOF) {
     parent_.setDone();
     if (chunked_) {
-      buffer_.put("0x0\r\n");
+      buffer_.put("0\r\n\r\n"); // closing chunk
     }
     return true;
   } else if (status == WS::IO_FAIL) {
     parent_.setFail();
     return true;
   }
-  // read headers back to requesthandler
   if (state_headers_) {
     std::string tmp;
     while (buffer_.getline(tmp)) {
-      if (!tmp.compare("\n") || !tmp.compare("\r\n")) {
+      if (!tmp.compare("\n") || !tmp.compare("\r\n")) { // end of headers
+        if (!buffer_.empty()) {
+          chunked_ = true;
+          stChunkBuffer(buffer_);
+        }
         Cgi cgi(cfg_, connection_, cgi_path_);
         cgi.act(headers_);
         state_headers_ = false;
@@ -92,11 +104,8 @@ bool SpliceOut::IHandler::handleRead() {
       headers_.append(tmp);
     }
   }
-  else if (chunked_) { // if body is not chunked it gets handled automatically
-    std::ostringstream stream;
-    stream << std::hex << std::to_string(buffer_.totalSize());
-    buffer_.prepend(stream.str());
-    buffer_.put("\r\n");
+  else if (chunked_) {
+    stChunkBuffer(buffer_);
   }
   return false;
 }
@@ -104,7 +113,7 @@ bool SpliceOut::IHandler::handleRead() {
 bool SpliceOut::IHandler::handleWHup() {
   parent_.setDone();
   if (chunked_) {
-    buffer_.put("0x0\r\n");
+    buffer_.put("0\r\n\r\n"); // closing chunk
   }
   //delFilter(EventQueue::in);
   connection_.enableFilter(server_.getEventQueue(), EventQueue::out);

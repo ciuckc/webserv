@@ -143,12 +143,15 @@ void Cgi::makeClientRedirResponse_(const std::string& headers)
   Response res;
   res.setMessage(302);
   res.addHeader("Location", findHeaderValue_(headers, "Location: "));
-  conn_.enqueueResponse(std::move(res));
+  if (conn_.getOutBuffer().empty()) {
+    // add body here!!!!!
+  }
+  // conn_.enqueueResponse(std::move(res));
+  bufferResponse_(res);
 }
 
 void Cgi::bufferResponse_(const Response& res)
 {
-  (void) res;
   conn_.getOutBuffer().prepend("\r\n");
   for (const auto& header : res.getHeaders()) {
     conn_.getOutBuffer().prepend(header);
