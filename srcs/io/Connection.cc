@@ -31,7 +31,14 @@ bool Connection::handleRead() {
       in_buffer_.resize(in_buffer_size_);
     else goto tasks;
   }
-  if (in_buffer_.read_sock(socket_) != WS::IO_GOOD) { //todo: not this, check eof and remove filter, otherwise error
+  status = in_buffer_.read_sock(socket_);
+  if (status == WS::IO_EOF) {
+    // We read 0 bytes, remove read filter
+    Log::debug(*this, " removing read filter, read 0 bytes from socket\n");
+    delFilter(EventQueue::in);
+    if (in_buffer_.empty())
+      return false;
+  } else if (status == WS::IO_FAIL) {
     return handleError();
   }
 
