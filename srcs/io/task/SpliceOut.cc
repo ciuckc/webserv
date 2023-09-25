@@ -59,13 +59,39 @@ bool SpliceOut::IHandler::handleTimeout(Server& server, bool) {
   return false;
 }
 
-static void stChunkBuffer(RingBuffer& buf)
+void SpliceOut::IHandler::chunkBuffer_()
 {
   std::ostringstream stream;
-  stream << std::hex << buf.totalSize();
-  buf.prepend("\r\n");
-  buf.prepend(stream.str());
-  buf.put("\r\n");
+  stream << std::hex << buffer_.totalSize();
+  buffer_.prepend("\r\n");
+  buffer_.prepend(stream.str());
+  buffer_.put("\r\n");
+}
+
+// keep reading buffer until headers are complete
+// pass headers to cgi and chunk the body
+void SpliceOut::IHandler::readBuffer_()
+{
+  if (state_headers_) {
+    std::string tmp;
+    while (buffer_.getline(tmp)) {
+      if (!tmp.compare("\n") || !tmp.compare("\r\n")) { // end of headers
+        if (!buffer_.empty()) { // if there is a body in buf we chunk
+          chunked_ = true;
+          chunkBuffer_();
+        }
+        Cgi cgi(cfg_, connection_, cgi_path_);
+        cgi.act(headers_);
+        state_headers_ = false;
+        return;
+      }
+      headers_.append(tmp);
+    }
+  }
+  else if (chunked_) {
+    chunkBuffer_();
+  }
+  return;
 }
 
 bool SpliceOut::IHandler::handleRead() {
@@ -88,25 +114,7 @@ bool SpliceOut::IHandler::handleRead() {
     parent_.setFail();
     return true;
   }
-  if (state_headers_) {
-    std::string tmp;
-    while (buffer_.getline(tmp)) {
-      if (!tmp.compare("\n") || !tmp.compare("\r\n")) { // end of headers
-        if (!buffer_.empty()) {
-          chunked_ = true;
-          stChunkBuffer(buffer_);
-        }
-        Cgi cgi(cfg_, connection_, cgi_path_);
-        cgi.act(headers_);
-        state_headers_ = false;
-        return false;
-      }
-      headers_.append(tmp);
-    }
-  }
-  else if (chunked_) {
-    stChunkBuffer(buffer_);
-  }
+  readBuffer_();
   return false;
 }
 

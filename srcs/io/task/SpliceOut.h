@@ -19,6 +19,7 @@ class SpliceOut : public OTask {
     std::string name_;
     bool state_headers_, chunked_;
     std::string headers_;
+
    public:
     IHandler(Server& server, SpliceOut& parent, Connection& connection,
              const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd);
@@ -33,6 +34,8 @@ class SpliceOut : public OTask {
     bool handleError() override;
     bool handleWrite() override;
     bool handleRHup() override;
+    void readBuffer_();
+    void chunkBuffer_();
   };
 
   Server& server_;
