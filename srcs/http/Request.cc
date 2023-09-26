@@ -18,12 +18,7 @@ bool Request::setMessage(const std::string& msg) {
   std::string_view word;
   if (!next_word(view, word))
     return false;
-  if (word == "GET")
-    method_ = HTTP::GET;
-  else if (word == "POST")
-    method_ = HTTP::POST;
-  else if (word == "DELETE")
-    method_ = HTTP::DELETE;
+  method_ = HTTP::parseMethod(word);
 
   if (!next_word(view, word))
     return false;

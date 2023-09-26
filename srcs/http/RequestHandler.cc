@@ -17,7 +17,7 @@
 #include "io/task/SpliceOut.h"
 #include "io/task/SpliceIn.h"
 
-void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
+void RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
 {
   // for route in cfg_.routes
   //   if route matches (location, method, all that)
@@ -31,46 +31,37 @@ void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& ro
   // add DiscardBody OTask to eat body
   // add SendFile task for error page
 
-  if (!legalMethod_(route)) {
-    handleError_(405);
+  if (!route.isMethodAllowed(request_.getMethod())) {
+    return handleError_(405);
   } else if (route.getRedir().length() != 0) {
-    handleRedir_(route);
-  } else {
-    // in case above functions get called without rooting the path, do it here
-    auto s = util::FileInfo();
-    std::string cgi_no_pathinfo;
-    if (path.find(".cgi") != std::string::npos) { // get ext from config instead
-      cgi_no_pathinfo = path.substr(0, path.find(".cgi") + 4);
-    }
-    if (!s.open(path.c_str()) && cgi_no_pathinfo.empty()) {
-      handleError_(404);
-    } else if (s.isDir()) {
-      handleDir_(path, route, s);
-    } else if (s.isFile() || !cgi_no_pathinfo.empty()) {
-      handleFile_(s, path);
-    }
+    return handleRedir_(route);
+  } else if (util::getExtension(path) == "cgi") {
+    return handleCgi_(path);
   }
-}
-
-bool RequestHandler::legalMethod_(const ConfigRoute& route) const
-{
-  if (request_.getMethod() == HTTP::POST && request_.getUri().find(".cgi") == std::string::npos) { // not %100 waterproof
-    return (false);
+  auto s = util::FileInfo();
+  if (!s.open(path.c_str())) {
+    handleError_(404);
+  } else if (s.isDir()) {
+    handleDir_(path, route, s);
+  } else if (s.isFile()) {
+    handleFile_(s, path);
   }
-  return (route.isMethodAllowed(request_.getMethod()));
 }
 
 void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& route, FileInfo& file_info) {
-  if (request_.getMethod() == HTTP::DELETE) {
-    return handleError_(400);
-  }
+  if (request_.getMethod() == HTTP::DELETE || request_.getMethod() == HTTP::PUT)
+    return handleError_(405);
+
   std::string actual_path = (*path.rbegin() == '/') ? path : path + '/';
   for (const auto& file : route.getIndexFiles()) {
     std::string actual_file = actual_path + file;
-    if (!access(actual_file.c_str(), R_OK)) {
-      file_info.open(actual_file.data());
-      handleFile_(file_info, actual_file);
-      return;
+
+    if (util::getExtension(file) == "cgi" && access(actual_file.c_str(), X_OK) == 0) {
+      return handleCgi_(actual_file);
+    } else if (access(actual_file.c_str(), R_OK) == 0 && file_info.open(actual_file.data())) {
+      if (request_.getMethod() == HTTP::POST)
+        return handleError_(405);
+      return handleFile_(file_info, actual_file);
     }
   }
   if (route.isAutoIndex()) {
@@ -123,20 +114,11 @@ void RequestHandler::deleteFile_(const std::string& path)
   connection_.enqueueResponse(std::forward<Response>(builder.build()));
 }
 
-void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
-{
-  if (request_.getMethod() == HTTP::DELETE) {
-    return (deleteFile_(path));
-  }
-  const std::string cgi_ext = ".cgi"; // fetch this from config instead
-  if (path.find(cgi_ext) != std::string::npos) {
-    return (handleCgi_(path));
-  }
-  bool addType = true;
-  std::string extension = util::getExtension(path);
-  std::string type;
-  if (extension.empty() || (type = MIME.getType(extension)).empty())
-    addType = false;
+void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path) {
+  if (request_.getMethod() == HTTP::POST)
+    return handleError_(405);
+  else if (request_.getMethod() == HTTP::DELETE)
+    return deleteFile_(path);
 
   int fd = open(path.c_str(), O_RDONLY);
   if (fd == -1) {
@@ -157,11 +139,14 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
   auto builder = Response::builder();
   builder.message(200)
          .content_length(file_info.size());
-  if (addType)
-    builder.header("Content-Type", type);
+  std::string_view mime_type = MIME.getType(util::getExtension(path));
+  if (!mime_type.empty())
+    builder.header("Content-Type", mime_type);
   connection_.enqueueResponse(std::forward<Response>(builder.build()));
-  connection_.addTask(std::make_unique<SendFile>(fd, file_info.size()));
-  Log::trace(connection_, "Adding SendFile(", path, ") to queue\n");
+  if (file_info.size() != 0) {
+    connection_.addTask(std::make_unique<SendFile>(fd, file_info.size()));
+    Log::trace(connection_, "Adding SendFile(", path, ") to queue\n");
+  }
 }
 
 void RequestHandler::handleCgi_(const std::string& path)

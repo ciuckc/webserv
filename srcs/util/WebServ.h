@@ -5,6 +5,7 @@
 
 // often used stuff
 #include <ctime>
+#include <string_view>
 
 #include "io/IOException.h"
 
@@ -94,12 +95,12 @@ namespace util {
       return s.st_size;
     }
   };
-  static inline std::string getExtension(const std::string& path) {
+  static inline std::string_view getExtension(const std::string& path) {
     size_t dot = path.find_last_of('.');
     if (dot == std::string::npos) {
       return {};
     }
-    return path.substr(dot + 1);
+    return std::string_view(path).substr(dot + 1);
   }
 
   static constexpr const char* RESET = "\033[0m";

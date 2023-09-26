@@ -34,11 +34,12 @@ bool ReadRequest::checkError(Connection& connection) {
   }
   if (cfg_ == nullptr)
     error_ = 400;
-  else if (request_.getPath().find("..") != std::string::npos)
+  else if (request_.getUri().find("..") != std::string::npos)
     error_ = 403; // don't escape root, forbidden
   else if (request_.getMethod() == HTTP::INVALID)
     error_ = 405; // Method not allowed
-  else if (request_.getMethod() == HTTP::POST && request_.getContentLength() == 0)
+  else if (request_.getContentLength() == 0
+       && (request_.getMethod() == HTTP::POST || request_.getMethod() == HTTP::PUT))
     error_ = 411;
   else if (request_.getContentLength() > cfg_->getClientMaxBodySize())
     error_ = 413;
@@ -76,6 +77,8 @@ int ReadRequest::use_line(Connection& connection, std::string& line) {
 }
 
 int ReadRequest::handle_msg(Connection& connection, std::string& line) {
+  if (line.find_first_not_of(" \t\n\r") == std::string::npos)
+    return 0; // RFC2616 4.1: ... servers SHOULD ignore any empty line(s) received where a Request-Line is expected ..."
   Log::info(connection, "IN: \t", util::without_crlf(line), '\n');
 
   if (request_.setMessage(line)) {

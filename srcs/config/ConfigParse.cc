@@ -375,12 +375,9 @@ bool ConfigParse::allowedMethodsParse(TokensConstIter& curr, const TokensConstIt
     return false;
   }
   for (; curr != end && *curr != ";"; ++curr) {
-    if (*curr == "GET") {
-      location.addAcceptedMethod(HTTP::GET);
-    } else if (*curr == "DELETE") {
-      location.addAcceptedMethod(HTTP::DELETE);
-    } else if (*curr == "POST") {
-      location.addAcceptedMethod(HTTP::POST);
+    HTTP::Method method = HTTP::parseMethod(*curr);
+    if (method != HTTP::INVALID) {
+      location.addAcceptedMethod(method);
     } else {
       Log::error("Unknown value in \"allowed_methods\" directive.\n");
       return false;
