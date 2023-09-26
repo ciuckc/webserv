@@ -50,13 +50,13 @@ bool Connection::handleRead() {
   } while (status == WS::IO_GOOD && !in_buffer_.empty());
 
   if (status == WS::IO_FAIL) {
-    Log::debug(*this, " closing read, task failed\n");
+    Log::debug(*this, "Closing read, task failed\n");
     // so a read task failed halfway through, don't read anymore
     closeRead();
     return out_queue_.empty() && out_buffer_.empty();
   }
   if (status == WS::IO_BLOCKED) {
-    Log::debug(*this, " removing read filter, task returned blocked\n");
+    Log::debug(*this, "Removing read filter, task returned blocked\n");
     delFilter(EventQueue::in);
   }
   return false;
@@ -77,13 +77,23 @@ bool Connection::handleWrite() {
   if (status == WS::IO_BLOCKED) {
     Log::debug(*this, "Write task blocked, removing write filter\n");
     delFilter(EventQueue::out);
+    if (out_buffer_.empty())
+      return false;
   } else if (status == WS::IO_FAIL) { // yeah.. what do we do now? close the connection?
     Log::debug(*this, "Write task failed, resetting connection\n");
     return true;
   }
+
+
+
   io:
-  if (out_buffer_.write_sock(socket_) == WS::IO_FAIL) // if write on a socket returns 0 something is wrong as well
-    return true;
+  if (!out_buffer_.empty()) {
+    if (out_buffer_.write_sock(socket_) != WS::IO_GOOD) // if write on a socket returns 0 something is wrong as well
+      return true;
+  } else {
+    Log::debug(*this, "Write task succeeded but buffer empty, removing write filter\n");
+    delFilter(EventQueue::out);
+  }
   if (!out_queue_.empty() || !out_buffer_.empty())
     return false;
   Log::trace(*this, "All out tasks done\n");

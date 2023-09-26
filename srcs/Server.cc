@@ -49,10 +49,8 @@ void Server::loop() {
 void Server::handle_event(EventQueue::event_t& event) {
   const uint32_t idx = EventQueue::getIndex(event);
 
-  if (idx >= handlers_.size() || !handlers_[idx]) {
-    Log::error("Got event without subscriber? ", event, '\n');
-    abort();
-  }
+  if (idx >= handlers_.size() || !handlers_[idx])
+    return;
   auto& handler = *handlers_[idx];
   handler.updateTimeout(event_queue_.lastWait());
   if (handler.handle(event)) {

@@ -92,7 +92,7 @@ Cgi::Cgi(const ConfigServer& config_server, Connection& conn, const std::string&
 void Cgi::act(const std::string& headers)
 {
   // document response
-  if (headers.find("Content-Type") != std::string::npos) {
+  if (strncasecmp("Content-Type", headers.c_str(), 12) == 0) {
     makeDocumentResponse_(headers);
   }
   // client-redir response

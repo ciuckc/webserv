@@ -91,7 +91,6 @@ void SpliceOut::IHandler::readBuffer_()
   else if (chunked_) {
     chunkBuffer_();
   }
-  return;
 }
 
 bool SpliceOut::IHandler::handleRead() {

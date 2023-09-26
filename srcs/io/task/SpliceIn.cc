@@ -11,7 +11,7 @@ SpliceIn::SpliceIn(Server& server, Connection& conn, int pipe_fd, size_t len) : 
 }
 
 SpliceIn::~SpliceIn() {
-  if (!done_ && !fail_)
+  if (!fail_)
     server_.del_sub(handler_->getIndex());
 }
 
@@ -29,6 +29,7 @@ void SpliceIn::onDone(Connection& connection) {
     return;
   Log::debug(connection, "Done reading body into pipe\n");
   connection.setInSize(); // reset to default
+  handler_->disableFilter(server_.getEventQueue(), EventQueue::out);
 }
 void SpliceIn::setDone() {
   done_ = true;

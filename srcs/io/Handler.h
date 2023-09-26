@@ -18,6 +18,7 @@ class Handler {
   virtual void updateTimeout(const timep_t& wait);
 
   void enableFilter(EventQueue& evq, filt_t f);
+  void disableFilter(EventQueue& evq, filt_t f);
   void updateFilter(EventQueue& evq);
 
   [[nodiscard]] virtual const std::string& getName() const = 0;

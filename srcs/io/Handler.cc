@@ -39,6 +39,11 @@ void Handler::enableFilter(EventQueue& evq, Handler::filt_t f) {
   updateFilter(evq);
 }
 
+void Handler::disableFilter(EventQueue &evq, Handler::filt_t f) {
+  delFilter(f);
+  updateFilter(evq);
+}
+
 void Handler::updateFilter(EventQueue& evq) {
   if (filter_ == prev_filter_)
     return;
@@ -62,15 +67,14 @@ const Handler::timep_t& Handler::getExpiry() const {
   return expires_;
 }
 
+
 void Handler::setIndex(uint32_t idx) {
   index_ = idx;
 }
 
-
 void Handler::addFilter(Handler::filt_t f) {
   filter_ |= f;
 }
-
 void Handler::delFilter(Handler::filt_t f) {
   filter_ &= ~f;
 }
