@@ -48,7 +48,7 @@ bool ReadRequest::checkError(Connection& connection) {
     error_ = 505; // Http version not supported
   else
    return false;
-  return true;
+  return error_ != 0;
 }
 
 void ReadRequest::onDone(Connection& connection) {
@@ -60,8 +60,9 @@ void ReadRequest::onDone(Connection& connection) {
       return rq.execRequest(path, route->second);
     }
     error_ = 404;
-    rq.handleError_(error_);
   }
+  if (error_ != 0)
+    rq.handleError_(error_);
 }
 
 int ReadRequest::use_line(Connection& connection, std::string& line) {
