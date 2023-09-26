@@ -189,7 +189,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     close(pipe_in[1]);
     close(pipe_out[0]);
     close(pipe_out[1]);
-    char** argv = {nullptr};
+    char* argv[1] = {nullptr};
     execve(Cgi::getScriptName(path).c_str(), argv, envp);
     // if we get here execve failed
     Log::error("executing CGI failed: ", strerror(errno), '\n');

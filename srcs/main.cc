@@ -9,5 +9,6 @@ int main(int argc, char* argv[]) {
     server.loop();
   } catch (const std::exception& ex) {
     Log::error("Uncaught exception: ", ex.what());
+    return 1;
   }
 }
