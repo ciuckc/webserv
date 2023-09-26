@@ -32,5 +32,6 @@ class RequestHandler {
   void handleFile_(FileInfo& file_info, const std::string& path);
   void handleRedir_(const ConfigRoute& route);
   void deleteFile_(const std::string& path);
+  void handleCgi_(const std::string& path);
   void autoIndex_(const std::string& path);
 };

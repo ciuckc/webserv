@@ -73,10 +73,9 @@ void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& rout
       return;
     }
   }
-  if (route.isAutoIndex()){
+  if (route.isAutoIndex()) {
     autoIndex_(path);
-  }
-  else {
+  } else {
     handleError_(403);
   }
 }
