@@ -114,14 +114,14 @@ std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& 
   // this will always work (std::string::npos + 1 == 0)
   const size_t val_start = line.find_first_not_of(" \t", sep + 1);
 
-  if (val_start > val_end) {
+    if (val_start > val_end) {
     error_ = 400;
     return {};
   }
   if (sep != std::string::npos) {
     size_t key_start = line.find_first_not_of(" \t");
     size_t key_end = line.find_last_not_of(" \t", sep - 1);
-    if (key_start > key_end) {
+    if (sep == 0 || key_start > key_end) {
       error_ = 400;
       return {};
     }
@@ -170,10 +170,16 @@ const ReadRequest::header_lambda_map ReadRequest::hhooks_ = {{
     HEADER_HOOK("content-length", {
       (void)connection;
       char *pos;
+      if (value[0] == '-')
+        return 400;
       size_t content_length = std::strtoul(value.data(), &pos, 10);
       if ((size_t)(pos - value.data()) != value.size())
         return 400;
       request.request_.setContentLength(content_length);
       return 0;
+    }),
+    HEADER_HOOK("transfer-encoding", {
+      (void) connection; (void) value; (void) request;
+      return 501;
     })}, WS::case_cmp_less};
 
