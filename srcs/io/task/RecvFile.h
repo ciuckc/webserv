@@ -7,6 +7,7 @@
 class RecvFile : public ITask {
  public:
   RecvFile(int fd, size_t size) : fd_(fd), remaining_(size) {};
+  ~RecvFile() override { close(fd_); }
 
   WS::IOStatus operator()(Connection& connection) override {
     auto& buffer = connection.getInBuffer();
@@ -23,9 +24,6 @@ class RecvFile : public ITask {
     Log::trace(connection, "RecvFile done\n");
     connection.setInSize();
   };
-
- protected:
-  ~RecvFile() override { close(fd_); }
 
  private:
   int fd_;

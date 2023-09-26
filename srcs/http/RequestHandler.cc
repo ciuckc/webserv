@@ -16,6 +16,7 @@
 #include "io/task/DiscardBody.h"
 #include "io/task/SpliceOut.h"
 #include "io/task/SpliceIn.h"
+#include "io/task/RecvFile.h"
 
 void RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
 {
@@ -33,6 +34,8 @@ void RequestHandler::execRequest(const std::string& path, const ConfigRoute& rou
 
   if (!route.isMethodAllowed(request_.getMethod())) {
     return handleError_(405);
+  } else if (request_.getMethod() == HTTP::PUT) {
+    return handlePut_(path, route);
   } else if (route.getRedir().length() != 0) {
     return handleRedir_(route);
   } else if (util::getExtension(path) == "cgi") {
@@ -44,7 +47,7 @@ void RequestHandler::execRequest(const std::string& path, const ConfigRoute& rou
   } else if (s.isDir()) {
     handleDir_(path, route, s);
   } else if (s.isFile()) {
-    handleFile_(s, path);
+    handleFile_(path, s);
   }
 }
 
@@ -59,9 +62,7 @@ void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& rout
     if (util::getExtension(file) == "cgi" && access(actual_file.c_str(), X_OK) == 0) {
       return handleCgi_(actual_file);
     } else if (access(actual_file.c_str(), R_OK) == 0 && file_info.open(actual_file.data())) {
-      if (request_.getMethod() == HTTP::POST)
-        return handleError_(405);
-      return handleFile_(file_info, actual_file);
+      return handleFile_(actual_file, file_info);
     }
   }
   if (route.isAutoIndex()) {
@@ -77,7 +78,7 @@ void RequestHandler::autoIndex_(const std::string& path)
   std::string name;
   DIR* dir = opendir(path.c_str());
   if (dir == nullptr)
-    return handleError_(500);
+    return handleFileError_();
 
   struct dirent* entry = readdir(dir);
   body << "<html>" << '\n' << "<body>" << '\n';
@@ -114,27 +115,15 @@ void RequestHandler::deleteFile_(const std::string& path)
   connection_.enqueueResponse(std::forward<Response>(builder.build()));
 }
 
-void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path) {
+void RequestHandler::handleFile_(const std::string& path, FileInfo& file_info) {
   if (request_.getMethod() == HTTP::POST)
     return handleError_(405);
   else if (request_.getMethod() == HTTP::DELETE)
     return deleteFile_(path);
 
   int fd = open(path.c_str(), O_RDONLY);
-  if (fd == -1) {
-    switch (errno) {
-      case EACCES:
-      case EISDIR:
-        handleError_(403);
-        return;
-      case ENOENT:
-        handleError_(404);
-        return;
-      default:
-        handleError_(500);
-        return;
-    }
-  }
+  if (fd == -1)
+    return handleFileError_();
 
   auto builder = Response::builder();
   builder.message(200)
@@ -202,4 +191,40 @@ void RequestHandler::handleRedir_(const ConfigRoute& route) {
   connection_.addTask(std::move(perr.second));
   if (request_.getContentLength() != 0)
     connection_.addTask(std::make_unique<DiscardBody>(request_.getContentLength()));
+}
+
+void RequestHandler::handlePut_(const std::string& path, const ConfigRoute& route) {
+  const std::string& dir = route.getUploadDirPath();
+  if (dir.empty())
+    return handleError_(405); // not gonna do absolute path for this, kinda sketchy
+  std::string file = dir;
+  file += std::string_view(path).substr(dir[dir.size() - 1] == '/'); // no //
+  int fd;
+  bool created = access(file.c_str(), F_OK) != 0;
+  if (created)
+    fd = open(file.c_str(), O_CREAT | O_WRONLY, 0644);
+  else
+    fd = open(file.c_str(), O_TRUNC | O_WRONLY);
+  if (fd < 0)
+    return handleFileError_();
+  connection_.addTask(std::make_unique<RecvFile>(fd, request_.getContentLength()));
+  connection_.enqueueResponse(Response::builder()
+                .message(created ? 201 : 200)
+                .header("Content-Location", path)
+                .build());
+}
+
+void RequestHandler::handleFileError_() {
+  switch (errno) {
+    case EACCES:
+    case EISDIR:
+      handleError_(403);
+      return;
+    case ENOENT:
+      handleError_(404);
+      return;
+    default:
+      handleError_(500);
+      return;
+  }
 }
