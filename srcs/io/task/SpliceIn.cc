@@ -39,7 +39,7 @@ void SpliceIn::setFail() {
 
 SpliceIn::OHandler::OHandler(Server& server, SpliceIn& parent, Connection& conn, int pipe_fd, size_t len)
     : Handler(pipe_fd, 0, 1000), server_(server), parent_(parent), connection_(conn), buffer_(connection_.getInBuffer()),
-      remaining_(len), name_(Str::join("SpliceOut::IHandler(", std::to_string(pipe_fd), ")")) {}
+      remaining_(len), name_(Str::join("SpliceIn::OHandler(", std::to_string(pipe_fd), ")")) {}
 
 SpliceIn::OHandler::~OHandler() {
   close(fd_);

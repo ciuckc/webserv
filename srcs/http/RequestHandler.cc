@@ -15,6 +15,7 @@
 #include "io/task/SimpleBody.h"
 #include "io/task/DiscardBody.h"
 #include "io/task/SpliceOut.h"
+#include "io/task/SpliceIn.h"
 
 void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
 {
@@ -53,7 +54,7 @@ void  RequestHandler::execRequest(const std::string& path, const ConfigRoute& ro
 
 bool RequestHandler::legalMethod_(const ConfigRoute& route) const
 {
-  if (request_.getMethod() == HTTP::POST && request_.getUri().find(".cgi")) { // not %100 waterproof
+  if (request_.getMethod() == HTTP::POST && request_.getUri().find(".cgi") == std::string::npos) { // not %100 waterproof
     return (false);
   }
   return (route.isMethodAllowed(request_.getMethod()));
@@ -166,10 +167,15 @@ void RequestHandler::handleFile_(FileInfo& file_info, const std::string& path)
 
 void RequestHandler::handleCgi_(const std::string& path)
 {
-  // int pipe_in[2];
+  int pipe_in[2];
   int pipe_out[2];
-  if (pipe(pipe_out) == -1) {
+  if (pipe(pipe_out) == -1 || pipe(pipe_in) == -1) {
     return (handleError_(500));
+  }
+  size_t len = request_.getContentLength();
+  if (len != 0) {
+    Log::trace("Reading request body of length: ", len, " into pipe\n");
+    connection_.addTask(std::make_unique<SpliceIn>(connection_.getServer(), connection_, pipe_in[1], len));
   }
   connection_.addTask(std::make_unique<SpliceOut>(connection_.getServer(), connection_, path, cfg_, pipe_out[0]));
   char** envp = Cgi::makeEnv(request_, path, cfg_);
@@ -178,7 +184,10 @@ void RequestHandler::handleCgi_(const std::string& path)
     return (handleError_(500));
   }
   if (pid == 0) { // child
+    dup2(pipe_in[0], STDIN_FILENO);
     dup2(pipe_out[1], STDOUT_FILENO);
+    close(pipe_in[0]);
+    close(pipe_in[1]);
     close(pipe_out[0]);
     close(pipe_out[1]);
     char** argv = {nullptr};
@@ -188,6 +197,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     exit(1);
   }
   // parent
+  close(pipe_in[0]);
   close(pipe_out[1]);
   Cgi::delEnv(envp);
   Log::trace("Cgi setup done\n");
