@@ -60,13 +60,13 @@ bool RequestHandler::legalMethod_(const ConfigRoute& route) const
   return (route.isMethodAllowed(request_.getMethod()));
 }
 
-void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& route, FileInfo& file_info)
-{
+void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& route, FileInfo& file_info) {
   if (request_.getMethod() == HTTP::DELETE) {
     return handleError_(400);
   }
+  std::string actual_path = (*path.rbegin() == '/') ? path : path + '/';
   for (const auto& file : route.getIndexFiles()) {
-    std::string actual_file = path + file;
+    std::string actual_file = actual_path + file;
     if (!access(actual_file.c_str(), R_OK)) {
       file_info.open(actual_file.data());
       handleFile_(file_info, actual_file);

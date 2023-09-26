@@ -12,6 +12,8 @@ class SendFile : public OTask {
   }
 
   WS::IOStatus operator()(Connection& connection) override {
+    if (size_ == 0)
+      return WS::IO_GOOD;
     auto& buffer = connection.getOutBuffer();
     if (buffer.capacity() != RingBuffer::file_buf_size_)
       connection.setOutSize(RingBuffer::file_buf_size_);
