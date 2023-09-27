@@ -3,12 +3,12 @@
 #include <limits>
 
 ConfigServer::ConfigServer()
-    : server_name_{"localhost"},
-      port_(8080),
-      client_max_body_size_(std::numeric_limits<size_t>::max()),
-      routes_(),
+    : routes_(),
       error_pages_(),
       files_{},
+      server_name_{"localhost"},
+      client_max_body_size_(std::numeric_limits<size_t>::max()),
+      port_(8080),
       auto_index_(false) {}
 
 void ConfigServer::setPort(uint16_t port) {

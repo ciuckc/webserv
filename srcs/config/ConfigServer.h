@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <sstream>
 #include <string>
@@ -9,6 +10,9 @@
 #include "ConfigRoute.h"
 #include "util/Log.h"
 
+/**
+ * @brief The ConfigServer class is a container for all the server related data.
+ */
 class ConfigServer {
  public:
   ConfigServer();
@@ -38,11 +42,11 @@ class ConfigServer {
   [[nodiscard]] bool getAutoIndex() const;
 
  private:
-  std::vector<std::string> server_name_;
-  uint16_t port_;
-  std::size_t client_max_body_size_;
-  routes_t routes_;
-  std::map<int, std::string> error_pages_;
-  index_files_t files_;
-  bool auto_index_;
+  routes_t routes_{};
+  std::map<int, std::string> error_pages_{};
+  index_files_t files_{};
+  std::vector<std::string> server_name_{};
+  std::size_t client_max_body_size_{std::numeric_limits<size_t>::max()};
+  uint16_t port_{8080};
+  bool auto_index_{false};
 };
