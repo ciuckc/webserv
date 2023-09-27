@@ -174,9 +174,10 @@ bool Connection::awaitRequest() {
 void Connection::enqueueResponse(Response&& response) {
   if (out_queue_.empty())
     addFilter(EventQueue::out);
-  if (!keep_alive_)
+  if (keep_alive_)
+    response.setKeepAlive(WS::timeout, WS::max_requests);
+  else
     response.addHeader("connection: close\r\n");
-  response.setKeepAlive(WS::timeout, WS::max_requests);
   addTask(std::make_unique<SendResponse>(std::forward<Response>(response)));
 }
 
