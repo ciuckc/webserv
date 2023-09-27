@@ -30,7 +30,7 @@ class ConfigParse {
  public:
   class InvalidDirective : public std::exception {
    public:
-    explicit InvalidDirective(std::string  argument = "") noexcept : reason_(std::move(argument)){};
+    explicit InvalidDirective(std::string argument = "") noexcept : reason_(std::move(argument)){};
     const char* what() const noexcept override;
 
    private:
@@ -49,7 +49,7 @@ class ConfigParse {
   void splitOnSymbols(Tokens& tokens);
   Config& semanticParse(const Tokens& tokens, Config& cfg);
 
-  bool isDirective(const TokensConstIter& curr);
+  bool isServerDirective(const TokensConstIter& curr);
   bool isLocationDirective(const TokensConstIter& curr);
 
   template <typename T, typename Map>
@@ -72,7 +72,7 @@ class ConfigParse {
   bool rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
   bool allowedMethodsParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
   bool redirectParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
-  bool uploadDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
+  bool uploadCgiDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
 
   const Lines& lines_;
   DirectiveFuncMap map_;

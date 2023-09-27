@@ -61,7 +61,7 @@ ConfigParse::ConfigParse(const Lines& file_data) : lines_(file_data), map_(), lo
 
   this->loc_map_ = {{"index", &ConfigParse::indexParse},       {"autoindex", &ConfigParse::autoIndexParse},
                     {"root", &ConfigParse::rootParse},         {"allowed_methods", &ConfigParse::allowedMethodsParse},
-                    {"redirect", &ConfigParse::redirectParse}, {"cgi_upload_dir", &ConfigParse::uploadDirParse}};
+                    {"redirect", &ConfigParse::redirectParse}, {"cgi_upload_dir", &ConfigParse::uploadCgiDirParse}};
 }
 
 Config& ConfigParse::parse(Config& cfg) {
@@ -87,7 +87,7 @@ Config& ConfigParse::semanticParse(const Tokens& tokens, Config& cfg) {
   return cfg;
 }
 
-bool ConfigParse::isDirective(const TokensConstIter& curr) {
+bool ConfigParse::isServerDirective(const TokensConstIter& curr) {
   std::unordered_map<std::string_view, bool> directives = {
       {"listen", true}, {"server_name", true}, {"location", true}, {"error_page", true}, {"client_max_body_size", true},
   };
@@ -96,8 +96,8 @@ bool ConfigParse::isDirective(const TokensConstIter& curr) {
 
 bool ConfigParse::isLocationDirective(const TokensConstIter& curr) {
   std::unordered_map<std::string_view, bool> location_directives = {{"index", true},    {"autoindex", true},
-                                                               {"root", true},     {"allowed_methods", true},
-                                                               {"redirect", true}, {"cgi_upload_dir", true}};
+                                                                    {"root", true},     {"allowed_methods", true},
+                                                                    {"redirect", true}, {"cgi_upload_dir", true}};
   return location_directives[*curr];
 }
 
@@ -147,7 +147,7 @@ bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, 
 }
 
 bool ConfigParse::directivesParse(TokensConstIter& curr, const TokensConstIter& end, ConfigServer& cfg_server) {
-  for (; curr != end && isDirective(curr); ++curr) {
+  for (; curr != end && isServerDirective(curr); ++curr) {
     if (!dispatchFunc<ConfigServer, DirectiveFuncMap>(curr, end, cfg_server, map_)) {
       if (curr == end) {
         Log::error("Dispatch returned false for token [ NULL ]!\n");
@@ -234,7 +234,7 @@ bool ConfigParse::errorPageParse(TokensConstIter& curr, const TokensConstIter& e
   }
   std::vector<int> error_codes{};
   for (; curr != end && isPositiveInt(std::string(*curr)); ++curr) {
-    auto number = static_cast<int>(std::stoul(std::string(*curr))); // todo: don't parse value multiple times
+    auto number = static_cast<int>(std::stoul(std::string(*curr)));  // todo: don't parse value multiple times
     if (number < 300 || number > 599) {
       Log::error("Value in \"error_page\" directive must be between 300 and 599.\n");
       return false;
@@ -426,7 +426,7 @@ bool ConfigParse::redirectParse(TokensConstIter& curr, const TokensConstIter& en
   return true;
 }
 
-bool ConfigParse::uploadDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location) {
+bool ConfigParse::uploadCgiDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location) {
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"upload_dir\" directive.\n");
