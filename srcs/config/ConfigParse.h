@@ -72,7 +72,6 @@ class ConfigParse {
   bool rootParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
   bool allowedMethodsParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
   bool redirectParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
-  bool uploadCgiDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location);
 
   const Lines& lines_;
   DirectiveFuncMap map_;
