@@ -45,7 +45,7 @@ class ConfigServer {
   routes_t routes_{};
   std::map<int, std::string> error_pages_{};
   index_files_t files_{};
-  std::vector<std::string> server_name_{};
+  std::vector<std::string> server_name_{"localhost"};
   std::size_t client_max_body_size_{std::numeric_limits<size_t>::max()};
   uint16_t port_{8080};
   bool auto_index_{false};
