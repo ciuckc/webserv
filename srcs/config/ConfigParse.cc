@@ -42,7 +42,7 @@ ConfigParse::ConfigParse(const Lines& file_data) : lines_(file_data), map_(), lo
 
   this->loc_map_ = {{"index", &ConfigParse::indexParse},       {"autoindex", &ConfigParse::autoIndexParse},
                     {"root", &ConfigParse::rootParse},         {"allowed_methods", &ConfigParse::allowedMethodsParse},
-                    {"redirect", &ConfigParse::redirectParse}, {"cgi_upload_dir", &ConfigParse::uploadCgiDirParse}};
+                    {"redirect", &ConfigParse::redirectParse}};
 }
 
 Config& ConfigParse::parse(Config& cfg) {
