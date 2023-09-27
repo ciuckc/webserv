@@ -1,5 +1,6 @@
 #include "ConfigServer.h"
 
+#include <algorithm>
 #include <limits>
 
 ConfigServer::ConfigServer()
@@ -47,4 +48,14 @@ const ConfigServer::routes_t& ConfigServer::getRoutes() const {
 
 const std::map<int, std::string>& ConfigServer::getErrorPages() const {
   return error_pages_;
+}
+
+ConfigServer::routes_t::const_iterator ConfigServer::matchRoute(std::string& path) const {
+  const auto routeMatches = [&path](auto& route)->bool {
+    return (!path.compare(0, route.first.length(), route.first));
+  };
+  auto found = std::find_if(routes_.begin(), routes_.end(), routeMatches);
+  if (found != routes_.end())
+    path.replace(0, found->first.size(), found->second.getRoot());
+  return found;
 }

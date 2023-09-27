@@ -15,32 +15,13 @@
 
 namespace {
 
-bool isPositiveInt(const std::string& str) {
-  if (str.find_first_not_of("0123456789") != std::string::npos) {
-    return false;
-  }
-  if (str.size() > 10) {
-    return false;
-  }
-  auto num = std::stoul(str);
-  if (num > std::numeric_limits<int>::max()) {
-    return false;
-  }
-  return true;
-}
-
 bool portParse(const std::string& portstr, uint16_t& port) {
-  if (portstr.size() > 5 || portstr.empty()) {
-    Log::error("Port number size is invalid.\n");
+  size_t end_idx;
+  auto num = std::stoi(portstr, &end_idx);
+  if (num <= 0 || num > std::numeric_limits<uint16_t>::max()) {
+    Log::error("Port must be in range of 1 to 65535.\n");
     return false;
-  }
-  if (portstr.find_first_not_of("0123456789") != std::string::npos) {
-    Log::error("Invalid character found in port number.\n");
-    return false;
-  }
-  auto num = std::stoul(portstr);
-  if ((num != 80 && num != 8080) && (num > std::numeric_limits<uint16_t>::max() || num < 49152)) {
-    Log::error("Port must be 80 or 8080 or be in range of 49152 to 65535.\n");
+  } else if (portstr.size() != end_idx) {
     return false;
   }
   port = num;
@@ -110,7 +91,7 @@ bool ConfigParse::dispatchFunc(TokensConstIter& curr, const TokensConstIter& end
   return (this->*function_pointer)(curr, end, cfg);
 }
 
-bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, Config& cfg) {
+bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter& end, Config& cfg) {
   if (*curr != "server") {
     Log::error("Expecting \"server\" directive.\n");
     return false;
@@ -140,6 +121,10 @@ bool ConfigParse::serverParse(TokensConstIter& curr, const TokensConstIter end, 
   }
   if (*curr != "}") {
     Log::error("Expecting \"}\" in server block.\n");
+    return false;
+  }
+  if (cfg_server.getPort() == 0) {
+    Log::error("Missing \"listen\" field in server block.\n");
     return false;
   }
   cfg.addServer(std::move(cfg_server));
@@ -233,13 +218,18 @@ bool ConfigParse::errorPageParse(TokensConstIter& curr, const TokensConstIter& e
     return false;
   }
   std::vector<int> error_codes{};
-  for (; curr != end && isPositiveInt(std::string(*curr)); ++curr) {
-    auto number = static_cast<int>(std::stoul(std::string(*curr)));  // todo: don't parse value multiple times
-    if (number < 300 || number > 599) {
+  for (; curr != end && curr->size() == 3; ++curr) {
+    size_t end_idx;
+    auto num = std::stoi(std::string(*curr), &end_idx);
+    if (num < 300 || num >= 600) {
       Log::error("Value in \"error_page\" directive must be between 300 and 599.\n");
       return false;
     }
-    error_codes.emplace_back(number);
+    if (curr->size() != end_idx) {
+      Log::error("Value in \"error_page\" is invalid\n");
+      return false;
+    }
+    error_codes.push_back(num);
   }
   if (curr == end) {
     Log::error("Unexpected end in \"error_page\" directive.\n");
@@ -289,13 +279,13 @@ bool ConfigParse::locationParse(TokensConstIter& curr, const TokensConstIter& en
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;
   }
+  ConfigRoute new_route;
   for (; curr != end && isLocationDirective(curr); ++curr) {
-    ConfigRoute new_route{};
     if (!dispatchFunc<ConfigRoute, LocDirectiveMap>(curr, end, new_route, loc_map_)) {
       return false;
     }
-    cfg_server.addRoute(std::string(path), std::move(new_route));
   }
+  cfg_server.addRoute(std::string(path), std::move(new_route));
   if (curr == end) {
     Log::error("Unexpected end in \"location\" directive.\n");
     return false;
@@ -335,7 +325,7 @@ bool ConfigParse::indexParse(TokensConstIter& curr, const TokensConstIter& end, 
   return true;
 }
 
-bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& lcoation) {
+bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location) {
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"autoindex\" directive.\n");
@@ -345,7 +335,7 @@ bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Value of \"autoindex\" directive must be either true or false.\n");
     return false;
   }
-  bool autoindex{*curr == "true" ? true : false};
+  bool autoindex = *curr == "true";
   curr++;
   if (curr == end) {
     Log::error("Unexpected end in \"autoindex\" directive.\n");
@@ -355,7 +345,7 @@ bool ConfigParse::autoIndexParse(TokensConstIter& curr, const TokensConstIter& e
     Log::error("Expected \";\" in \"autoindex\" directive.\n");
     return false;
   }
-  lcoation.setAutoIndex(autoindex);
+  location.setAutoIndex(autoindex);
   return true;
 }
 
@@ -385,12 +375,9 @@ bool ConfigParse::allowedMethodsParse(TokensConstIter& curr, const TokensConstIt
     return false;
   }
   for (; curr != end && *curr != ";"; ++curr) {
-    if (*curr == "GET") {
-      location.addAcceptedMethod(HTTP::GET);
-    } else if (*curr == "DELETE") {
-      location.addAcceptedMethod(HTTP::DELETE);
-    } else if (*curr == "POST") {
-      location.addAcceptedMethod(HTTP::POST);
+    HTTP::Method method = HTTP::parseMethod(*curr);
+    if (method != HTTP::INVALID) {
+      location.addAcceptedMethod(method);
     } else {
       Log::error("Unknown value in \"allowed_methods\" directive.\n");
       return false;

@@ -1,47 +1,55 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <fstream>
-#include <unordered_map>
+#include <map>
+#include <list>
 
 static struct MIME {
  public:
-  const std::string& getType(const std::string& extension) {
-    static const std::string empty;
+  std::string_view getType(std::string_view extension) {
     if (!have_read_file_)
       readTypes();
-    if (types_.empty())
-      return empty;
-    auto it = types_.find(extension);
-    if (it == types_.end())
-      return empty;
+    if (extension.empty() || mimes_.empty())
+      return {};
+    auto it = mimes_.find(extension);
+    if (it == mimes_.end())
+      return {};
     return it->second;
   }
  private:
-  std::unordered_map<std::string, std::string> types_;
+  std::map<std::string, std::string_view, std::less<>> mimes_;
+  std::list<std::string> types_; // so we don't need to duplicate types
   bool have_read_file_ = false;
 
+  static bool skip_ws(std::string_view& view) {
+    size_t ws_end = view.find_first_not_of(" \t");
+    if (ws_end == std::string::npos)
+      return false;
+    view.remove_prefix(ws_end);
+    return true;
+  }
   void readTypes() {
     have_read_file_ = true;
 
-    std::ifstream mime_stream(WS::mimes_file);
+    std::ifstream mime_stream(WS::mimes_file); // french clowns
     std::string line;
     while (std::getline(mime_stream, line)) {
       if (line.empty() || line[0] == '#')
         continue;
-      size_t key_len = line.find_first_of(" \t");
-      if (key_len == std::string::npos) // just key
+      size_t mime_len = line.find_first_of(" \t");
+      if (mime_len == std::string::npos) // just key
         continue;
-      std::string mime = line.substr(0, key_len);
-
-      size_t val_end = key_len;
-      size_t val_start;
-      while ((val_start = line.find_first_not_of(" \t", val_end)) != std::string::npos) {
-        val_end = line.find_first_of(" \t", val_start);
-        size_t len = val_end == std::string::npos ? std::string::npos : val_end - val_start;
-        types_[line.substr(val_start, len)] = mime;
-        if (val_end == std::string::npos)
+      std::string_view mime = types_.emplace_back(line, 0, mime_len);
+      std::string_view sv(line);
+      sv.remove_prefix(mime_len);
+      while (skip_ws(sv)) {
+        size_t len = sv.find_first_of(" \t");
+        mimes_.emplace(std::string(sv.substr(0, len)), mime);
+        if (len == std::string::npos)
           break;
+        sv.remove_prefix(len);
       }
     }
   }

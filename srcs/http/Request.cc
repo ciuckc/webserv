@@ -1,19 +1,5 @@
 #include "Request.h"
 
-Request::Request(const Request& other) : Message(other) {
-  method_ = other.method_;
-  uri_ = other.uri_;
-}
-
-Request& Request::operator=(const Request& rhs) {
-  if (this == &rhs)
-    return *this;
-  Message::operator=(rhs);
-  method_ = rhs.method_;
-  uri_ = rhs.uri_;
-  return *this;
-}
-
 static bool next_word(std::string_view& view, std::string_view& word) {
   size_t start = view.find_first_not_of(" \t\r\n");
   if (start == std::string::npos)
@@ -32,10 +18,7 @@ bool Request::setMessage(const std::string& msg) {
   std::string_view word;
   if (!next_word(view, word))
     return false;
-  if (word == "GET")
-    method_ = HTTP::GET;
-  else if (word == "POST")
-    method_ = HTTP::POST;
+  method_ = HTTP::parseMethod(word);
 
   if (!next_word(view, word))
     return false;
@@ -50,6 +33,16 @@ bool Request::setMessage(const std::string& msg) {
   return true;
 }
 
+void Request::setMethod(HTTP::Method method)
+{
+  method_ = method;
+}
+
+void Request::setVersion(HttpVersion version)
+{
+  version_ = version;
+}
+
 HTTP::Method Request::getMethod() const {
   return method_;
 }
@@ -62,7 +55,7 @@ void Request::setUri(const std::string& uri) {
   this->uri_ = uri;
 }
 
-const std::string Request::getPath() const {
+std::string Request::getPath() const {
   return (uri_.substr(uri_.find('/'), uri_.find('?')));
 }
 

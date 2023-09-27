@@ -1,6 +1,8 @@
 #pragma once
 
 #include "IOTask.h"
+#include "io/Connection.h"
+#include "util/Log.h"
 
 class SendFile : public OTask {
  public:
@@ -9,14 +11,22 @@ class SendFile : public OTask {
     close(fd_);
   }
 
-  bool operator()(Connection& connection) override {
-    if (connection.getBuffer().readFrom(fd_, size_))
-      return size_ == 0;
-    return false;
+  WS::IOStatus operator()(Connection& connection) override {
+    if (size_ == 0)
+      return WS::IO_GOOD;
+    auto& buffer = connection.getOutBuffer();
+    if (buffer.capacity() != RingBuffer::file_buf_size_)
+      connection.setOutSize(RingBuffer::file_buf_size_);
+    if (buffer.read(fd_, size_) != WS::IO_GOOD) {
+      Log::error(connection, "SendFile failed\n");
+      return WS::IO_FAIL;
+    }
+    return size_ == 0 ? WS::IO_GOOD : WS::IO_AGAIN;
   };
 
   void onDone(Connection& connection) override {
     Log::trace(connection, "Sendfile done\n");
+    connection.setOutSize();
   };
 
  private:
