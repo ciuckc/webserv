@@ -7,7 +7,7 @@ ConfigServer::ConfigServer()
     : routes_(),
       error_pages_(),
       files_{},
-      server_name_{"localhost"},
+      server_name_{},
       client_max_body_size_(std::numeric_limits<size_t>::max()),
       port_(8080),
       auto_index_(false) {}
