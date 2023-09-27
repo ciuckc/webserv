@@ -412,26 +412,6 @@ bool ConfigParse::redirectParse(TokensConstIter& curr, const TokensConstIter& en
   }
   return true;
 }
-
-bool ConfigParse::uploadCgiDirParse(TokensConstIter& curr, const TokensConstIter& end, ConfigRoute& location) {
-  curr++;
-  if (curr == end) {
-    Log::error("Unexpected end in \"upload_dir\" directive.\n");
-    return false;
-  }
-  location.setUploadDir(std::string(*curr));
-  curr++;
-  if (curr == end) {
-    Log::error("Unexpected end in \"upload_dir\" directive.\n");
-    return false;
-  }
-  if (*curr != ";") {
-    Log::error("Expected \";\" in \"upload_dir\" directive.\n");
-    return false;
-  }
-  return true;
-}
-
 void ConfigParse::splitOnWhiteSpace(const Lines& lines, Tokens& tokens) {
   constexpr const char* white_space = "\t ";
   std::string_view cur;
