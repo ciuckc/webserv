@@ -1,0 +1,4 @@
+delete without preceding '/' gives exception, should be 404?
+failing execve hangs instead of returning 500
+what should happen when location header + body???
+unsupported method should return 501

@@ -121,7 +121,7 @@ WS::IOStatus RingBuffer::write(int fd, size_t& max) {
 
 bool RingBuffer::getline(std::string& dst) {
   if (empty_)
-    abort();
+    return (false);
 
   std::string_view strs[3];
   auto chunk_n = getOutVecs(strs);

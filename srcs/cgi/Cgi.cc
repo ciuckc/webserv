@@ -92,7 +92,7 @@ Cgi::Cgi(const ConfigServer& config_server, Connection& conn, const std::string&
 void Cgi::act(const std::string& headers)
 {
   // document response
-  if (strncasecmp("Content-Type", headers.c_str(), 12) == 0) {
+  if (strncasecmp("Content-Type", headers.c_str(), 12) == 0 && strncasecmp("Location", headers.c_str(), 8)) {
     makeDocumentResponse_(headers);
   }
   // client-redir response
@@ -144,9 +144,8 @@ void Cgi::makeClientRedirResponse_(const std::string& headers)
   res.setMessage(302);
   res.addHeader("Location", findHeaderValue_(headers, "Location: "));
   if (conn_.getOutBuffer().empty()) {
-    // add body here!!!!!
+    // add content type
   }
-  // conn_.enqueueResponse(std::move(res));
   bufferResponse_(res);
 }
 
