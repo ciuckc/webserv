@@ -207,11 +207,7 @@ void RequestHandler::handlePut_(const std::string& path, const ConfigRoute& rout
     fd = open(file.c_str(), O_TRUNC | O_WRONLY);
   if (fd < 0)
     return handleFileError_();
-  connection_.addTask(std::make_unique<RecvFile>(fd, request_.getContentLength()));
-  connection_.enqueueResponse(Response::builder()
-                .message(created ? 201 : 200)
-                .header("Content-Location", path)
-                .build());
+  connection_.addTask(std::make_unique<RecvFile>(path, fd, request_.getContentLength(), created));
 }
 
 void RequestHandler::handleFileError_() {
