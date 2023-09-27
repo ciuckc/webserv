@@ -43,6 +43,6 @@ class ConfigServer {
   index_files_t files_;
   std::vector<std::string> server_name_;
   std::size_t client_max_body_size_;
-  uint16_t port_{8080};
-  bool auto_index_{false};
+  uint16_t port_;
+  bool auto_index_;
 };
