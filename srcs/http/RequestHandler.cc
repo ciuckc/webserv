@@ -155,7 +155,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     connection_.addTask(std::make_unique<SpliceIn>(connection_.getServer(), connection_, pipe_in[1], len));
   }
   connection_.addTask(std::make_unique<SpliceOut>(connection_.getServer(), connection_, path, cfg_, pipe_out[0]));
-  char** envp = Cgi::makeEnv(request_, path, cfg_);
+  char** envp = Cgi::makeEnv(request_, path, connection_.getAddress(), cfg_);
   int pid = fork();
   if (pid < 0) {
     return (handleError_(500));
@@ -181,7 +181,7 @@ void RequestHandler::handleCgi_(const std::string& path)
 }
 
 void RequestHandler::handleError_(int error) {
-  auto perr = http::createError(cfg_, error);
+  auto perr = HTTP::createError(cfg_, error);
   connection_.enqueueResponse(std::move(perr.first));
   connection_.addTask(std::move(perr.second));
   if (request_.getContentLength() != 0)
@@ -189,7 +189,7 @@ void RequestHandler::handleError_(int error) {
 }
 
 void RequestHandler::handleRedir_(const ConfigRoute& route) {
-  auto perr = http::createError(cfg_, 302);
+  auto perr = HTTP::createError(cfg_, 302);
   perr.first.addHeader("Location", route.getRedir());
   connection_.enqueueResponse(std::move(perr.first));
   connection_.addTask(std::move(perr.second));
