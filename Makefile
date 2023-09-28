@@ -1,16 +1,19 @@
-NAME = build
+NAME = webserv
 
 all: $(NAME)
 
 $(NAME):
 	cmake -B build -S .
-	make -C build
+	make -C build -j
 
 clean:
+	rm -rf ./build/CMakeFiles/webserv.dir/
+
+fclean:
 	make clean -C build
 	rm -rf build
 
-re: clean
+re: fclean
 	$(MAKE)
 
-.PHONY: re clean build
+.PHONY: re fclean clean build $(NAME)
