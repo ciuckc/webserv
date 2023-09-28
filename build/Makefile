@@ -153,6 +153,30 @@ srcs/Server.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/Server.cc.s
 .PHONY : srcs/Server.cc.s
 
+srcs/cgi/Cgi.o: srcs/cgi/Cgi.cc.o
+.PHONY : srcs/cgi/Cgi.o
+
+# target to build an object file
+srcs/cgi/Cgi.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.o
+.PHONY : srcs/cgi/Cgi.cc.o
+
+srcs/cgi/Cgi.i: srcs/cgi/Cgi.cc.i
+.PHONY : srcs/cgi/Cgi.i
+
+# target to preprocess a source file
+srcs/cgi/Cgi.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.i
+.PHONY : srcs/cgi/Cgi.cc.i
+
+srcs/cgi/Cgi.s: srcs/cgi/Cgi.cc.s
+.PHONY : srcs/cgi/Cgi.s
+
+# target to generate assembly for a file
+srcs/cgi/Cgi.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/cgi/Cgi.cc.s
+.PHONY : srcs/cgi/Cgi.cc.s
+
 srcs/config/Config.o: srcs/config/Config.cc.o
 .PHONY : srcs/config/Config.o
 
@@ -248,6 +272,30 @@ srcs/config/ConfigServer.s: srcs/config/ConfigServer.cc.s
 srcs/config/ConfigServer.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/config/ConfigServer.cc.s
 .PHONY : srcs/config/ConfigServer.cc.s
+
+srcs/http/ErrorPage.o: srcs/http/ErrorPage.cc.o
+.PHONY : srcs/http/ErrorPage.o
+
+# target to build an object file
+srcs/http/ErrorPage.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorPage.cc.o
+.PHONY : srcs/http/ErrorPage.cc.o
+
+srcs/http/ErrorPage.i: srcs/http/ErrorPage.cc.i
+.PHONY : srcs/http/ErrorPage.i
+
+# target to preprocess a source file
+srcs/http/ErrorPage.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorPage.cc.i
+.PHONY : srcs/http/ErrorPage.cc.i
+
+srcs/http/ErrorPage.s: srcs/http/ErrorPage.cc.s
+.PHONY : srcs/http/ErrorPage.s
+
+# target to generate assembly for a file
+srcs/http/ErrorPage.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/http/ErrorPage.cc.s
+.PHONY : srcs/http/ErrorPage.cc.s
 
 srcs/http/Message.o: srcs/http/Message.cc.o
 .PHONY : srcs/http/Message.o
@@ -369,30 +417,6 @@ srcs/io/Connection.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Connection.cc.s
 .PHONY : srcs/io/Connection.cc.s
 
-srcs/io/ConnectionBuffer.o: srcs/io/ConnectionBuffer.cc.o
-.PHONY : srcs/io/ConnectionBuffer.o
-
-# target to build an object file
-srcs/io/ConnectionBuffer.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/ConnectionBuffer.cc.o
-.PHONY : srcs/io/ConnectionBuffer.cc.o
-
-srcs/io/ConnectionBuffer.i: srcs/io/ConnectionBuffer.cc.i
-.PHONY : srcs/io/ConnectionBuffer.i
-
-# target to preprocess a source file
-srcs/io/ConnectionBuffer.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/ConnectionBuffer.cc.i
-.PHONY : srcs/io/ConnectionBuffer.cc.i
-
-srcs/io/ConnectionBuffer.s: srcs/io/ConnectionBuffer.cc.s
-.PHONY : srcs/io/ConnectionBuffer.s
-
-# target to generate assembly for a file
-srcs/io/ConnectionBuffer.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/ConnectionBuffer.cc.s
-.PHONY : srcs/io/ConnectionBuffer.cc.s
-
 srcs/io/EventQueue.o: srcs/io/EventQueue.cc.o
 .PHONY : srcs/io/EventQueue.o
 
@@ -416,6 +440,102 @@ srcs/io/EventQueue.s: srcs/io/EventQueue.cc.s
 srcs/io/EventQueue.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/EventQueue.cc.s
 .PHONY : srcs/io/EventQueue.cc.s
+
+srcs/io/Handler.o: srcs/io/Handler.cc.o
+.PHONY : srcs/io/Handler.o
+
+# target to build an object file
+srcs/io/Handler.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Handler.cc.o
+.PHONY : srcs/io/Handler.cc.o
+
+srcs/io/Handler.i: srcs/io/Handler.cc.i
+.PHONY : srcs/io/Handler.i
+
+# target to preprocess a source file
+srcs/io/Handler.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Handler.cc.i
+.PHONY : srcs/io/Handler.cc.i
+
+srcs/io/Handler.s: srcs/io/Handler.cc.s
+.PHONY : srcs/io/Handler.s
+
+# target to generate assembly for a file
+srcs/io/Handler.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Handler.cc.s
+.PHONY : srcs/io/Handler.cc.s
+
+srcs/io/ListenSocket.o: srcs/io/ListenSocket.cc.o
+.PHONY : srcs/io/ListenSocket.o
+
+# target to build an object file
+srcs/io/ListenSocket.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/ListenSocket.cc.o
+.PHONY : srcs/io/ListenSocket.cc.o
+
+srcs/io/ListenSocket.i: srcs/io/ListenSocket.cc.i
+.PHONY : srcs/io/ListenSocket.i
+
+# target to preprocess a source file
+srcs/io/ListenSocket.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/ListenSocket.cc.i
+.PHONY : srcs/io/ListenSocket.cc.i
+
+srcs/io/ListenSocket.s: srcs/io/ListenSocket.cc.s
+.PHONY : srcs/io/ListenSocket.s
+
+# target to generate assembly for a file
+srcs/io/ListenSocket.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/ListenSocket.cc.s
+.PHONY : srcs/io/ListenSocket.cc.s
+
+srcs/io/RingBuffer.o: srcs/io/RingBuffer.cc.o
+.PHONY : srcs/io/RingBuffer.o
+
+# target to build an object file
+srcs/io/RingBuffer.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/RingBuffer.cc.o
+.PHONY : srcs/io/RingBuffer.cc.o
+
+srcs/io/RingBuffer.i: srcs/io/RingBuffer.cc.i
+.PHONY : srcs/io/RingBuffer.i
+
+# target to preprocess a source file
+srcs/io/RingBuffer.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/RingBuffer.cc.i
+.PHONY : srcs/io/RingBuffer.cc.i
+
+srcs/io/RingBuffer.s: srcs/io/RingBuffer.cc.s
+.PHONY : srcs/io/RingBuffer.s
+
+# target to generate assembly for a file
+srcs/io/RingBuffer.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/RingBuffer.cc.s
+.PHONY : srcs/io/RingBuffer.cc.s
+
+srcs/io/Signal.o: srcs/io/Signal.cc.o
+.PHONY : srcs/io/Signal.o
+
+# target to build an object file
+srcs/io/Signal.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Signal.cc.o
+.PHONY : srcs/io/Signal.cc.o
+
+srcs/io/Signal.i: srcs/io/Signal.cc.i
+.PHONY : srcs/io/Signal.i
+
+# target to preprocess a source file
+srcs/io/Signal.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Signal.cc.i
+.PHONY : srcs/io/Signal.cc.i
+
+srcs/io/Signal.s: srcs/io/Signal.cc.s
+.PHONY : srcs/io/Signal.s
+
+# target to generate assembly for a file
+srcs/io/Signal.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/Signal.cc.s
+.PHONY : srcs/io/Signal.cc.s
 
 srcs/io/Socket.o: srcs/io/Socket.cc.o
 .PHONY : srcs/io/Socket.o
@@ -489,6 +609,78 @@ srcs/io/task/SendResponse.cc.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SendResponse.cc.s
 .PHONY : srcs/io/task/SendResponse.cc.s
 
+srcs/io/task/SimpleBody.o: srcs/io/task/SimpleBody.cc.o
+.PHONY : srcs/io/task/SimpleBody.o
+
+# target to build an object file
+srcs/io/task/SimpleBody.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SimpleBody.cc.o
+.PHONY : srcs/io/task/SimpleBody.cc.o
+
+srcs/io/task/SimpleBody.i: srcs/io/task/SimpleBody.cc.i
+.PHONY : srcs/io/task/SimpleBody.i
+
+# target to preprocess a source file
+srcs/io/task/SimpleBody.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SimpleBody.cc.i
+.PHONY : srcs/io/task/SimpleBody.cc.i
+
+srcs/io/task/SimpleBody.s: srcs/io/task/SimpleBody.cc.s
+.PHONY : srcs/io/task/SimpleBody.s
+
+# target to generate assembly for a file
+srcs/io/task/SimpleBody.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SimpleBody.cc.s
+.PHONY : srcs/io/task/SimpleBody.cc.s
+
+srcs/io/task/SpliceIn.o: srcs/io/task/SpliceIn.cc.o
+.PHONY : srcs/io/task/SpliceIn.o
+
+# target to build an object file
+srcs/io/task/SpliceIn.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SpliceIn.cc.o
+.PHONY : srcs/io/task/SpliceIn.cc.o
+
+srcs/io/task/SpliceIn.i: srcs/io/task/SpliceIn.cc.i
+.PHONY : srcs/io/task/SpliceIn.i
+
+# target to preprocess a source file
+srcs/io/task/SpliceIn.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SpliceIn.cc.i
+.PHONY : srcs/io/task/SpliceIn.cc.i
+
+srcs/io/task/SpliceIn.s: srcs/io/task/SpliceIn.cc.s
+.PHONY : srcs/io/task/SpliceIn.s
+
+# target to generate assembly for a file
+srcs/io/task/SpliceIn.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SpliceIn.cc.s
+.PHONY : srcs/io/task/SpliceIn.cc.s
+
+srcs/io/task/SpliceOut.o: srcs/io/task/SpliceOut.cc.o
+.PHONY : srcs/io/task/SpliceOut.o
+
+# target to build an object file
+srcs/io/task/SpliceOut.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SpliceOut.cc.o
+.PHONY : srcs/io/task/SpliceOut.cc.o
+
+srcs/io/task/SpliceOut.i: srcs/io/task/SpliceOut.cc.i
+.PHONY : srcs/io/task/SpliceOut.i
+
+# target to preprocess a source file
+srcs/io/task/SpliceOut.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SpliceOut.cc.i
+.PHONY : srcs/io/task/SpliceOut.cc.i
+
+srcs/io/task/SpliceOut.s: srcs/io/task/SpliceOut.cc.s
+.PHONY : srcs/io/task/SpliceOut.s
+
+# target to generate assembly for a file
+srcs/io/task/SpliceOut.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/webserv.dir/build.make CMakeFiles/webserv.dir/srcs/io/task/SpliceOut.cc.s
+.PHONY : srcs/io/task/SpliceOut.cc.s
+
 srcs/main.o: srcs/main.cc.o
 .PHONY : srcs/main.o
 
@@ -525,6 +717,9 @@ help:
 	@echo "... srcs/Server.o"
 	@echo "... srcs/Server.i"
 	@echo "... srcs/Server.s"
+	@echo "... srcs/cgi/Cgi.o"
+	@echo "... srcs/cgi/Cgi.i"
+	@echo "... srcs/cgi/Cgi.s"
 	@echo "... srcs/config/Config.o"
 	@echo "... srcs/config/Config.i"
 	@echo "... srcs/config/Config.s"
@@ -537,6 +732,9 @@ help:
 	@echo "... srcs/config/ConfigServer.o"
 	@echo "... srcs/config/ConfigServer.i"
 	@echo "... srcs/config/ConfigServer.s"
+	@echo "... srcs/http/ErrorPage.o"
+	@echo "... srcs/http/ErrorPage.i"
+	@echo "... srcs/http/ErrorPage.s"
 	@echo "... srcs/http/Message.o"
 	@echo "... srcs/http/Message.i"
 	@echo "... srcs/http/Message.s"
@@ -552,12 +750,21 @@ help:
 	@echo "... srcs/io/Connection.o"
 	@echo "... srcs/io/Connection.i"
 	@echo "... srcs/io/Connection.s"
-	@echo "... srcs/io/ConnectionBuffer.o"
-	@echo "... srcs/io/ConnectionBuffer.i"
-	@echo "... srcs/io/ConnectionBuffer.s"
 	@echo "... srcs/io/EventQueue.o"
 	@echo "... srcs/io/EventQueue.i"
 	@echo "... srcs/io/EventQueue.s"
+	@echo "... srcs/io/Handler.o"
+	@echo "... srcs/io/Handler.i"
+	@echo "... srcs/io/Handler.s"
+	@echo "... srcs/io/ListenSocket.o"
+	@echo "... srcs/io/ListenSocket.i"
+	@echo "... srcs/io/ListenSocket.s"
+	@echo "... srcs/io/RingBuffer.o"
+	@echo "... srcs/io/RingBuffer.i"
+	@echo "... srcs/io/RingBuffer.s"
+	@echo "... srcs/io/Signal.o"
+	@echo "... srcs/io/Signal.i"
+	@echo "... srcs/io/Signal.s"
 	@echo "... srcs/io/Socket.o"
 	@echo "... srcs/io/Socket.i"
 	@echo "... srcs/io/Socket.s"
@@ -567,6 +774,15 @@ help:
 	@echo "... srcs/io/task/SendResponse.o"
 	@echo "... srcs/io/task/SendResponse.i"
 	@echo "... srcs/io/task/SendResponse.s"
+	@echo "... srcs/io/task/SimpleBody.o"
+	@echo "... srcs/io/task/SimpleBody.i"
+	@echo "... srcs/io/task/SimpleBody.s"
+	@echo "... srcs/io/task/SpliceIn.o"
+	@echo "... srcs/io/task/SpliceIn.i"
+	@echo "... srcs/io/task/SpliceIn.s"
+	@echo "... srcs/io/task/SpliceOut.o"
+	@echo "... srcs/io/task/SpliceOut.i"
+	@echo "... srcs/io/task/SpliceOut.s"
 	@echo "... srcs/main.o"
 	@echo "... srcs/main.i"
 	@echo "... srcs/main.s"
