@@ -86,14 +86,21 @@ else
 fi
 
 # post with non-cgi
-response=$(./post.sh localhost 6969 /test/dummy.cgi arg1 arg2)
+response=$(./post.sh localhost 6969 /cgi/dummy.txt arg1 arg2)
 if [[ ! $response =~ "405" ]]; then
 	echo "$RED [KO] $NC failed post test with non-cgi"
 else
 	echo "$GREEN [OK] $NC passed post test with non-cgi"
 fi
 
-# test cgi not printing rfc-compliant output (including nothing at all)
+# test cgi not printing rfc-compliant output
+response=$(./get.sh localhost 6969 /cgi/invalid.cgi)
+if [[ ! $response =~ "500" ]]; then
+	echo "$RED [KO] $NC failed get test with invalid cgi"
+else
+	echo "$GREEN [OK] $NC passed get test with invalid cgi"
+fi
+
 # test cgi metavariables
 
 # normal delete
@@ -159,4 +166,10 @@ else
 	echo "$GREEN [OK] $NC passed test with body_size > max_body_size"
 fi
 
-# test with siege
+# test with normal put
+response=$(./put.sh 6969 /put/my_upload favicon.ico)
+if [[ ! $response =~ "200" ]] && [[ ! $response =~ "201" ]]; then
+	echo "$RED [KO] $NC failed normal test with put"
+else
+	echo "$GREEN [OK] $NC passed normal test with put"
+fi
