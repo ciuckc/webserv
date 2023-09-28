@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Post method example</title>
+    <style>
+      form {
+        width: 420px;
+      }
+
+      div {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: inline-block;
+        width: 240px;
+        text-align: right;
+        padding-right: 10px;
+      }
+
+      button, input {
+        float: right;
+      }
+    </style>
+  </head>
+  <body>
+    <form action="http://localhost:6969/cgi/client_redir_doc.cgi" method="post">
+      <div>
+        <label for="arg1">What greeting do you want to say?</label>
+        <input name="arg1" value="Hi">
+      </div>
+      <div>
+        <label for="arg2">Who do you want to say it to?</label>
+        <input name="arg2" value="Mom">
+      </div>
+      <div>
+        <button>Send my greetings</button>
+      </div>
+    </form>
+  </body>
+</html>

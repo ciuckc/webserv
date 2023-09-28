@@ -17,8 +17,8 @@ foreach $pair (@pairs) {
 }
 $first_value = $FORM{arg1};
 $second_value = $FORM{arg2};
-print "Content-type:text/html\r\n\r\n";
 print "Location: http://localhost:6969/html/redir.html\r\n";
+print "Content-type:text/html\r\n\r\n";
 print "<html>";
 print "<head>";
 print "</head>";

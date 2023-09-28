@@ -62,8 +62,10 @@ void RequestHandler::handleDir_(const std::string& path, const ConfigRoute& rout
   std::string actual_path = (*path.rbegin() == '/') ? path : path + '/';
   for (const auto& file : route.getIndexFiles()) {
     std::string actual_file = actual_path + file;
-
-    if (util::getExtension(file) == "cgi" && access(actual_file.c_str(), X_OK) == 0) {
+    if (access(actual_file.c_str(), F_OK) != 0) {
+      continue;
+    }
+    if (util::getExtension(file) == "cgi") {
       return handleCgi_(actual_file);
     } else if (access(actual_file.c_str(), R_OK) == 0 && file_info.open(actual_file.data())) {
       return handleFile_(actual_file, file_info);
@@ -146,6 +148,10 @@ void RequestHandler::handleCgi_(const std::string& path)
 {
   int pipe_in[2];
   int pipe_out[2];
+  if (access(path.c_str(), X_OK) != 0) {
+    handleFileError_();
+    return;
+  }
   if (pipe(pipe_out) == -1 || pipe(pipe_in) == -1) {
     return (handleError_(500));
   }
