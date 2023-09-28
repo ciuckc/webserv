@@ -13,16 +13,17 @@ class SpliceOut : public OTask {
     Server& server_;
     SpliceOut& parent_;
     Connection& connection_;
-    const std::string& cgi_path_;
     const ConfigServer& cfg_;
     RingBuffer& buffer_;
     std::string name_;
     bool state_headers_, chunked_;
     std::string headers_;
 
+    bool error();
+
    public:
     IHandler(Server& server, SpliceOut& parent, Connection& connection,
-             const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd);
+             const ConfigServer& cfg, int pipe_fd);
     ~IHandler() override;
 
     [[nodiscard]] const std::string& getName() const override;
@@ -34,7 +35,7 @@ class SpliceOut : public OTask {
     bool handleError() override;
     bool handleWrite() override;
     bool handleRHup() override;
-    void readBuffer_();
+    bool readBuffer_();
     void chunkBuffer_();
   };
 
@@ -44,7 +45,7 @@ class SpliceOut : public OTask {
   bool fail_ = false;
 
  public:
-  SpliceOut(Server& server, Connection& conn, const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd);
+  SpliceOut(Server& server, Connection& conn, const ConfigServer& cfg, int pipe_fd);
   ~SpliceOut() override;
 
   WS::IOStatus operator()(Connection& connection) override;

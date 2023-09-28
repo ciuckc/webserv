@@ -160,7 +160,7 @@ void RequestHandler::handleCgi_(const std::string& path)
     Log::trace("Reading request body of length: ", len, " into pipe\n");
     connection_.addTask(std::make_unique<SpliceIn>(connection_.getServer(), connection_, pipe_in[1], len));
   }
-  connection_.addTask(std::make_unique<SpliceOut>(connection_.getServer(), connection_, path, cfg_, pipe_out[0]));
+  connection_.addTask(std::make_unique<SpliceOut>(connection_.getServer(), connection_, cfg_, pipe_out[0]));
   char** envp = Cgi::makeEnv(request_, path, connection_.getAddress(), cfg_);
   int pid = fork();
   if (pid < 0) {

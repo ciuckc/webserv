@@ -14,6 +14,7 @@ class Cgi {
   static std::string getScriptName(const std::string& path);
   static char** makeEnv(const Request& req, const std::string& p, const std::string& addr, const ConfigServer& cfg);
   static void delEnv(char** arr);
+  static void makeErrorResponse(Connection& connection, const ConfigServer& cfg);
 
  private:
   bool makeDocumentResponse_(const std::string& headers);

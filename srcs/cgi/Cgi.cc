@@ -107,11 +107,7 @@ bool Cgi::act(const std::string& headers)
     }
   }
   // invalid response (not compliant with CGI spec)
-  auto perr = HTTP::createError(cfg_, 500);
-  conn_.enqueueResponse(std::move(perr.first));
-  conn_.addTask(std::move(perr.second));
-  size_t len = conn_.getOutBuffer().dataLen();
-  conn_.getOutBuffer().discard(len);
+  makeErrorResponse(conn_, cfg_);
   return false;
 }
 
@@ -163,4 +159,12 @@ void Cgi::bufferResponse_(const Response& res)
     conn_.getOutBuffer().prepend(header);
   }
   conn_.getOutBuffer().prepend(res.getMessage());
+}
+
+void Cgi::makeErrorResponse(Connection &connection, const ConfigServer &cfg) {
+  auto perr = HTTP::createError(cfg, 500);
+  connection.enqueueResponse(std::move(perr.first));
+  connection.addTask(std::move(perr.second));
+  size_t len = connection.getOutBuffer().dataLen();
+  connection.getOutBuffer().discard(len);
 }

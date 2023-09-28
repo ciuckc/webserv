@@ -4,9 +4,9 @@
 #include "io/Connection.h"
 #include "util/Log.h"
 
-SpliceOut::SpliceOut(Server& server, Connection& conn, const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd)
+SpliceOut::SpliceOut(Server& server, Connection& conn, const ConfigServer& cfg, int pipe_fd)
   : server_(server) {
-  auto handler = std::make_unique<IHandler>(server, *this, conn, cgi_path, cfg, pipe_fd);
+  auto handler = std::make_unique<IHandler>(server, *this, conn, cfg, pipe_fd);
   handler_ = handler.operator->();
   server.add_sub(std::move(handler));
 }
@@ -38,10 +38,9 @@ void SpliceOut::setFail() {
   fail_ = true;
 }
 
-SpliceOut::IHandler::IHandler(Server& server, SpliceOut& parent, Connection& connection,
-                              const std::string& cgi_path, const ConfigServer& cfg, int pipe_fd)
+SpliceOut::IHandler::IHandler(Server& server, SpliceOut& parent, Connection& connection, const ConfigServer& cfg, int pipe_fd)
     : Handler(pipe_fd, EventQueue::in, 1000), server_(server),
-      parent_(parent), connection_(connection), cgi_path_(cgi_path),
+      parent_(parent), connection_(connection),
       cfg_(cfg), buffer_(connection.getOutBuffer()),
       name_(Str::join("SpliceOut::IHandler(", std::to_string(pipe_fd), ")")),
       state_headers_(true), chunked_(false) {}
@@ -68,34 +67,51 @@ void SpliceOut::IHandler::chunkBuffer_()
   buffer_.put("\r\n");
 }
 
+bool SpliceOut::IHandler::error() {
+  parent_.setDone();
+  delFilter(EventQueue::in);
+  Cgi::makeErrorResponse(connection_, cfg_);
+  return true;
+}
+
+static bool isValidHeader(const std::string& str) {
+  size_t colon = str.find_first_of(':');
+  size_t end = str.find_last_not_of("\r\n\t ");
+  size_t start = str.find_first_not_of("\t ");
+  return colon != std::string::npos && end != colon && start == 0 && start != colon;
+}
+
 // keep reading buffer until headers are complete
 // pass headers to cgi and chunk the body
-void SpliceOut::IHandler::readBuffer_()
+bool SpliceOut::IHandler::readBuffer_()
 {
   if (state_headers_) {
     std::string tmp;
     while (buffer_.getline(tmp)) {
-      if (!tmp.compare("\n") || !tmp.compare("\r\n")) { // end of headers
-        if (!buffer_.empty()) { // if there is a body in buf we chunk
-          chunked_ = true;
-          chunkBuffer_();
-        }
-        Cgi cgi(cfg_, connection_);
-        if (!cgi.act(headers_)) {
-          parent_.setFail();
-          connection_.setKeepAlive(false);
-          delFilter(EventQueue::in);
-          return;
-        }
-        state_headers_ = false;
-        return;
+      if (tmp != "\n" && tmp != "\r\n") {
+        if (!isValidHeader(tmp))
+          return error();
+        headers_.append(tmp);
+        continue;
       }
-      headers_.append(tmp);
+      if (!buffer_.empty()) { // if there is a body in buf we chunk
+        chunked_ = true;
+        chunkBuffer_();
+      }
+      Cgi cgi(cfg_, connection_);
+      if (!cgi.act(headers_)) {
+        parent_.setDone();
+        delFilter(EventQueue::in);
+        return true;
+      }
+      state_headers_ = false;
+      return false;
     }
   }
   else if (chunked_) {
     chunkBuffer_();
   }
+  return false;
 }
 
 bool SpliceOut::IHandler::handleRead() {
@@ -118,8 +134,7 @@ bool SpliceOut::IHandler::handleRead() {
     parent_.setFail();
     return true;
   }
-  readBuffer_();
-  return false;
+  return readBuffer_();
 }
 
 bool SpliceOut::IHandler::handleWHup() {
