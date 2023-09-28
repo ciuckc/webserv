@@ -43,9 +43,10 @@ Socket& Socket::operator=(Socket&& other) noexcept {
 void Socket::bind(std::uint16_t port) {
   addrinfo* bind_info;
 
-  int yes = 1;
-  setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
-  setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+  // uncomment the next 3 lines if you wanna be able to rerun the program quickly
+  //int yes = 1;
+  //setsockopt(fd_, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
+  //setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
   {
     std::string port_str = std::to_string(port);
     name_ = Str::join(util::terminal_colours[fd_ % 8], "[", port_str, "]", util::RESET);

@@ -35,6 +35,10 @@ Server::Server(Config& config) {
 Server::~Server() = default;
 
 void Server::loop() {
+  if (handlers_.empty()) {
+    Log::error("[Server] No listening sockets! Exiting\n");
+    return;
+  }
   Log::info("[Server] Entering main loop!\n");
   while (true) {
     try {
