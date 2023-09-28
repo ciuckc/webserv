@@ -18,6 +18,10 @@
 #include "io/task/SpliceIn.h"
 #include "io/task/RecvFile.h"
 
+static bool isCgi(std::string_view extension) {
+  return extension == "cgi" || extension.compare(0, 4, "cgi/") == 0;
+}
+
 void RequestHandler::execRequest(const std::string& path, const ConfigRoute& route)
 {
   // for route in cfg_.routes
@@ -38,7 +42,7 @@ void RequestHandler::execRequest(const std::string& path, const ConfigRoute& rou
     return handlePut_(path, route);
   } else if (route.getRedir().length() != 0) {
     return handleRedir_(route);
-  } else if (util::getExtension(path) == "cgi") {
+  } else if (isCgi(util::getExtension(path))) {
     return handleCgi_(path);
   }
   auto s = util::FileInfo();
@@ -207,11 +211,7 @@ void RequestHandler::handlePut_(const std::string& path, const ConfigRoute& rout
     fd = open(file.c_str(), O_TRUNC | O_WRONLY);
   if (fd < 0)
     return handleFileError_();
-  connection_.addTask(std::make_unique<RecvFile>(fd, request_.getContentLength()));
-  connection_.enqueueResponse(Response::builder()
-                .message(created ? 201 : 200)
-                .header("Content-Location", path)
-                .build());
+  connection_.addTask(std::make_unique<RecvFile>(path, fd, request_.getContentLength(), created));
 }
 
 void RequestHandler::handleFileError_() {

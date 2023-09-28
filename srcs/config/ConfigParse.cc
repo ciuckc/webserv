@@ -42,7 +42,7 @@ ConfigParse::ConfigParse(const Lines& file_data) : lines_(file_data), map_(), lo
 
   this->loc_map_ = {{"index", &ConfigParse::indexParse},       {"autoindex", &ConfigParse::autoIndexParse},
                     {"root", &ConfigParse::rootParse},         {"allowed_methods", &ConfigParse::allowedMethodsParse},
-                    {"redirect", &ConfigParse::redirectParse}, {"cgi_upload_dir", &ConfigParse::uploadDirParse}};
+                    {"redirect", &ConfigParse::redirectParse}, {"upload_dir", &ConfigParse::uploadDirParse}};
 }
 
 Config& ConfigParse::parse(Config& cfg) {
@@ -78,7 +78,7 @@ bool ConfigParse::isDirective(const TokensConstIter& curr) {
 bool ConfigParse::isLocationDirective(const TokensConstIter& curr) {
   std::unordered_map<std::string_view, bool> location_directives = {{"index", true},    {"autoindex", true},
                                                                {"root", true},     {"allowed_methods", true},
-                                                               {"redirect", true}, {"cgi_upload_dir", true}};
+                                                               {"redirect", true}, {"upload_dir", true}};
   return location_directives[*curr];
 }
 
