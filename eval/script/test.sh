@@ -76,7 +76,6 @@ if [[ ! $response =~ "302" ]] || [[ ! $response =~ "Location" ]]; then
 else
 	echo "$GREEN [OK] $NC passed post test with client redir cgi"
 fi
-echo $response
 
 # post with nonexistent file
 response=$(./post.sh localhost 6969 /nonexistent.cgi arg1 arg2)
@@ -139,7 +138,7 @@ Host: localhost:8080
 Connection: close
 "
 response=$(echo $request | netcat localhost 8080)
-if [[ ! $response =~ "501" ]]; then
+if [[ ! $response =~ "405" ]]; then
 	echo "$RED [KO] $NC failed test with unsupported method"
 else
 	echo "$GREEN [OK] $NC passed test with unsupported method"
