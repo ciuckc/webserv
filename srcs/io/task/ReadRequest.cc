@@ -139,9 +139,9 @@ std::pair<std::string, std::string_view> ReadRequest::split_header(std::string& 
 void ReadRequest::error(Connection& connection) {
   std::pair<Response, std::unique_ptr<OTask>> perr;
   if (cfg_)
-    perr = http::createError(*cfg_, error_);
+    perr = HTTP::createError(*cfg_, error_);
   else
-    perr = http::defaultErrPage(error_);
+    perr = HTTP::defaultErrPage(error_);
   connection.enqueueResponse(std::move(perr.first));
   connection.addTask(std::move(perr.second));
 }

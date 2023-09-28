@@ -22,7 +22,7 @@ bool Connection::handleRead() {
   WS::IOStatus status;
 
   if (in_buffer_.full()) {
-    Log::debug(*this, " removing read filter, in buffer full (blocked)\n");
+    Log::debug(*this, "Removing read filter, in buffer full (blocked)\n");
     delFilter(EventQueue::in);
     return false;
   }
@@ -34,7 +34,7 @@ bool Connection::handleRead() {
   status = in_buffer_.read_sock(socket_);
   if (status == WS::IO_EOF) {
     // This only happens when we also get a read hangup
-    Log::debug(*this, " removing read filter, read 0 bytes from socket\n");
+    Log::debug(*this, "Removing read filter, read 0 bytes from socket\n");
     delFilter(EventQueue::in);
     if (in_buffer_.empty())
       return false;
@@ -234,6 +234,10 @@ const std::map<std::string, ConfigServer &>& Connection::getHostMap() const {
 
 const std::string& Connection::getName() const {
   return socket_.getName();
+}
+
+const std::string& Connection::getAddress() const {
+  return socket_.getAddress();
 }
 
 void Connection::setKeepAlive(bool keepAlive) {

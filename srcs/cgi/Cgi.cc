@@ -1,13 +1,13 @@
+#include "Cgi.h"
+
 #include <unistd.h>
-#include <sys/wait.h>
 
 #include <array>
 
-#include "Cgi.h"
-#include "http/RequestHandler.h"
 #include "config/ConfigServer.h"
-#include "io/task/SimpleBody.h"
+#include "http/RequestHandler.h"
 #include "util/WebServ.h"
+#include "http/ErrorPage.h"
 
 std::string Cgi::findHeaderValue_(const std::string& headers, const std::string& key)
 {
@@ -33,7 +33,7 @@ void Cgi::delEnv(char** arr)
 
 // make environment variables as specified in CGI RFC
 // some of them are missing due to not being required by subject
-char** Cgi::makeEnv(const Request& req, const std::string& path, const ConfigServer& cfg)
+char** Cgi::makeEnv(const Request& req, const std::string& path, const std::string& addr, const ConfigServer& cfg)
 {
   static struct header_null_helper {
     std::string operator()(const Request& req, const std::string& key) {
@@ -50,24 +50,25 @@ char** Cgi::makeEnv(const Request& req, const std::string& path, const ConfigSer
       return str.substr(start, i);
     };
   } head;
-  char** env = nullptr;
+  char** env;
+  using namespace std::string_literals;
   std::string script = getScriptName(path);
   std::array<std::string, 16> arr = {
-    std::string("CONTENT_LENGTH=") + head(req, "Content-Length: "),
-    std::string("CONTENT_TYPE=") + head(req, "Content-Type: "),
-    std::string("GATEWAY_INTERFACE=CGI/1.1"),
-    std::string("PATH_INFO=") + path.substr(script.length()),
-    std::string("PATH_TRANSLATED=") + script,
-    std::string("QUERY_STRING=") +
-      ((req.getUri().find("?") != std::string::npos) ? req.getUri().substr(req.getUri().find("?") + 1) : ""),
-    std::string("REMOTE_ADDR=127.0.0.1"), // for now just hardcode localhost, ask lucas to pass the real thing
-    std::string("REMOTE_HOST=") + head(req, "Host: "),
-    std::string("REQUEST_METHOD=") + (req.getMethod() == HTTP::GET ? "GET" : "POST"),
-    std::string("SCRIPT_NAME=") + script,
-    std::string("SERVER_NAME=") + head(req, "Host: "),
-    std::string("SERVER_PORT=") + std::to_string(cfg.getPort()),
-    std::string("SERVER_PROTOCOL=HTTP/1.1"),
-    std::string("SERVER_SOFTWARE=SuperWebserv10K/0.9.1 (Unix)")
+    "CONTENT_LENGTH="s + head(req, "Content-Length: "),
+    "CONTENT_TYPE="s + head(req, "Content-Type: "),
+    "GATEWAY_INTERFACE=CGI/1.1"s,
+    "PATH_INFO="s + path.substr(script.length()),
+    "PATH_TRANSLATED="s + script,
+    "QUERY_STRING="s +
+      ((req.getUri().find('?') != std::string::npos) ? req.getUri().substr(req.getUri().find('?') + 1) : ""),
+    "REMOTE_ADDR="s + addr,
+    "REMOTE_HOST="s + head(req, "Host: "),
+    "REQUEST_METHOD="s + (req.getMethod() == HTTP::GET ? "GET" : "POST"),
+    "SCRIPT_NAME="s + script,
+    "SERVER_NAME="s + head(req, "Host: "),
+    "SERVER_PORT="s + std::to_string(cfg.getPort()),
+    "SERVER_PROTOCOL=HTTP/1.1"s,
+    "SERVER_SOFTWARE=SuperWebserv10K/0.9.1 (Unix)"s
   };
   env = new char*[arr.size() + 1];
   env[arr.size()] = nullptr;
@@ -84,44 +85,49 @@ std::string Cgi::getScriptName(const std::string& path)
   return (path.substr(0, path.find(".cgi") + 4));
 }
 
-Cgi::Cgi(const ConfigServer& config_server, Connection& conn, const std::string& path)
-  : cfg_(config_server),
-    conn_(conn),
-    path_(path) {}
+Cgi::Cgi(const ConfigServer &config_server, Connection &conn)
+  : cfg_(config_server), conn_(conn) {}
 
-void Cgi::act(const std::string& headers)
+bool Cgi::act(const std::string& headers)
 {
   // document response
-  if (strncasecmp("Content-Type", headers.c_str(), 12) == 0 && strncasecmp("Location", headers.c_str(), 8)) {
-    makeDocumentResponse_(headers);
+  if (strncasecmp("Content-Type", headers.c_str(), 12) == 0) {
+    if (makeDocumentResponse_(headers))
+      return true;
   }
-  // client-redir response
-  else if (headers.find("Location") != std::string::npos && headers.find("http://") != std::string::npos) {
-    makeClientRedirResponse_(headers);
-  }
-  // local-redir response AKA server redirect
-  else if (headers.find("Location") != std::string::npos) {
-    makeLocalRedirResponse_(headers);
+  else if (strncasecmp("Location", headers.c_str(), 8) == 0) {
+    if (headers.find("http://") != std::string::npos || headers.find("https://") != std::string::npos) {
+      // client-redir response
+      if (makeClientRedirResponse_(headers))
+        return true;
+    } else {
+      // local-redir response
+      if (makeLocalRedirResponse_(headers))
+        return true;
+    }
   }
   // invalid response (not compliant with CGI spec)
-  else {
-    // rh_.handleError_(500);
-  }
+  auto perr = HTTP::createError(cfg_, 500);
+  conn_.enqueueResponse(std::move(perr.first));
+  conn_.addTask(std::move(perr.second));
+  size_t len = conn_.getOutBuffer().dataLen();
+  conn_.getOutBuffer().discard(len);
+  return false;
 }
 
 // cgi document response into http response
-void Cgi::makeDocumentResponse_(const std::string& headers)
+bool Cgi::makeDocumentResponse_(const std::string& headers)
 {
   Response res;
   res.addHeader("Transfer-Encoding", "Chunked");
   res.addHeader("Content-Type", findHeaderValue_(headers, "Content-Type: "));
   res.setMessage(200);
-  // conn_.enqueueResponse(std::move(res));
   bufferResponse_(res);
+  return true;
 }
 
 // cgi local redirect response into http response
-void Cgi::makeLocalRedirResponse_(const std::string& headers)
+bool Cgi::makeLocalRedirResponse_(const std::string& headers)
 {
   Request req;
   req.setMethod(HTTP::GET);
@@ -132,21 +138,22 @@ void Cgi::makeLocalRedirResponse_(const std::string& headers)
   if (new_route != cfg_.getRoutes().end()) {
     req.setUri(new_uri);
     rh.execRequest(new_uri, new_route->second);
-    return;
+    return true;
   }
-  // rh.handleError_(500);
+  return false;
 }
 
 // cgi client redirect response into http response
-void Cgi::makeClientRedirResponse_(const std::string& headers)
+bool Cgi::makeClientRedirResponse_(const std::string& headers)
 {
   Response res;
   res.setMessage(302);
   res.addHeader("Location", findHeaderValue_(headers, "Location: "));
   if (conn_.getOutBuffer().empty()) {
-    // add content type
+    res.addHeader("Content-Length: 0\r\n");
   }
   bufferResponse_(res);
+  return true;
 }
 
 void Cgi::bufferResponse_(const Response& res)

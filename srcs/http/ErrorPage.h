@@ -6,7 +6,7 @@
 #include "config/ConfigServer.h"
 #include "io/task/IOTask.h"
 
-namespace http {
+namespace HTTP {
 
 static constexpr const char* errpage_template = "<!DOCTYPE html><html><head><title>%d %s</title></head>"
                               "<body><h1>%d %s</h1><p>(Google what it means yourself)</p></body></html>";

@@ -80,8 +80,13 @@ void SpliceOut::IHandler::readBuffer_()
           chunked_ = true;
           chunkBuffer_();
         }
-        Cgi cgi(cfg_, connection_, cgi_path_);
-        cgi.act(headers_);
+        Cgi cgi(cfg_, connection_);
+        if (!cgi.act(headers_)) {
+          parent_.setFail();
+          connection_.setKeepAlive(false);
+          delFilter(EventQueue::in);
+          return;
+        }
         state_headers_ = false;
         return;
       }

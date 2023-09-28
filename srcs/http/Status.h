@@ -2,7 +2,7 @@
 #include <string>
 
 // I am not sorry for this
-namespace http {
+namespace HTTP {
 static constexpr const char* getStatus(int code) {
   switch (code) {
     case 100:
@@ -133,4 +133,4 @@ static constexpr const char* getStatus(int code) {
       return "Invalid Status Code";
   }
 }
-}  // namespace http
+}

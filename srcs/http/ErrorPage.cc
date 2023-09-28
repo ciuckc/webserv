@@ -5,8 +5,8 @@
 #include "io/task/SimpleBody.h"
 #include "io/task/SendFile.h"
 
-std::pair<Response, std::unique_ptr<OTask>> http::defaultErrPage(int error) {
-  const char* err_msg = http::getStatus(error);
+std::pair<Response, std::unique_ptr<OTask>> HTTP::defaultErrPage(int error) {
+  const char* err_msg = HTTP::getStatus(error);
   // template is ~128 bytes, max status code length is ~32 byte, 128 + 2 * 32 + 2 * 3 < 256 QED
   auto body = std::make_unique<char[]>(256);
   size_t content_length = snprintf(body.get(), 256, errpage_template,
@@ -20,7 +20,7 @@ std::pair<Response, std::unique_ptr<OTask>> http::defaultErrPage(int error) {
   };
 }
 
-std::pair<Response, std::unique_ptr<OTask>> http::createError(const ConfigServer &cfg, int error) {
+std::pair<Response, std::unique_ptr<OTask>> HTTP::createError(const ConfigServer &cfg, int error) {
   auto& error_pages = cfg.getErrorPages();
   auto page = error_pages.find(error);
   if (page == error_pages.end())

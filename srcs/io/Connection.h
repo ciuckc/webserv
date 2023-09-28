@@ -55,6 +55,7 @@ class Connection : public Handler {
 
   [[nodiscard]] const std::map<std::string, ConfigServer&>& getHostMap() const;
   [[nodiscard]] const std::string& getName() const override;
+  [[nodiscard]] const std::string& getAddress() const;
 
   [[nodiscard]] RingBuffer& getInBuffer();
   [[nodiscard]] RingBuffer& getOutBuffer();

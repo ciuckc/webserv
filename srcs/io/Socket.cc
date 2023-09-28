@@ -22,18 +22,21 @@ Socket::~Socket() {
 
 Socket::Socket(int fd) : fd_(fd) {}
 
-Socket::Socket(int fd, std::string name) : fd_(fd), name_(std::move(name)) {}
+Socket::Socket(int fd, std::string addr, std::string name)
+    : fd_(fd), addr_(std::move(addr)), name_(std::move(name)) {}
 
 Socket::Socket(Socket&& other) noexcept {
   fd_ = other.fd_;
   other.fd_ = -1;
   name_ = std::move(other.name_);
+  addr_ = std::move(other.addr_);
 }
 
 Socket& Socket::operator=(Socket&& other) noexcept {
   fd_ = other.fd_;
   other.fd_ = -1;
   name_ = std::move(other.name_);
+  addr_ = std::move(other.addr_);
   return *this;
 }
 
@@ -82,10 +85,11 @@ Socket Socket::accept() const {
   if (fd < 0)
     throw IOException("Failed to handle request", errno);
 
-  std::string addrstr = Str::join(util::terminal_colours[fd % 8], "[", inet_ntoa(addr.sin_addr), ":",
+  std::string remote_addr = inet_ntoa(addr.sin_addr);
+  std::string addrstr = Str::join(util::terminal_colours[fd % 8], "[", remote_addr, ":",
                                   std::to_string(ntohs(addr.sin_port)), "]", util::RESET);
   Log::info(name_, "\tAccepting incoming\t", addrstr, "->[fd ", fd, "]\n");
-  return {fd, Str::join(name_, "->", std::move(addrstr))};
+  return {fd, remote_addr, Str::join(name_, "->", std::move(addrstr))};
 }
 
 int Socket::get_fd() const {
@@ -94,6 +98,10 @@ int Socket::get_fd() const {
 
 const std::string& Socket::getName() const {
   return name_;
+}
+
+const std::string& Socket::getAddress() const {
+  return addr_;
 }
 
 void Socket::shutdown(int channel) const {
